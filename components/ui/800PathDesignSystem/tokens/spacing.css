@@ -1,0 +1,46 @@
+/* ─────────────────────────────────────────────────────────────
+   800Path — Spacing, radii, shadows
+   Soft, generous, rounded. Shadows are low-contrast and lilac-cool,
+   never heavy. Radii are large — pills and 16–24px cards.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Spacing scale (4px base) */
+  --space-1:  0.25rem;  /* 4  */
+  --space-2:  0.5rem;   /* 8  */
+  --space-3:  0.75rem;  /* 12 */
+  --space-4:  1rem;     /* 16 */
+  --space-5:  1.25rem;  /* 20 */
+  --space-6:  1.5rem;   /* 24 */
+  --space-8:  2rem;     /* 32 */
+  --space-10: 2.5rem;   /* 40 */
+  --space-12: 3rem;     /* 48 */
+  --space-16: 4rem;     /* 64 */
+  --space-20: 5rem;     /* 80 */
+
+  /* Radii — rounded, soft (extra-round) */
+  --radius-sm:   10px;
+  --radius-md:   15px;
+  --radius-lg:   20px;   /* default card */
+  --radius-xl:   26px;   /* feature card */
+  --radius-2xl:  34px;
+  --radius-pill: 999px;
+
+  /* Shadows — soft, cool, low-contrast */
+  --shadow-xs: 0 1px 2px rgba(42, 40, 51, 0.04);
+  --shadow-sm: 0 1px 3px rgba(42, 40, 51, 0.05), 0 1px 2px rgba(42, 40, 51, 0.04);
+  --shadow-md: 0 4px 14px rgba(82, 70, 150, 0.07), 0 1px 3px rgba(42, 40, 51, 0.04);
+  --shadow-lg: 0 12px 32px rgba(82, 70, 150, 0.10), 0 2px 6px rgba(42, 40, 51, 0.05);
+  --shadow-brand: 0 8px 22px rgba(132, 114, 232, 0.28);
+
+  /* Motion — gentle, no bounce on UI */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1); /* @kind other */
+  --ease-in-out: cubic-bezier(0.45, 0, 0.2, 1); /* @kind other */
+  --dur-fast: 130ms; /* @kind other */
+  --dur-base: 200ms; /* @kind other */
+  --dur-slow: 320ms; /* @kind other */
+
+  /* Layout */
+  --container-sm: 28rem;
+  --container-md: 48rem;
+  --container-lg: 64rem;
+}

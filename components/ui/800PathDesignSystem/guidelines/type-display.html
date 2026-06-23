@@ -1,0 +1,26 @@
+<!-- @dsCard group="Type" viewport="700x230" name="Display & headings" subtitle="Plus Jakarta Sans, tight tracking" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface); font-family: var(--font-sans); color: var(--text-strong); }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+  .line { display: flex; align-items: baseline; gap: 16px; }
+  .tag { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); width: 92px; flex-shrink: 0; }
+  .hero { font-size: var(--text-3xl); font-weight: 800; letter-spacing: var(--tracking-tight); line-height: 1; }
+  .title { font-size: var(--text-xl); font-weight: 700; letter-spacing: var(--tracking-snug); }
+  .cardt { font-size: var(--text-lg); font-weight: 700; }
+  .lead { font-size: var(--text-md); font-weight: 500; color: var(--text-body); }
+</style>
+</head>
+<body>
+  <div class="stack">
+    <div class="line"><span class="tag">3xl / 800</span><span class="hero">Study smarter.</span></div>
+    <div class="line"><span class="tag">xl / 700</span><span class="title">Set up your session</span></div>
+    <div class="line"><span class="tag">lg / 700</span><span class="cardt">Skill accuracy</span></div>
+    <div class="line"><span class="tag">md / 500</span><span class="lead">Short, focused practice with real feedback.</span></div>
+  </div>
+</body>
+</html>

@@ -1,6 +1,12 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
+import { TopNav, NavLink } from "@/components/ui/nav";
+import { Card, Badge, ScoreRing, SkillBar, Button } from "@/components/ui/ds";
+import { Icon } from "@/components/ui/icon";
 import type { QuestionSkill } from "@/lib/types";
 
 const SKILL_LABELS: Record<QuestionSkill, string> = {
@@ -15,219 +21,242 @@ const SKILL_LABELS: Record<QuestionSkill, string> = {
   transitions: "Transitions",
 };
 
-export default async function ResultsPage({
-  params,
-}: {
-  params: Promise<{ sessionId: string }>;
-}) {
-  const { sessionId } = await params;
-  const supabase = await createClient();
+const eyebrow: React.CSSProperties = {
+  fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 600,
+  letterSpacing: "var(--tracking-caps)", textTransform: "uppercase",
+  color: "var(--text-faint)", margin: "0 0 10px", display: "block",
+};
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/auth");
+interface AnswerRow {
+  id: string;
+  is_correct: boolean;
+  user_answer: string | null;
+  question: {
+    stem: string;
+    answer: string;
+    explanation: string;
+    skill: QuestionSkill;
+    domain: string;
+    difficulty: string;
+  } | null;
+}
 
-  const { data: session } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("id", sessionId)
-    .eq("user_id", user.id)
-    .single();
+export default function ResultsPage() {
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const router = useRouter();
+  const supabase = createClient();
 
-  if (!session) redirect("/dashboard");
-  if (!session.completed_at) redirect(`/practice/${sessionId}`);
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<{
+    score: number | null;
+    domain_filter: string;
+    feedback_text: string | null;
+  } | null>(null);
+  const [answers, setAnswers] = useState<AnswerRow[]>([]);
+  const [skillMap, setSkillMap] = useState<Record<string, { total: number; correct: number }>>({});
 
-  const { data: answers } = await supabase
-    .from("answers")
-    .select("*, question:questions(*)")
-    .eq("session_id", sessionId)
-    .order("id");
+  useEffect(() => {
+    async function load() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.replace("/auth");
+        return;
+      }
 
-  const rows = answers ?? [];
-  const totalCount = rows.length;
-  const correctCount = rows.filter((r) => r.is_correct).length;
-  const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+      const { data: sessionData } = await supabase
+        .from("sessions")
+        .select("*")
+        .eq("id", sessionId)
+        .eq("user_id", user.id)
+        .single();
 
-  const skillMap: Record<string, { total: number; correct: number }> = {};
-  rows.forEach((row) => {
-    const skill = row.question?.skill as QuestionSkill | undefined;
-    if (!skill) return;
-    if (!skillMap[skill]) skillMap[skill] = { total: 0, correct: 0 };
-    skillMap[skill].total++;
-    if (row.is_correct) skillMap[skill].correct++;
-  });
+      if (!sessionData) {
+        router.replace("/dashboard");
+        return;
+      }
+      if (!sessionData.completed_at) {
+        router.replace(`/practice/${sessionId}`);
+        return;
+      }
 
-  const scoreColor =
-    score >= 80 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : "text-red-600";
+      setSession(sessionData);
 
-  const scoreBg =
-    score >= 80 ? "bg-emerald-50" : score >= 60 ? "bg-amber-50" : "bg-red-50";
+      const { data: answerRows } = await supabase
+        .from("answers")
+        .select("*, question:questions(*)")
+        .eq("session_id", sessionId)
+        .order("id");
+
+      const rows: AnswerRow[] = answerRows ?? [];
+      setAnswers(rows);
+
+      const map: Record<string, { total: number; correct: number }> = {};
+      rows.forEach((row) => {
+        const skill = row.question?.skill as QuestionSkill | undefined;
+        if (!skill) return;
+        if (!map[skill]) map[skill] = { total: 0, correct: 0 };
+        map[skill].total++;
+        if (row.is_correct) map[skill].correct++;
+      });
+      setSkillMap(map);
+      setLoading(false);
+    }
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-faint)" }}>Loading results…</p>
+      </div>
+    );
+  }
+
+  if (!session) return null;
+
+  const totalCount = answers.length;
+  const correctCount = answers.filter((r) => r.is_correct).length;
+  const score = session.score ?? (totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0);
+
+  const sortedSkills = Object.entries(skillMap).sort(
+    ([, a], [, b]) => a.correct / a.total - b.correct / b.total
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Nav */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-lg font-bold text-slate-900 tracking-tight">
-            PrepWise
-          </Link>
-          <Link
-            href="/dashboard"
-            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
-          >
-            Dashboard
-          </Link>
-        </div>
-      </nav>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+      <TopNav
+        homeHref="/dashboard"
+        maxWidth={720}
+        right={<NavLink href="/dashboard">Dashboard</NavLink>}
+      />
 
-      <main className="max-w-3xl mx-auto px-6 py-10">
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "32px 24px 80px" }}>
         {/* Score hero */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 mb-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
-            Session complete
-          </p>
-          <div className={`inline-flex items-center justify-center w-28 h-28 rounded-full ${scoreBg} mb-4`}>
-            <span className={`text-4xl font-bold ${scoreColor}`}>{score}%</span>
+        <Card tone="surface" padding="xl" radius="xl" shadow="md" style={{ marginBottom: 20, textAlign: "center" }}>
+          <span style={eyebrow}>Session complete</span>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+            <ScoreRing score={score} size={140} />
           </div>
-          <p className="text-base font-semibold text-slate-900 mb-1">
+          <p style={{
+            fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-md)",
+            color: "var(--text-strong)", margin: "0 0 6px",
+          }}>
             {correctCount} of {totalCount} correct
           </p>
-          <p className="text-sm text-slate-500 capitalize">
+          <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: 0, textTransform: "capitalize" }}>
             {session.domain_filter === "both" ? "Reading & Writing" : session.domain_filter}
           </p>
+        </Card>
 
-          {session.feedback_text && (
-            <div className="mt-6 text-left bg-indigo-50 border border-indigo-100 rounded-xl p-5">
-              <p className="text-xs font-semibold text-indigo-500 mb-2 uppercase tracking-wide">
-                AI Feedback
-              </p>
-              <p className="text-sm text-indigo-900 leading-relaxed whitespace-pre-wrap">
-                {session.feedback_text}
-              </p>
+        {/* AI Feedback */}
+        {session.feedback_text && (
+          <Card tone="lilac" padding="lg" radius="xl" shadow="none" style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <Icon name="sparkles" size={16} color="var(--brand-ink)" />
+              <span style={{ ...eyebrow, margin: 0, color: "var(--brand-ink)" }}>AI Feedback</span>
             </div>
-          )}
-        </div>
-
-        {/* Skill breakdown */}
-        {Object.keys(skillMap).length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-            <h2 className="text-sm font-semibold text-slate-900 mb-5">
-              Skill breakdown
-            </h2>
-            <div className="flex flex-col gap-4">
-              {Object.entries(skillMap)
-                .sort(([, a], [, b]) => a.correct / a.total - b.correct / b.total)
-                .map(([skill, { total, correct }]) => {
-                  const pct = Math.round((correct / total) * 100);
-                  return (
-                    <div key={skill}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-medium text-slate-700">
-                          {SKILL_LABELS[skill as QuestionSkill] ?? skill}
-                        </span>
-                        <span className="text-xs font-semibold text-slate-900">
-                          {correct}/{total} · {pct}%
-                        </span>
-                      </div>
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{
-                            width: `${pct}%`,
-                            backgroundColor:
-                              pct >= 75 ? "#16a34a" : pct >= 50 ? "#d97706" : "#dc2626",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
+            <p style={{
+              fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
+              color: "var(--brand-ink)", lineHeight: "var(--leading-relaxed)",
+              margin: 0, whiteSpace: "pre-wrap",
+            }}>
+              {session.feedback_text}
+            </p>
+          </Card>
         )}
 
-        {/* Answer review */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-          <h2 className="text-sm font-semibold text-slate-900 mb-5">
-            Question review
-          </h2>
-          <div className="flex flex-col gap-4">
-            {rows.map((row, i) => {
+        {/* Skill breakdown */}
+        {sortedSkills.length > 0 && (
+          <Card tone="surface" padding="lg" radius="xl" shadow="sm" style={{ marginBottom: 20 }}>
+            <h2 style={{
+              fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
+              color: "var(--text-strong)", margin: "0 0 20px",
+            }}>Skill breakdown</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {sortedSkills.map(([skill, { total, correct }]) => {
+                const pct = Math.round((correct / total) * 100);
+                return (
+                  <SkillBar
+                    key={skill}
+                    label={SKILL_LABELS[skill as QuestionSkill] ?? skill}
+                    accuracy={pct}
+                    detail={`${correct}/${total}`}
+                  />
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {/* Question review */}
+        <Card tone="surface" padding="lg" radius="xl" shadow="sm" style={{ marginBottom: 20 }}>
+          <h2 style={{
+            fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
+            color: "var(--text-strong)", margin: "0 0 20px",
+          }}>Question review</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {answers.map((row, i) => {
               const q = row.question;
               if (!q) return null;
-              const isCorrect = row.is_correct;
-
               return (
-                <div
+                <Card
                   key={row.id}
-                  className={`rounded-xl border p-5 ${
-                    isCorrect
-                      ? "border-emerald-200 bg-emerald-50"
-                      : "border-red-200 bg-red-50"
-                  }`}
+                  tone={row.is_correct ? "mint" : "rose"}
+                  padding="lg"
+                  radius="lg"
+                  shadow="none"
                 >
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div>
-                      <span className="text-xs font-semibold text-slate-600">
-                        Q{i + 1}
-                      </span>
-                      <span className="text-xs text-slate-400 ml-2 capitalize">
-                        {q.skill?.replace(/_/g, " ")}
-                      </span>
-                    </div>
-                    <span
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
-                        isCorrect
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {isCorrect ? "Correct" : "Incorrect"}
-                    </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                    <Badge tone={row.is_correct ? "mint" : "rose"}>{row.is_correct ? "Correct" : "Incorrect"}</Badge>
+                    <Badge tone="lilac">Q{i + 1}</Badge>
+                    <Badge tone="sky">{q.skill?.replace(/_/g, " ")}</Badge>
                   </div>
-                  <p className="text-sm font-medium text-slate-800 mb-3 leading-relaxed">
-                    {q.stem}
-                  </p>
-                  <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs mb-3">
-                    <span className="text-slate-600">
+                  <p style={{
+                    fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
+                    color: "var(--text-strong)", margin: "0 0 10px", lineHeight: "var(--leading-snug)",
+                  }}>{q.stem}</p>
+                  <div style={{
+                    fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
+                    color: "var(--text-muted)", display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 10,
+                  }}>
+                    <span>
                       Your answer:{" "}
-                      <strong className={isCorrect ? "text-emerald-700" : "text-red-700"}>
+                      <strong style={{ color: row.is_correct ? "var(--success)" : "var(--danger)" }}>
                         {row.user_answer ?? "Skipped"}
                       </strong>
                     </span>
-                    {!isCorrect && (
-                      <span className="text-slate-600">
-                        Correct:{" "}
-                        <strong className="text-emerald-700">{q.answer}</strong>
+                    {!row.is_correct && (
+                      <span>
+                        Correct: <strong style={{ color: "var(--success)" }}>{q.answer}</strong>
                       </span>
                     )}
                   </div>
-                  <div className="bg-white/80 rounded-lg px-4 py-3 border border-white">
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {q.explanation}
-                    </p>
+                  <div style={{
+                    background: "rgba(255,255,255,0.7)", borderRadius: "var(--radius-sm)",
+                    padding: "10px 14px",
+                  }}>
+                    <p style={{
+                      fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
+                      color: "var(--text-body)", lineHeight: "var(--leading-relaxed)", margin: 0,
+                    }}>{q.explanation}</p>
                   </div>
-                </div>
+                </Card>
               );
             })}
           </div>
-        </div>
+        </Card>
 
         {/* Actions */}
-        <div className="flex gap-3">
-          <Link
-            href="/practice"
-            className="flex-1 text-center bg-indigo-600 text-white text-sm font-semibold py-3.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
-          >
-            Practice again →
-          </Link>
-          <Link
-            href="/dashboard"
-            className="flex-1 text-center bg-white text-slate-700 text-sm font-semibold py-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors"
-          >
+        <div style={{ display: "flex", gap: 12 }}>
+          <Button full size="lg" onClick={() => router.push("/practice")} iconRight={<Icon name="arrow-right" size={18} />}>
+            Practice again
+          </Button>
+          <Button full size="lg" variant="secondary" onClick={() => router.push("/dashboard")}>
             Dashboard
-          </Link>
+          </Button>
         </div>
       </main>
     </div>

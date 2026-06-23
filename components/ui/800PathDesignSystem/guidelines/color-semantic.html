@@ -1,0 +1,23 @@
+<!-- @dsCard group="Colors" viewport="700x140" name="Semantic" subtitle="Success, warning, danger — pastel-forward" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface); }
+  .row { display: flex; gap: 14px; }
+  .cell { flex: 1; border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .dot { width: 28px; height: 28px; border-radius: 50%; }
+  .name { font-family: var(--font-sans); font-size: 12px; font-weight: 700; }
+  .hex { font-family: var(--font-mono); font-size: 10px; opacity: 0.7; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="cell" style="background:var(--success-surface);color:var(--success)"><div class="dot" style="background:var(--success)"></div><span class="name">Success</span><span class="hex">#1f7a57 on #e7f7ef</span></div>
+    <div class="cell" style="background:var(--warning-surface);color:var(--warning)"><div class="dot" style="background:var(--warning)"></div><span class="name">Warning</span><span class="hex">#8c6913 on #fbf3dd</span></div>
+    <div class="cell" style="background:var(--danger-surface);color:var(--danger)"><div class="dot" style="background:var(--danger)"></div><span class="name">Danger</span><span class="hex">#c25275 on #fdeaf1</span></div>
+  </div>
+</body>
+</html>

@@ -1,6 +1,11 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
+import { TopNav, NavLink } from "@/components/ui/nav";
+import { Card, Avatar, Badge, SkillBar } from "@/components/ui/ds";
 import type { Session, SkillStat, QuestionSkill } from "@/lib/types";
 
 const SKILL_LABELS: Record<QuestionSkill, string> = {
@@ -15,251 +20,255 @@ const SKILL_LABELS: Record<QuestionSkill, string> = {
   transitions: "Transitions",
 };
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export default function DashboardPage() {
+  const router = useRouter();
+  const supabase = createClient();
+  const [loading, setLoading] = useState(true);
+  const [displayName, setDisplayName] = useState("there");
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [skillStats, setSkillStats] = useState<SkillStat[]>([]);
 
-  if (!user) redirect("/auth");
+  useEffect(() => {
+    async function load() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.replace("/auth");
+        return;
+      }
 
-  const { data: sessions } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("user_id", user.id)
-    .not("completed_at", "is", null)
-    .order("completed_at", { ascending: false })
-    .limit(10);
+      setDisplayName(
+        user.user_metadata?.display_name ?? user.email?.split("@")[0] ?? "there"
+      );
 
-  const { data: skillRows } = await supabase
-    .from("answers")
-    .select("is_correct, question:questions(skill)")
-    .eq("sessions.user_id", user.id);
+      const { data: sessionData } = await supabase
+        .from("sessions")
+        .select("*")
+        .eq("user_id", user.id)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(10);
 
-  const skillMap: Record<string, { total: number; correct: number }> = {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (skillRows ?? []).forEach((row: any) => {
-    const q = Array.isArray(row.question) ? row.question[0] : row.question;
-    const skill: string | undefined = q?.skill;
-    if (!skill) return;
-    if (!skillMap[skill]) skillMap[skill] = { total: 0, correct: 0 };
-    skillMap[skill].total++;
-    if (row.is_correct) skillMap[skill].correct++;
-  });
+      const allSessions: Session[] = sessionData ?? [];
+      setSessions(allSessions);
 
-  const skillStats: SkillStat[] = Object.entries(skillMap).map(
-    ([skill, { total, correct }]) => ({
-      skill: skill as QuestionSkill,
-      total,
-      correct,
-      accuracy: total > 0 ? Math.round((correct / total) * 100) : 0,
-    })
-  );
+      const sessionIds = allSessions.map((s) => s.id);
+      if (sessionIds.length > 0) {
+        const { data: answerRows } = await supabase
+          .from("answers")
+          .select("is_correct, question:questions(skill)")
+          .in("session_id", sessionIds);
 
-  const recentSessions: Session[] = sessions ?? [];
-  const totalSessions = recentSessions.length;
+        const skillMap: Record<string, { total: number; correct: number }> = {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (answerRows ?? []).forEach((row: any) => {
+          const q = Array.isArray(row.question) ? row.question[0] : row.question;
+          const skill: string | undefined = q?.skill;
+          if (!skill) return;
+          if (!skillMap[skill]) skillMap[skill] = { total: 0, correct: 0 };
+          skillMap[skill].total++;
+          if (row.is_correct) skillMap[skill].correct++;
+        });
+
+        setSkillStats(
+          Object.entries(skillMap).map(([skill, { total, correct }]) => ({
+            skill: skill as QuestionSkill,
+            total,
+            correct,
+            accuracy: total > 0 ? Math.round((correct / total) * 100) : 0,
+          }))
+        );
+      }
+
+      setLoading(false);
+    }
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const avgScore =
-    totalSessions > 0
-      ? Math.round(
-          recentSessions.reduce((acc, s) => acc + (s.score ?? 0), 0) /
-            totalSessions
-        )
+    sessions.length > 0
+      ? Math.round(sessions.reduce((acc, s) => acc + (s.score ?? 0), 0) / sessions.length)
       : null;
 
-  const displayName =
-    user.user_metadata?.display_name ?? user.email?.split("@")[0] ?? "there";
-
+  const sortedSkills = [...skillStats].sort((a, b) => a.accuracy - b.accuracy);
   const weakestSkill =
-    skillStats.length > 0
-      ? SKILL_LABELS[
-          [...skillStats].sort((a, b) => a.accuracy - b.accuracy)[0].skill
-        ]
-      : null;
+    sortedSkills.length > 0 ? SKILL_LABELS[sortedSkills[0].skill] : null;
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-faint)" }}>Loading…</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top nav */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-lg font-bold text-slate-900 tracking-tight">
-            PrepWise
-          </Link>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/history"
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              History
-            </Link>
-            <form action="/auth/signout" method="post">
-              <button className="text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">
+    <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+      <TopNav
+        homeHref="/dashboard"
+        right={
+          <>
+            <NavLink href="/history">History</NavLink>
+            <form action="/auth/signout" method="post" style={{ display: "inline" }}>
+              <button
+                type="submit"
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  fontFamily: "var(--font-sans)", fontWeight: 500,
+                  fontSize: "var(--text-sm)", color: "var(--text-muted)", padding: "6px 4px",
+                }}
+              >
                 Sign out
               </button>
             </form>
-          </div>
-        </div>
-      </nav>
+            <Avatar name={displayName} size={32} />
+          </>
+        }
+      />
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
+      <main style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px" }}>
         {/* Greeting */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">
-            Hey, {displayName} 👋
+        <div style={{ marginBottom: 32 }}>
+          <h1 style={{
+            fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: "var(--text-xl)",
+            letterSpacing: "var(--tracking-snug)", color: "var(--text-strong)", margin: "0 0 6px",
+          }}>
+            Hey, {displayName}!
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: 0 }}>
             Ready for a session? Let&apos;s keep the streak going.
           </p>
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-medium text-slate-500 mb-2">Sessions done</p>
-            <p className="text-2xl font-bold text-slate-900">{totalSessions}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-medium text-slate-500 mb-2">Avg. score</p>
-            <p className="text-2xl font-bold text-slate-900">
-              {avgScore !== null ? `${avgScore}%` : "—"}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-medium text-slate-500 mb-2">Skills tracked</p>
-            <p className="text-2xl font-bold text-slate-900">{skillStats.length}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-medium text-slate-500 mb-2">Weakest skill</p>
-            <p className="text-base font-bold text-slate-900 leading-tight mt-1">
-              {weakestSkill ?? "—"}
-            </p>
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 28 }}>
+          {[
+            { label: "Sessions done", value: String(sessions.length), mono: true },
+            { label: "Avg. score", value: avgScore !== null ? `${avgScore}%` : "—", mono: true },
+            { label: "Skills tracked", value: String(skillStats.length), mono: true },
+            { label: "Weakest skill", value: weakestSkill ?? "—", mono: false },
+          ].map((s) => (
+            <Card key={s.label} tone="surface" padding="lg" radius="lg" shadow="sm">
+              <p style={{
+                fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 500,
+                color: "var(--text-faint)", margin: "0 0 8px",
+                textTransform: "uppercase", letterSpacing: "var(--tracking-caps)",
+              }}>{s.label}</p>
+              <p style={{
+                fontFamily: s.mono ? "var(--font-mono)" : "var(--font-sans)",
+                fontWeight: 700,
+                fontSize: s.mono ? "var(--text-xl)" : "var(--text-base)",
+                color: "var(--text-strong)", margin: 0,
+                lineHeight: s.mono ? 1 : "var(--leading-snug)",
+              }}>{s.value}</p>
+            </Card>
+          ))}
         </div>
 
-        {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Start session CTA */}
-          <div className="lg:col-span-1">
-            <div className="bg-indigo-600 text-white rounded-2xl p-6 flex flex-col gap-4 h-full min-h-50">
-              <div>
-                <h2 className="text-lg font-bold mb-2">Start a session</h2>
-                <p className="text-indigo-200 text-sm leading-relaxed">
-                  10 questions. ~8 minutes. Instant AI feedback.
+        {/* Main grid: CTA + Skills */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 20, marginBottom: 20 }}>
+          <Card tone="brand" padding="lg" radius="xl" shadow="none" style={{ boxShadow: "var(--shadow-brand)" }}>
+            <h2 style={{
+              fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-lg)",
+              color: "var(--text-on-brand)", margin: "0 0 10px",
+            }}>Start a session</h2>
+            <p style={{
+              fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
+              color: "rgba(255,255,255,0.8)", margin: "0 0 24px",
+              lineHeight: "var(--leading-relaxed)",
+            }}>
+              10 questions. ~8 minutes. Instant AI feedback.
+            </p>
+            <Link href="/practice" style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              padding: "11px 20px", background: "#fff", color: "var(--lilac-700)",
+              fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
+              borderRadius: "var(--radius-pill)", textDecoration: "none",
+              boxShadow: "var(--shadow-sm)",
+            }}>
+              Practice now →
+            </Link>
+          </Card>
+
+          <Card tone="surface" padding="lg" radius="xl" shadow="sm">
+            <h2 style={{
+              fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
+              color: "var(--text-strong)", margin: "0 0 20px",
+            }}>Skill accuracy</h2>
+            {sortedSkills.length === 0 ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "32px 0" }}>
+                <p style={{
+                  fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
+                  color: "var(--text-faint)", textAlign: "center",
+                }}>
+                  Complete a session to see your skill breakdown.
                 </p>
               </div>
-              <Link
-                href="/practice"
-                className="mt-auto inline-flex items-center justify-center bg-white text-indigo-700 font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-indigo-50 transition-colors"
-              >
-                Practice now →
-              </Link>
-            </div>
-          </div>
-
-          {/* Skill breakdown */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 h-full">
-              <h2 className="text-sm font-semibold text-slate-900 mb-5">
-                Skill accuracy
-              </h2>
-              {skillStats.length === 0 ? (
-                <div className="flex items-center justify-center py-10">
-                  <p className="text-sm text-slate-400 text-center">
-                    Complete a session to see your skill breakdown.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {[...skillStats]
-                    .sort((a, b) => a.accuracy - b.accuracy)
-                    .map((s) => (
-                      <div key={s.skill}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-medium text-slate-700">
-                            {SKILL_LABELS[s.skill]}
-                          </span>
-                          <span className="text-xs font-semibold text-slate-900">
-                            {s.accuracy}%
-                          </span>
-                        </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${s.accuracy}%`,
-                              backgroundColor:
-                                s.accuracy >= 75
-                                  ? "#16a34a"
-                                  : s.accuracy >= 50
-                                  ? "#d97706"
-                                  : "#dc2626",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {sortedSkills.map((s) => (
+                  <SkillBar
+                    key={s.skill}
+                    label={SKILL_LABELS[s.skill] ?? s.skill}
+                    accuracy={s.accuracy}
+                    detail={`${s.correct}/${s.total}`}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
 
         {/* Recent sessions */}
-        {recentSessions.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-semibold text-slate-900">
-                Recent sessions
-              </h2>
-              <Link
-                href="/history"
-                className="text-xs font-medium text-slate-400 hover:text-indigo-600 transition-colors"
-              >
-                View all →
-              </Link>
+        {sessions.length > 0 && (
+          <Card tone="surface" padding="lg" radius="xl" shadow="sm">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h2 style={{
+                fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
+                color: "var(--text-strong)", margin: 0,
+              }}>Recent sessions</h2>
+              <Link href="/history" style={{
+                fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 500,
+                color: "var(--text-faint)", textDecoration: "none",
+              }}>View all →</Link>
             </div>
-            <div className="divide-y divide-slate-100">
-              {recentSessions.slice(0, 5).map((s) => (
-                <div
-                  key={s.id}
-                  className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0"
-                >
+            <div>
+              {sessions.slice(0, 5).map((s, i) => (
+                <div key={s.id} style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "14px 0",
+                  borderTop: i === 0 ? "none" : "1px solid var(--border)",
+                }}>
                   <div>
-                    <p className="text-sm font-medium text-slate-900 capitalize">
+                    <p style={{
+                      fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
+                      color: "var(--text-strong)", margin: "0 0 3px", textTransform: "capitalize",
+                    }}>
                       {s.domain_filter === "both" ? "Reading & Writing" : s.domain_filter}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", color: "var(--text-faint)", margin: 0 }}>
                       {s.completed_at
                         ? new Date(s.completed_at).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
+                            month: "short", day: "numeric", year: "numeric",
                           })
                         : "—"}
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`text-sm font-bold ${
-                        (s.score ?? 0) >= 75
-                          ? "text-emerald-600"
-                          : (s.score ?? 0) >= 50
-                          ? "text-amber-600"
-                          : "text-red-600"
-                      }`}
-                    >
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <Badge tone={(s.score ?? 0) >= 75 ? "mint" : (s.score ?? 0) >= 50 ? "butter" : "rose"}>
                       {s.score ?? "—"}%
-                    </span>
-                    <Link
-                      href={`/results/${s.id}`}
-                      className="text-xs font-medium text-slate-400 hover:text-indigo-600 transition-colors"
-                    >
-                      Review →
-                    </Link>
+                    </Badge>
+                    <Link href={`/results/${s.id}`} style={{
+                      fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 500,
+                      color: "var(--text-faint)", textDecoration: "none",
+                    }}>Review →</Link>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
       </main>
     </div>

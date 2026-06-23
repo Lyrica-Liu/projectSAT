@@ -1,0 +1,48 @@
+<!-- @dsCard group="800Path" viewport="1040x760" name="800Path web app" subtitle="Interactive click-through: landing → practice → results" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>800Path — UI kit</title>
+<link rel="stylesheet" href="../../styles.css" />
+<style>
+  html, body { margin: 0; height: 100%; background: var(--canvas); }
+  #app { min-height: 100%; }
+  /* keep Lucide icons crisp & aligned */
+  [data-lucide] svg, svg.lucide { width: 1em; height: 1em; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="data.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<script type="text/babel" src="Shell.jsx"></script>
+<script type="text/babel" src="Landing.jsx"></script>
+<script type="text/babel" src="Auth.jsx"></script>
+<script type="text/babel" src="Dashboard.jsx"></script>
+<script type="text/babel" src="Setup.jsx"></script>
+<script type="text/babel" src="Session.jsx"></script>
+<script type="text/babel" src="Results.jsx"></script>
+<script type="text/babel" src="History.jsx"></script>
+<script type="text/babel">
+  function App() {
+    const [route, setRoute] = React.useState("landing");
+    const go = (r) => { setRoute(r); window.scrollTo(0, 0); };
+    React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+    const Screen = { landing: Landing, auth: Auth, dashboard: Dashboard, setup: Setup, session: Session, results: Results, history: History }[route] || Landing;
+    return <Screen key={route} go={go} />;
+  }
+  // Wait for babel-transpiled screen scripts to register on window.
+  function mount() {
+    if (!window.Landing || !window.Results) { setTimeout(mount, 30); return; }
+    ReactDOM.createRoot(document.getElementById("app")).render(<App />);
+  }
+  mount();
+</script>
+</body>
+</html>

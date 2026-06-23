@@ -1,0 +1,26 @@
+<!-- @dsCard group="Colors" viewport="700x190" name="Pastel accents" subtitle="Surface + ink pairs for skills & badges" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface); }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .pair { border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
+  .top { height: 56px; display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 13px; }
+  .meta { padding: 8px 10px; background: var(--surface); }
+  .name { font-family: var(--font-sans); font-size: 11px; font-weight: 600; color: var(--text-strong); display: block; }
+  .hex { font-family: var(--font-mono); font-size: 9px; color: var(--text-faint); }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="pair"><div class="top" style="background:var(--mint-surface);color:var(--mint-ink)">Aa</div><div class="meta"><span class="name">Mint</span><span class="hex">#e7f7ef / #1f7a57</span></div></div>
+    <div class="pair"><div class="top" style="background:var(--sky-surface);color:var(--sky-ink)">Aa</div><div class="meta"><span class="name">Sky</span><span class="hex">#e8f2fe / #245f9f</span></div></div>
+    <div class="pair"><div class="top" style="background:var(--rose-surface);color:var(--rose-ink)">Aa</div><div class="meta"><span class="name">Rose</span><span class="hex">#fdeaf1 / #b1426e</span></div></div>
+    <div class="pair"><div class="top" style="background:var(--butter-surface);color:var(--butter-ink)">Aa</div><div class="meta"><span class="name">Butter</span><span class="hex">#fbf3dd / #8c6913</span></div></div>
+    <div class="pair"><div class="top" style="background:var(--peach-surface);color:var(--peach-ink)">Aa</div><div class="meta"><span class="name">Peach</span><span class="hex">#fcebe2 / #b35a30</span></div></div>
+  </div>
+</body>
+</html>

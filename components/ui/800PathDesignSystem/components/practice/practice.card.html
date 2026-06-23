@@ -1,0 +1,38 @@
+<!-- @dsCard group="Components" viewport="700x320" name="Practice — choices & answers" subtitle="Setup choice cards + graded answer options" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<style> body { margin: 0; padding: 24px; background: var(--canvas); } .wrap { display: flex; gap: 22px; } .col { flex: 1; display: flex; flex-direction: column; gap: 10px; } </style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+  const { ChoiceCard, AnswerOption } = window.DesignSystem_4010b3;
+  function Demo() {
+    const [sel, setSel] = React.useState("both");
+    return (
+      <div className="wrap">
+        <div className="col">
+          <ChoiceCard label="Reading & Writing" desc="Mix of both domains" selected={sel==="both"} onClick={()=>setSel("both")} />
+          <ChoiceCard label="Reading" desc="Passages & comprehension" selected={sel==="reading"} onClick={()=>setSel("reading")} />
+          <ChoiceCard label="Writing" desc="Grammar & expression" selected={sel==="writing"} onClick={()=>setSel("writing")} />
+        </div>
+        <div className="col">
+          <AnswerOption letter="A" state="muted">A claim the author later rejects.</AnswerOption>
+          <AnswerOption letter="B" state="correct">A qualification of the main argument.</AnswerOption>
+          <AnswerOption letter="C" state="incorrect">An unrelated counterexample.</AnswerOption>
+          <AnswerOption letter="D" state="muted">A restatement of the title.</AnswerOption>
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<Demo />);
+</script>
+</body>
+</html>

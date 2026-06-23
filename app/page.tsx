@@ -1,149 +1,157 @@
+"use client";
+
 import Link from "next/link";
+import { TopNav, NavLink } from "@/components/ui/nav";
+import { Badge, Card } from "@/components/ui/ds";
+import { Icon } from "@/components/ui/icon";
+
+const features = [
+  { icon: "zap", title: "Focused sessions", desc: "10-question sprints you can fit into any break." },
+  { icon: "target", title: "Skill targeting", desc: "Drill exactly the skills where you're weakest." },
+  { icon: "sparkles", title: "AI feedback", desc: "Personalized analysis after every session — not generic tips." },
+];
+
+const steps = [
+  { n: "01", title: "Pick your focus", desc: "Choose Reading, Writing, or both — and how many questions." },
+  { n: "02", title: "Answer questions", desc: "Real SAT-style passages and questions. No fluff, no filler." },
+  { n: "03", title: "Review & reflect", desc: "See your score, skill breakdown, and personalized AI feedback." },
+];
+
+const primaryBtn: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+  padding: "14px 28px", fontFamily: "var(--font-sans)", fontWeight: 600,
+  fontSize: "var(--text-base)", letterSpacing: "var(--tracking-snug)", lineHeight: 1,
+  borderRadius: "var(--radius-pill)", textDecoration: "none", cursor: "pointer",
+  border: "1px solid transparent", background: "var(--brand)", color: "#fff",
+  boxShadow: "var(--shadow-brand)",
+};
+
+const ghostBtn: React.CSSProperties = {
+  display: "inline-flex", alignItems: "center", justifyContent: "center",
+  padding: "14px 20px", fontFamily: "var(--font-sans)", fontWeight: 600,
+  fontSize: "var(--text-base)", letterSpacing: "var(--tracking-snug)", lineHeight: 1,
+  borderRadius: "var(--radius-pill)", textDecoration: "none", cursor: "pointer",
+  border: "1px solid transparent", background: "transparent", color: "var(--text-muted)",
+};
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-white">
-      {/* Nav — border spans full width, content constrained inside */}
-      <nav className="border-b border-slate-100 bg-white sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="text-lg font-bold tracking-tight text-slate-900">
-            PrepWise
-          </span>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/auth"
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/auth?mode=signup"
-              className="text-sm font-semibold bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              Get started
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <div style={{ minHeight: "100vh", background: "var(--surface)" }}>
+      <TopNav
+        right={
+          <>
+            <NavLink href="/auth">Sign in</NavLink>
+            <Link href="/auth?mode=signup" style={primaryBtn}>Get started</Link>
+          </>
+        }
+      />
 
       {/* Hero */}
-      <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block" />
-          SAT Reading &amp; Writing
+      <section style={{ maxWidth: 760, margin: "0 auto", padding: "80px 24px 60px", textAlign: "center" }}>
+        <div style={{ display: "inline-flex", marginBottom: 28 }}>
+          <Badge tone="lilac" dot>SAT Reading &amp; Writing</Badge>
         </div>
-        <h1 className="text-5xl sm:text-6xl font-bold text-slate-900 leading-tight mb-6">
-          Study smarter,
-          <br />
-          <span className="text-indigo-600">not harder.</span>
+        <h1 style={{
+          fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: "var(--text-4xl)",
+          lineHeight: "var(--leading-tight)", letterSpacing: "var(--tracking-tight)",
+          color: "var(--text-strong)", margin: "0 0 22px",
+        }}>
+          Study smarter,<br />
+          <span style={{ color: "var(--lilac-500)" }}>not harder.</span>
         </h1>
-        <p className="text-lg text-slate-600 max-w-xl mx-auto mb-10 leading-relaxed">
-          Short, focused practice sessions with AI-powered feedback — built for
-          self-studiers who want real improvement, not just more questions.
+        <p style={{
+          fontFamily: "var(--font-sans)", fontSize: "var(--text-md)", color: "var(--text-muted)",
+          lineHeight: "var(--leading-relaxed)", maxWidth: 480, margin: "0 auto 36px",
+        }}>
+          Short, focused practice sessions with AI-powered feedback — built for self-studiers
+          who want real improvement, not just more questions.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/auth?mode=signup"
-            className="w-full sm:w-auto bg-indigo-600 text-white text-sm font-semibold px-8 py-3.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
-          >
+        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+          <Link href="/auth?mode=signup" style={primaryBtn}>
             Start practicing — it&apos;s free
+            <Icon name="arrow-right" size={18} />
           </Link>
-          <Link
-            href="#how-it-works"
-            className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-          >
-            How it works →
-          </Link>
+          <a href="#how-it-works" style={ghostBtn}>How it works</a>
         </div>
       </section>
 
       {/* Feature strip */}
-      <section className="bg-slate-50 border-y border-slate-100 py-14">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-3 gap-10">
-          {[
-            {
-              icon: "⚡",
-              title: "Focused sessions",
-              desc: "10-question sprints you can fit into any break.",
-            },
-            {
-              icon: "🎯",
-              title: "Skill targeting",
-              desc: "Drill exactly the skills where you're weakest.",
-            },
-            {
-              icon: "🤖",
-              title: "AI feedback",
-              desc: "Personalized analysis after every session — not generic tips.",
-            },
-          ].map((f) => (
-            <div key={f.title} className="flex flex-col gap-3">
-              <span className="text-3xl">{f.icon}</span>
-              <h3 className="text-base font-semibold text-slate-900">{f.title}</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">{f.desc}</p>
-            </div>
+      <section style={{
+        background: "var(--canvas)",
+        borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)",
+        padding: "56px 24px",
+      }}>
+        <div style={{
+          maxWidth: 960, margin: "0 auto",
+          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20,
+        }}>
+          {features.map((f) => (
+            <Card key={f.title} tone="surface" padding="lg" radius="xl" shadow="sm">
+              <span style={{
+                display: "inline-flex", width: 44, height: 44, borderRadius: 14,
+                background: "var(--lilac-100)", color: "var(--lilac-600)",
+                alignItems: "center", justifyContent: "center", marginBottom: 16,
+              }}>
+                <Icon name={f.icon} size={20} />
+              </span>
+              <h3 style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-base)", color: "var(--text-strong)", margin: "0 0 6px" }}>{f.title}</h3>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-muted)", lineHeight: "var(--leading-relaxed)", margin: 0 }}>{f.desc}</p>
+            </Card>
           ))}
         </div>
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="max-w-4xl mx-auto px-6 py-20">
-        <h2 className="text-2xl font-bold text-slate-900 mb-12 text-center">
+      <section id="how-it-works" style={{ maxWidth: 820, margin: "0 auto", padding: "72px 24px" }}>
+        <h2 style={{
+          fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-xl)",
+          letterSpacing: "var(--tracking-snug)", textAlign: "center",
+          color: "var(--text-strong)", margin: "0 0 48px",
+        }}>
           How it works
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
-          {[
-            {
-              step: "01",
-              title: "Pick your focus",
-              desc: "Choose Reading, Writing, or both. Set your session length.",
-            },
-            {
-              step: "02",
-              title: "Answer questions",
-              desc: "Real SAT-style passages and questions. No fluff, no filler.",
-            },
-            {
-              step: "03",
-              title: "Review & reflect",
-              desc: "See your score, skill breakdown, and AI-written personalized feedback.",
-            },
-          ].map((s) => (
-            <div key={s.step} className="flex flex-col gap-3">
-              <span className="text-sm font-mono font-bold text-indigo-500">
-                {s.step}
-              </span>
-              <h3 className="text-base font-semibold text-slate-900">{s.title}</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">{s.desc}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 32 }}>
+          {steps.map((s) => (
+            <div key={s.n}>
+              <span style={{
+                fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: "var(--text-sm)",
+                color: "var(--lilac-400)", display: "block", marginBottom: 12,
+              }}>{s.n}</span>
+              <h3 style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-base)", color: "var(--text-strong)", margin: "0 0 8px" }}>{s.title}</h3>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-muted)", lineHeight: "var(--leading-relaxed)", margin: 0 }}>{s.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* CTA */}
-      <section className="bg-indigo-600 py-16">
-        <div className="max-w-xl mx-auto px-6 text-center">
-          <h2 className="text-2xl font-bold text-white mb-3">
-            Ready to improve your score?
-          </h2>
-          <p className="text-indigo-200 text-sm mb-8 leading-relaxed">
-            Free to use. No credit card. Start your first session in under a
-            minute.
+      <section style={{ padding: "0 24px 80px" }}>
+        <div style={{
+          maxWidth: 720, margin: "0 auto",
+          background: "var(--lilac-500)", borderRadius: "var(--radius-2xl)",
+          padding: "52px 32px", textAlign: "center", boxShadow: "var(--shadow-lg)",
+        }}>
+          <h2 style={{
+            fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: "var(--text-2xl)",
+            letterSpacing: "var(--tracking-tight)", color: "#fff", margin: "0 0 12px",
+          }}>Ready to improve your score?</h2>
+          <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--lilac-100)", margin: "0 0 28px" }}>
+            Free to use. No credit card. First session in under a minute.
           </p>
-          <Link
-            href="/auth?mode=signup"
-            className="inline-block bg-white text-indigo-700 font-semibold text-sm px-8 py-3.5 rounded-xl hover:bg-indigo-50 transition-colors shadow-sm"
-          >
-            Create your account →
+          <Link href="/auth?mode=signup" style={{
+            ...primaryBtn, background: "#fff", color: "var(--lilac-700)", boxShadow: "var(--shadow-sm)",
+          }}>
+            Create your account
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-100 py-8 text-center text-xs text-slate-400">
-        PrepWise &copy; {new Date().getFullYear()} — SAT is a trademark of
-        College Board.
+      <footer style={{
+        borderTop: "1px solid var(--border)", padding: "26px 24px", textAlign: "center",
+        fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", color: "var(--text-faint)",
+      }}>
+        PrepWise &copy; 2026 — SAT is a trademark of College Board.
       </footer>
-    </main>
+    </div>
   );
 }

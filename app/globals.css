@@ -1,36 +1,145 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --border: #e2e8f0;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #4f46e5;
-  --accent-foreground: #ffffff;
-  --success: #16a34a;
-  --danger: #dc2626;
-  --warning: #d97706;
+  /* ── Brand: Lilac / periwinkle ── */
+  --lilac-50:  #f4f3fe;
+  --lilac-100: #ebe9fd;
+  --lilac-200: #dad6fb;
+  --lilac-300: #c0b8f7;
+  --lilac-400: #a294f0;
+  --lilac-500: #8472e8;
+  --lilac-600: #6f5bd8;
+  --lilac-700: #5a47b8;
+
+  /* ── Pastel accent family ── */
+  --mint-surface:   #e7f7ef;
+  --mint-ink:       #1f7a57;
+  --sky-surface:    #e8f2fe;
+  --sky-ink:        #245f9f;
+  --rose-surface:   #fdeaf1;
+  --rose-ink:       #b1426e;
+  --butter-surface: #fbf3dd;
+  --butter-ink:     #8c6913;
+  --peach-surface:  #fcebe2;
+  --peach-ink:      #b35a30;
+
+  /* ── Neutrals ── */
+  --ink-900: #1f1d26;
+  --ink-700: #353240;
+  --ink-500: #57535f;
+  --ink-400: #7b7783;
+  --ink-300: #b6b2bf;
+  --line:    #ecebf1;
+  --line-strong: #dddbe6;
+
+  /* ── Surfaces ── */
+  --canvas:    #f7f5fc;
+  --surface:   #ffffff;
+  --surface-2: #f3f1f9;
+  --overlay:   rgba(42, 40, 51, 0.32);
+
+  /* ── Semantic ── */
+  --success:         #1f7a57;
+  --success-surface: #e7f7ef;
+  --warning:         #8c6913;
+  --warning-surface: #fbf3dd;
+  --danger:          #c25275;
+  --danger-surface:  #fdeaf1;
+
+  /* ── Semantic aliases ── */
+  --brand:         var(--lilac-500);
+  --brand-hover:   var(--lilac-600);
+  --brand-soft:    var(--lilac-100);
+  --brand-ink:     var(--lilac-700);
+  --text-strong:   var(--ink-900);
+  --text-body:     var(--ink-700);
+  --text-muted:    var(--ink-500);
+  --text-faint:    var(--ink-400);
+  --text-on-brand: #ffffff;
+  --border:        var(--line);
+  --border-strong: var(--line-strong);
+  --surface-card:   var(--surface);
+  --surface-sunken: var(--surface-2);
+  --bg-canvas:     var(--canvas);
+  --focus-ring:    rgba(132, 114, 232, 0.35);
+
+  /* ── Typography ── */
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+  --weight-extra:    800;
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-md:   1.125rem;
+  --text-lg:   1.375rem;
+  --text-xl:   1.75rem;
+  --text-2xl:  2.25rem;
+  --text-3xl:  3rem;
+  --text-4xl:  3.75rem;
+  --leading-tight:   1.1;
+  --leading-snug:    1.25;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+  --tracking-tight:  -0.02em;
+  --tracking-snug:   -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+  --tracking-caps:   0.08em;
+
+  /* ── Spacing ── */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* ── Radii ── */
+  --radius-sm:   10px;
+  --radius-md:   15px;
+  --radius-lg:   20px;
+  --radius-xl:   26px;
+  --radius-2xl:  34px;
+  --radius-pill: 999px;
+
+  /* ── Shadows ── */
+  --shadow-xs:    0 1px 2px rgba(42, 40, 51, 0.04);
+  --shadow-sm:    0 1px 3px rgba(42, 40, 51, 0.05), 0 1px 2px rgba(42, 40, 51, 0.04);
+  --shadow-md:    0 4px 14px rgba(82, 70, 150, 0.07), 0 1px 3px rgba(42, 40, 51, 0.04);
+  --shadow-lg:    0 12px 32px rgba(82, 70, 150, 0.10), 0 2px 6px rgba(42, 40, 51, 0.05);
+  --shadow-brand: 0 8px 22px rgba(132, 114, 232, 0.28);
+
+  /* ── Motion ── */
+  --ease-out:    cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.2, 1);
+  --dur-fast:    130ms;
+  --dur-base:    200ms;
+  --dur-slow:    320ms;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
+@layer base {
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+    font-family: var(--font-sans);
+    background: var(--bg-canvas);
+    color: var(--text-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
-  background: var(--background);
-  color: var(--foreground);
-  -webkit-font-smoothing: antialiased;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }

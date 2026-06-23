@@ -1,0 +1,35 @@
+<!-- @dsCard group="Brand" viewport="700x240" name="Voice & tone" subtitle="Warm, second-person, encouraging" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface); font-family: var(--font-sans); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .cell { border-radius: var(--radius-md); padding: 14px 16px; border: 1px solid var(--border); }
+  .do { background: var(--mint-surface); border-color: transparent; }
+  .dont { background: var(--rose-surface); border-color: transparent; }
+  .k { font-family: var(--font-sans); font-size: 11px; font-weight: 700; letter-spacing: var(--tracking-caps); text-transform: uppercase; margin: 0 0 8px; }
+  .do .k { color: var(--mint-ink); }
+  .dont .k { color: var(--rose-ink); }
+  .ex { font-size: 13px; color: var(--text-body); margin: 5px 0; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="cell do">
+      <p class="k">Do</p>
+      <p class="ex">“Hey, Maya 👋 Ready for a session?”</p>
+      <p class="ex">“Study smarter, not harder.”</p>
+      <p class="ex">“10 questions. ~8 minutes. Instant feedback.”</p>
+    </div>
+    <div class="cell dont">
+      <p class="k">Don't</p>
+      <p class="ex">“Commence your assessment module now.”</p>
+      <p class="ex">“Maximize learning outcomes via our platform.”</p>
+      <p class="ex">“ERROR: session could not be initialized.”</p>
+    </div>
+  </div>
+</body>
+</html>

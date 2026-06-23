@@ -1,0 +1,32 @@
+<!-- @dsCard group="Spacing" viewport="700x160" name="Radii & shadows" subtitle="Rounded corners, soft cool shadows" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 24px; background: var(--canvas); font-family: var(--font-sans); display: flex; gap: 28px; align-items: center; }
+  .group { display: flex; gap: 16px; align-items: flex-end; }
+  .box { background: var(--surface); border: 1px solid var(--border); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; width: 72px; height: 72px; }
+  .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+  .sh { width: 80px; height: 56px; background: var(--surface); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; }
+  .sep { width: 1px; height: 80px; background: var(--border); }
+</style>
+</head>
+<body>
+  <div class="group">
+    <div class="box" style="border-radius:var(--radius-sm)"><span class="lbl">sm 8</span></div>
+    <div class="box" style="border-radius:var(--radius-md)"><span class="lbl">md 12</span></div>
+    <div class="box" style="border-radius:var(--radius-lg)"><span class="lbl">lg 16</span></div>
+    <div class="box" style="border-radius:var(--radius-xl)"><span class="lbl">xl 22</span></div>
+    <div class="box" style="border-radius:var(--radius-pill)"><span class="lbl">pill</span></div>
+  </div>
+  <div class="sep"></div>
+  <div class="group">
+    <div class="sh" style="box-shadow:var(--shadow-sm)"><span class="lbl">sm</span></div>
+    <div class="sh" style="box-shadow:var(--shadow-md)"><span class="lbl">md</span></div>
+    <div class="sh" style="box-shadow:var(--shadow-lg)"><span class="lbl">lg</span></div>
+    <div class="sh" style="box-shadow:var(--shadow-brand);background:var(--lilac-500)"><span class="lbl" style="color:#fff">brand</span></div>
+  </div>
+</body>
+</html>

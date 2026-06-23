@@ -1,0 +1,23 @@
+<!-- @dsCard group="Brand" viewport="700x180" name="Wordmark & app mark" subtitle="Text lockup + rounded lilac monogram" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 28px; background: var(--surface); display: flex; align-items: center; gap: 44px; }
+  .lockup { display: inline-flex; align-items: center; gap: 11px; }
+  .mark { width: 40px; height: 40px; border-radius: 12px; background: var(--lilac-500); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 21px; box-shadow: var(--shadow-brand); }
+  .word { font-family: var(--font-sans); font-weight: 800; font-size: 26px; letter-spacing: var(--tracking-tight); color: var(--text-strong); }
+  .markbig { width: 84px; height: 84px; border-radius: 22px; font-size: 44px; }
+  .onbrand { background: var(--lilac-500); padding: 18px 22px; border-radius: var(--radius-lg); }
+  .onbrand .word { color: #fff; }
+  .onbrand .mark { background: #fff; color: var(--lilac-600); box-shadow: none; }
+</style>
+</head>
+<body>
+  <div class="mark markbig">8</div>
+  <div class="lockup"><span class="mark">8</span><span class="word">800Path</span></div>
+  <div class="onbrand"><div class="lockup"><span class="mark">8</span><span class="word">800Path</span></div></div>
+</body>
+</html>

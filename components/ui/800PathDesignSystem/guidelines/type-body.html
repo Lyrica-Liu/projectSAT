@@ -1,0 +1,26 @@
+<!-- @dsCard group="Type" viewport="700x210" name="Body, meta & mono" subtitle="Body copy, labels, eyebrows, numerals" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface); font-family: var(--font-sans); }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .line { display: flex; align-items: baseline; gap: 16px; }
+  .tag { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); width: 92px; flex-shrink: 0; }
+  .body { font-size: var(--text-base); color: var(--text-body); line-height: var(--leading-relaxed); max-width: 440px; }
+  .meta { font-size: var(--text-sm); color: var(--text-muted); }
+  .eyebrow { font-size: var(--text-xs); font-weight: 600; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--text-faint); }
+  .mono { font-family: var(--font-mono); font-size: var(--text-base); font-weight: 600; color: var(--text-strong); }
+</style>
+</head>
+<body>
+  <div class="stack">
+    <div class="line"><span class="tag">base / 400</span><span class="body">Real SAT-style passages and questions, with personalized AI feedback after every session.</span></div>
+    <div class="line"><span class="tag">sm / 500</span><span class="meta">10 questions · ~8 minutes</span></div>
+    <div class="line"><span class="tag">xs / caps</span><span class="eyebrow">Session complete</span></div>
+    <div class="line"><span class="tag">mono / 600</span><span class="mono">Q3 · 82% · 7/10</span></div>
+  </div>
+</body>
+</html>

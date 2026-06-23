@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { TopNav, NavLink } from "@/components/ui/nav";
+import { Button, ChoiceCard } from "@/components/ui/ds";
+import { Icon } from "@/components/ui/icon";
 import type { QuestionDomain } from "@/lib/types";
 
 const DOMAIN_OPTIONS: { value: QuestionDomain | "both"; label: string; desc: string }[] = [
@@ -13,6 +15,12 @@ const DOMAIN_OPTIONS: { value: QuestionDomain | "both"; label: string; desc: str
 ];
 
 const COUNT_OPTIONS = [5, 10, 15, 20];
+
+const eyebrow: React.CSSProperties = {
+  fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 600,
+  letterSpacing: "var(--tracking-caps)", textTransform: "uppercase",
+  color: "var(--text-faint)", margin: "0 0 12px", display: "block",
+};
 
 export default function PracticeSetupPage() {
   const router = useRouter();
@@ -36,11 +44,7 @@ export default function PracticeSetupPage() {
 
     const { data, error: insertError } = await supabase
       .from("sessions")
-      .insert({
-        user_id: user.id,
-        question_count: count,
-        domain_filter: domain,
-      })
+      .insert({ user_id: user.id, question_count: count, domain_filter: domain })
       .select("id")
       .single();
 
@@ -54,105 +58,86 @@ export default function PracticeSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Nav */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="text-lg font-bold text-slate-900 tracking-tight">
-            PrepWise
-          </Link>
-          <Link
-            href="/dashboard"
-            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
-          >
-            ← Dashboard
-          </Link>
-        </div>
-      </nav>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column" }}>
+      <TopNav
+        homeHref="/dashboard"
+        maxWidth={760}
+        right={<NavLink href="/dashboard">← Dashboard</NavLink>}
+      />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md">
-          <h1 className="text-2xl font-bold text-slate-900 mb-1">
-            Set up your session
-          </h1>
-          <p className="text-sm text-slate-500 mb-8">
-            Pick what you want to practice and how many questions.
-          </p>
+      <main style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "56px 24px" }}>
+        <div style={{ width: "100%", maxWidth: 440 }}>
+          <h1 style={{
+            fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: "var(--text-xl)",
+            letterSpacing: "var(--tracking-snug)", color: "var(--text-strong)", margin: "0 0 6px",
+          }}>Set up your session</h1>
+          <p style={{
+            fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
+            color: "var(--text-muted)", margin: "0 0 30px",
+          }}>Pick what you want to practice and how many questions.</p>
 
           {/* Domain */}
-          <div className="mb-6">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 block">
-              Domain
-            </label>
-            <div className="flex flex-col gap-2">
-              {DOMAIN_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setDomain(opt.value)}
-                  className={`flex items-center justify-between px-4 py-3.5 rounded-xl border text-left transition-all ${
-                    domain === opt.value
-                      ? "border-indigo-500 bg-indigo-50 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
-                  }`}
-                >
-                  <div>
-                    <p className={`text-sm font-semibold ${domain === opt.value ? "text-indigo-700" : "text-slate-800"}`}>
-                      {opt.label}
-                    </p>
-                    <p className={`text-xs mt-0.5 ${domain === opt.value ? "text-indigo-500" : "text-slate-400"}`}>
-                      {opt.desc}
-                    </p>
-                  </div>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ml-4 shrink-0 transition-all ${
-                    domain === opt.value ? "border-indigo-500 bg-indigo-500" : "border-slate-300"
-                  }`}>
-                    {domain === opt.value && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
+          <span style={eyebrow}>Domain</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 30 }}>
+            {DOMAIN_OPTIONS.map((opt) => (
+              <ChoiceCard
+                key={opt.value}
+                label={opt.label}
+                desc={opt.desc}
+                selected={domain === opt.value}
+                onClick={() => setDomain(opt.value)}
+              />
+            ))}
           </div>
 
           {/* Question count */}
-          <div className="mb-8">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 block">
-              Number of questions
-            </label>
-            <div className="flex gap-2">
-              {COUNT_OPTIONS.map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setCount(n)}
-                  className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-all ${
-                    count === n
-                      ? "border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-slate-400 mt-2">
-              ~{Math.round(count * 0.8)} min estimated
-            </p>
+          <span style={eyebrow}>Number of questions</span>
+          <div style={{ display: "flex", gap: 10, marginBottom: 8 }}>
+            {COUNT_OPTIONS.map((n) => (
+              <button
+                key={n}
+                onClick={() => setCount(n)}
+                style={{
+                  flex: 1, padding: "13px 0", borderRadius: "var(--radius-md)",
+                  fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-sm)",
+                  cursor: "pointer", transition: "all var(--dur-base) var(--ease-out)",
+                  background: count === n ? "var(--lilac-50)" : "var(--surface)",
+                  border: `1.5px solid ${count === n ? "var(--lilac-300)" : "var(--border-strong)"}`,
+                  color: count === n ? "var(--brand-ink)" : "var(--text-body)",
+                  boxShadow: count === n ? `0 0 0 4px var(--focus-ring)` : "none",
+                }}
+              >
+                {n}
+              </button>
+            ))}
           </div>
+          <p style={{
+            fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
+            color: "var(--text-faint)", margin: "0 0 30px",
+          }}>
+            ~{Math.round(count * 0.8)} min estimated
+          </p>
 
           {error && (
-            <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 mb-4">
+            <div style={{
+              fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
+              color: "var(--danger)", background: "var(--danger-surface)",
+              borderRadius: "var(--radius-md)", padding: "10px 14px",
+              lineHeight: "var(--leading-normal)", marginBottom: 16,
+            }}>
               {error}
-            </p>
+            </div>
           )}
 
-          <button
+          <Button
+            full
+            size="lg"
             onClick={startSession}
             disabled={loading}
-            className="w-full bg-indigo-600 text-white text-sm font-semibold py-3.5 rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 shadow-sm"
+            iconRight={<Icon name="arrow-right" size={18} />}
           >
-            {loading ? "Starting…" : "Start session →"}
-          </button>
+            {loading ? "Starting…" : "Start session"}
+          </Button>
         </div>
       </main>
     </div>
