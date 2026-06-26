@@ -9,7 +9,8 @@ export type QuestionSkill =
   | "text_structure"
   | "boundaries"
   | "form_structure_sense"
-  | "transitions";
+  | "transitions"
+  | "rhetorical_synthesis";
 
 export type Difficulty = "easy" | "medium" | "hard";
 

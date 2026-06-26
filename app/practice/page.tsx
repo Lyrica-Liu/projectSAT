@@ -6,12 +6,18 @@ import { createClient } from "@/lib/supabase/client";
 import { TopNav, NavLink } from "@/components/ui/nav";
 import { Button, ChoiceCard } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
-import type { QuestionDomain } from "@/lib/types";
+import type { QuestionDomain, Difficulty } from "@/lib/types";
 
 const DOMAIN_OPTIONS: { value: QuestionDomain | "both"; label: string; desc: string }[] = [
-  { value: "both", label: "Reading & Writing", desc: "Mix of both domains" },
-  { value: "reading", label: "Reading", desc: "Passages & comprehension" },
-  { value: "writing", label: "Writing", desc: "Grammar & expression" },
+  { value: "both",    label: "Reading & Writing", desc: "Mix of both domains" },
+  { value: "reading", label: "Reading",           desc: "Passages & comprehension" },
+  { value: "writing", label: "Writing",           desc: "Grammar & expression" },
+];
+
+const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string }[] = [
+  { value: "easy",   label: "Easy",   desc: "Clear passages, obvious distractors" },
+  { value: "medium", label: "Medium", desc: "Nuanced passages, some inference needed" },
+  { value: "hard",   label: "Hard",   desc: "Dense prose, highly plausible distractors" },
 ];
 
 const COUNT_OPTIONS = [5, 10, 15, 20];
@@ -25,36 +31,79 @@ const eyebrow: React.CSSProperties = {
 export default function PracticeSetupPage() {
   const router = useRouter();
   const [domain, setDomain] = useState<QuestionDomain | "both">("both");
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function startSession() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       router.push("/auth");
       return;
     }
 
-    const { data, error: insertError } = await supabase
+    // 1. Generate questions via Claude
+    setLoadingStage("Generating questions with AI…");
+    let generatedQuestions;
+    try {
+      const res = await fetch("/api/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain, difficulty, count }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Failed to generate questions");
+      }
+      const data = await res.json();
+      generatedQuestions = data.questions;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not generate questions. Please try again.");
+      setLoading(false);
+      setLoadingStage("");
+      return;
+    }
+
+    // 2. Save questions to Supabase
+    setLoadingStage("Setting up session…");
+    const { data: savedQuestions, error: qErr } = await supabase
+      .from("questions")
+      .insert(generatedQuestions)
+      .select("id");
+
+    if (qErr || !savedQuestions) {
+      setError("Could not save questions. Please try again.");
+      setLoading(false);
+      setLoadingStage("");
+      return;
+    }
+
+    // 3. Create session
+    const { data: session, error: sErr } = await supabase
       .from("sessions")
       .insert({ user_id: user.id, question_count: count, domain_filter: domain })
       .select("id")
       .single();
 
-    if (insertError || !data) {
+    if (sErr || !session) {
       setError("Could not create session. Please try again.");
       setLoading(false);
+      setLoadingStage("");
       return;
     }
 
-    router.push(`/practice/${data.id}`);
+    // 4. Pre-create answer rows so the session page loads instantly
+    await supabase
+      .from("answers")
+      .insert(savedQuestions.map((q) => ({ session_id: session.id, question_id: q.id })));
+
+    router.push(`/practice/${session.id}`);
   }
 
   return (
@@ -86,6 +135,20 @@ export default function PracticeSetupPage() {
                 desc={opt.desc}
                 selected={domain === opt.value}
                 onClick={() => setDomain(opt.value)}
+              />
+            ))}
+          </div>
+
+          {/* Difficulty */}
+          <span style={eyebrow}>Difficulty</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 30 }}>
+            {DIFFICULTY_OPTIONS.map((opt) => (
+              <ChoiceCard
+                key={opt.value}
+                label={opt.label}
+                desc={opt.desc}
+                selected={difficulty === opt.value}
+                onClick={() => setDifficulty(opt.value)}
               />
             ))}
           </div>
@@ -134,10 +197,19 @@ export default function PracticeSetupPage() {
             size="lg"
             onClick={startSession}
             disabled={loading}
-            iconRight={<Icon name="arrow-right" size={18} />}
+            iconRight={!loading ? <Icon name="arrow-right" size={18} /> : undefined}
           >
-            {loading ? "Starting…" : "Start session"}
+            {loading ? loadingStage || "Starting…" : "Start session"}
           </Button>
+
+          {loading && (
+            <p style={{
+              fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
+              color: "var(--text-faint)", textAlign: "center", marginTop: 12,
+            }}>
+              Claude is writing your questions — this takes about 15–30 seconds.
+            </p>
+          )}
         </div>
       </main>
     </div>
