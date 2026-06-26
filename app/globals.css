@@ -23,6 +23,11 @@
   --peach-surface:  #fcebe2;
   --peach-ink:      #b35a30;
 
+  /* ── Radiant gradient — pink→violet→periwinkle. Use sparingly:
+     borders, text-clip highlights, logo mark. Never as a page fill. ── */
+  --gradient-radiant:      linear-gradient(125deg, #ff5fa2 0%, #a855f7 50%, #5b8def 100%);
+  --gradient-radiant-soft: linear-gradient(125deg, #ff9cc4 0%, #c79bf7 50%, #9bb8f5 100%);
+
   /* ── Neutrals ── */
   --ink-900: #1f1d26;
   --ink-700: #353240;

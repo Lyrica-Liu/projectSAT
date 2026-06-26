@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Landing Page" description="800Path marketing home — soft pastel hero with product preview, benefits, gentle CTA" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+<script src="./ds-base.js"></script>
+</helmet>
+<div style="background:var(--canvas);min-height:100vh;font-family:var(--font-sans);overflow-x:hidden;">
+
+  <!-- Nav -->
+  <nav style="max-width:1080px;margin:0 auto;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="display:inline-flex;align-items:center;gap:9px;">
+      <span style="width:30px;height:30px;border-radius:10px;background:var(--gradient-radiant);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;box-shadow:var(--shadow-brand);">8</span>
+      <span style="font-weight:800;font-size:18px;letter-spacing:var(--tracking-tight);color:var(--text-strong);">800Path</span>
+    </span>
+    <div style="display:flex;align-items:center;gap:18px;">
+      <span style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);">Sign in</span>
+      <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="soft" size="sm" hint-size="110px,36px">Get started</x-import>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section style="max-width:1080px;margin:0 auto;padding:40px 28px 72px;display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;" ref="{{ heroRef }}">
+
+    <!-- Left: message -->
+    <div>
+      <div style="display:inline-flex;margin-bottom:22px;">
+        <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="{{ accentTone }}" dot="{{ true }}" hint-size="190px,26px">Made for self-studiers</x-import>
+      </div>
+      <h1 style="font-weight:800;font-size:var(--text-4xl);line-height:1.05;letter-spacing:var(--tracking-tight);color:var(--text-strong);margin:0 0 20px;">A calmer way to<br />prep for the <span style="background:var(--gradient-radiant);-webkit-background-clip:text;background-clip:text;color:transparent;">SAT.</span></h1>
+      <p style="font-size:var(--text-md);color:var(--text-body);line-height:var(--leading-relaxed);max-width:420px;margin:0 0 32px;">Short, focused practice with feedback that actually sounds like a person. No cram marathons — just steady, kind progress.</p>
+
+      <div style="display:flex;gap:14px;flex-wrap:wrap;">
+        <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" size="lg" hint-size="210px,48px">Start practicing — free</x-import>
+        <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="ghost" size="lg" hint-size="150px,48px">See how it works</x-import>
+      </div>
+    </div>
+
+    <!-- Right: soft product preview -->
+    <sc-if value="{{ showPreview }}" hint-placeholder-val="{{ true }}">
+    <div style="background:linear-gradient(var(--lilac-100),var(--lilac-100)) padding-box, var(--gradient-radiant) border-box;border:6px solid transparent;border-radius:var(--radius-2xl);padding:24px;position:relative;">
+      <span style="position:absolute;top:-18px;right:24px;width:64px;height:64px;border-radius:50%;background:var(--rose-surface);" ref="{{ circleRef }}"></span>
+      <span style="position:absolute;bottom:30px;left:-16px;width:40px;height:40px;border-radius:50%;background:var(--lilac-200);"></span>
+      <div style="position:relative;background:var(--surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);padding:22px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="lilac" hint-size="68px,24px">Reading</x-import>
+          <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="butter" dot="{{ true }}" hint-size="74px,24px">Medium</x-import>
+        </div>
+        <p style="font-weight:700;font-size:var(--text-base);color:var(--text-strong);line-height:var(--leading-snug);margin:0 0 14px;">As used in the text, "terse" most nearly means</p>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+          <x-import component-from-global-scope="DesignSystem_4010b3.AnswerOption" letter="A" state="muted" hint-size="100%,46px">lengthy</x-import>
+          <x-import component-from-global-scope="DesignSystem_4010b3.AnswerOption" letter="B" state="muted" hint-size="100%,46px">rude</x-import>
+          <x-import component-from-global-scope="DesignSystem_4010b3.AnswerOption" letter="C" state="correct" hint-size="100%,46px">concise</x-import>
+          <x-import component-from-global-scope="DesignSystem_4010b3.AnswerOption" letter="D" state="muted" hint-size="100%,46px">unclear</x-import>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;background:var(--rose-surface);border-radius:var(--radius-lg);padding:14px 16px;">
+          <i data-lucide="sparkles" style="width:16px;height:16px;color:var(--rose-ink);flex-shrink:0;margin-top:2px;"></i>
+          <p style="font-size:var(--text-sm);color:var(--rose-ink);line-height:var(--leading-normal);margin:0;">Nice — you caught the contrast with "exhaustive." That's exactly the clue to lean on.</p>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+  </section>
+
+  <!-- Benefits (minimal, no boxes) -->
+  <section style="max-width:980px;margin:0 auto;padding:8px 28px 80px;display:grid;grid-template-columns:repeat(3,1fr);gap:40px;">
+    <div>
+      <span style="display:inline-flex;width:44px;height:44px;border-radius:14px;background:var(--lilac-100);color:var(--lilac-600);align-items:center;justify-content:center;margin-bottom:16px;"><i data-lucide="coffee" style="width:21px;height:21px;"></i></span>
+      <h3 style="font-weight:700;font-size:var(--text-base);color:var(--text-strong);margin:0 0 7px;">Short by design</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-body);line-height:var(--leading-relaxed);margin:0;">Sessions fit in a coffee break. Come as you are, leave a little sharper.</p>
+    </div>
+    <div>
+      <span style="display:inline-flex;width:44px;height:44px;border-radius:14px;background:var(--rose-surface);color:var(--rose-ink);align-items:center;justify-content:center;margin-bottom:16px;"><i data-lucide="compass" style="width:21px;height:21px;"></i></span>
+      <h3 style="font-weight:700;font-size:var(--text-base);color:var(--text-strong);margin:0 0 7px;">Knows your gaps</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-body);line-height:var(--leading-relaxed);margin:0;">We quietly track each skill and point you to what'll help most next.</p>
+    </div>
+    <div>
+      <span style="display:inline-flex;width:44px;height:44px;border-radius:14px;background:var(--lilac-100);color:var(--lilac-600);align-items:center;justify-content:center;margin-bottom:16px;"><i data-lucide="message-circle-heart" style="width:21px;height:21px;"></i></span>
+      <h3 style="font-weight:700;font-size:var(--text-base);color:var(--text-strong);margin:0 0 7px;">Feedback with warmth</h3>
+      <p style="font-size:var(--text-sm);color:var(--text-body);line-height:var(--leading-relaxed);margin:0;">Notes that explain, encourage, and never make you feel behind.</p>
+    </div>
+  </section>
+
+  <!-- Why 800Path -->
+  <section style="padding:0 28px 88px;">
+    <div style="max-width:880px;margin:0 auto;background:linear-gradient(var(--surface),var(--surface)) padding-box, var(--gradient-radiant) border-box;border:5px solid transparent;border-radius:var(--radius-2xl);padding:48px 44px;">
+      <h2 style="font-weight:800;font-size:var(--text-2xl);color:var(--text-strong);margin:0 0 12px;letter-spacing:var(--tracking-tight);text-align:center;">Why 800Path?</h2>
+      <p style="font-size:var(--text-md);color:var(--text-body);line-height:var(--leading-relaxed);max-width:560px;margin:0 auto 36px;text-align:center;">Studying alone shouldn't mean studying blind. 800Path gives self-studiers the structure, feedback, and encouragement a good tutor would — without the schedule or the price tag.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px 40px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="display:inline-flex;width:38px;height:38px;border-radius:11px;background:var(--lilac-100);color:var(--lilac-600);align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="user-check" style="width:19px;height:19px;"></i></span>
+          <div>
+            <h3 style="font-weight:700;font-size:var(--text-base);color:var(--text-strong);margin:0 0 5px;">A tutor's feedback, on your own time</h3>
+            <p style="font-size:var(--text-sm);color:var(--text-body);line-height:var(--leading-relaxed);margin:0;">Every answer comes with a plain-language explanation of why — so you learn the reasoning, not just the right letter.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="display:inline-flex;width:38px;height:38px;border-radius:11px;background:var(--rose-surface);color:var(--rose-ink);align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="trending-up" style="width:19px;height:19px;"></i></span>
+          <div>
+            <h3 style="font-weight:700;font-size:var(--text-base);color:var(--text-strong);margin:0 0 5px;">Know exactly what to fix next</h3>
+            <p style="font-size:var(--text-sm);color:var(--text-body);line-height:var(--leading-relaxed);margin:0;">We track your accuracy by skill and surface your weakest areas first, so your limited study time goes where it counts.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="display:inline-flex;width:38px;height:38px;border-radius:11px;background:var(--lilac-100);color:var(--lilac-600);align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="calendar-check" style="width:19px;height:19px;"></i></span>
+          <div>
+            <h3 style="font-weight:700;font-size:var(--text-base);color:var(--text-strong);margin:0 0 5px;">Built for staying consistent</h3>
+            <p style="font-size:var(--text-sm);color:var(--text-body);line-height:var(--leading-relaxed);margin:0;">Bite-sized sessions are easy to start and easy to repeat — the habit that actually moves SAT scores, not the all-nighter.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <span style="display:inline-flex;width:38px;height:38px;border-radius:11px;background:var(--rose-surface);color:var(--rose-ink);align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="wallet" style="width:19px;height:19px;"></i></span>
+          <div>
+            <h3 style="font-weight:700;font-size:var(--text-base);color:var(--text-strong);margin:0 0 5px;">Free, and on your side</h3>
+            <p style="font-size:var(--text-sm);color:var(--text-body);line-height:var(--leading-relaxed);margin:0;">No paywalls between you and practice. Real SAT-style Reading &amp; Writing questions, free to use whenever you're ready.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:40px;">
+        <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" size="lg" hint-size="200px,48px">Create your account</x-import>
+      </div>
+    </div>
+  </section>
+
+  <footer style="border-top:1px solid var(--border);padding:26px 28px;text-align:center;font-size:var(--text-xs);color:var(--text-faint);">800Path © 2026 — SAT is a trademark of College Board.</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 1080, &quot;height&quot;: 760 },
+  &quot;accent&quot;: {
+    &quot;editor&quot;: &quot;enum&quot;,
+    &quot;options&quot;: [&quot;rose&quot;, &quot;lilac&quot;, &quot;mint&quot;, &quot;sky&quot;, &quot;peach&quot;],
+    &quot;default&quot;: &quot;rose&quot;,
+    &quot;tsType&quot;: &quot;\&quot;rose\&quot; | \&quot;lilac\&quot; | \&quot;mint\&quot; | \&quot;sky\&quot; | \&quot;peach\&quot;&quot;
+  },
+  &quot;showPreview&quot;: {
+    &quot;editor&quot;: &quot;boolean&quot;,
+    &quot;default&quot;: true,
+    &quot;tsType&quot;: &quot;boolean&quot;
+  }
+}">
+class Component extends DCLogic {
+  componentDidMount() { this._icons(); }
+  componentDidUpdate() { this._icons(); }
+  _icons(tries = 0) {
+    if (window.lucide && document.querySelector('i[data-lucide]')) {
+      window.lucide.createIcons();
+    }
+    if (document.querySelector('i[data-lucide]') && tries < 50) {
+      setTimeout(() => this._icons(tries + 1), 80);
+    }
+  }
+  renderVals() {
+    const accent = this.props.accent || 'rose';
+    const surf = {
+      mint: 'var(--mint-surface)',
+      sky: 'var(--sky-surface)',
+      lilac: 'var(--lilac-100)',
+      rose: 'var(--rose-surface)',
+      peach: 'var(--peach-surface)',
+    }[accent] || 'var(--rose-surface)';
+    const showPreview = this.props.showPreview ?? true;
+    return {
+      accentTone: accent,
+      showPreview: showPreview,
+      // Callback refs apply tweak-driven styles imperatively so the layout
+      // paints from literal CSS and only adjusts once props resolve.
+      heroRef: (el) => { if (el) el.style.gridTemplateColumns = showPreview ? '1.05fr 0.95fr' : '1fr'; },
+      circleRef: (el) => { if (el) el.style.background = surf; },
+    };
+  }
+}
+</script>
+</body>
+</html>

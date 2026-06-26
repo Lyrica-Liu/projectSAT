@@ -165,7 +165,8 @@ export default function ActiveSessionPage() {
       ? "butter"
       : "rose";
 
-  function stateFor(letter: AnswerChoice): string {
+  type AnswerState = "default" | "selected" | "correct" | "incorrect" | "muted";
+  function stateFor(letter: AnswerChoice): AnswerState {
     if (!current.revealed) return current.selected === letter ? "selected" : "default";
     if (letter === (current.question.answer as AnswerChoice)) return "correct";
     if (letter === current.selected) return "incorrect";

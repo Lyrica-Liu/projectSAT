@@ -1,11 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    serverActions: {
-      allowedOrigins: ["localhost:3000"],
-    },
-  },
+  allowedDevOrigins: ["127.0.0.1", "*.github.dev", "*.app.github.dev"],
 };
 
 export default nextConfig;

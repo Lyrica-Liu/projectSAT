@@ -1,0 +1,22 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Radiant gradient" subtitle="Instagram-style pop for edges & highlights — use sparingly" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 20px; background: var(--surface); font-family: var(--font-sans); display: flex; gap: 18px; align-items: center; }
+  .swatch { width: 150px; height: 92px; border-radius: var(--radius-lg); background: var(--gradient-radiant); }
+  .edge { width: 150px; height: 92px; border-radius: var(--radius-lg); background: linear-gradient(var(--surface),var(--surface)) padding-box, var(--gradient-radiant) border-box; border: 3px solid transparent; display: flex; align-items: center; justify-content: center; }
+  .edge span { background: var(--gradient-radiant); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; font-size: 22px; letter-spacing: -0.02em; }
+  .soft { width: 150px; height: 92px; border-radius: var(--radius-lg); background: var(--gradient-radiant-soft); }
+  .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-top: 8px; display: block; text-align: center; }
+  .col { display: flex; flex-direction: column; }
+</style>
+</head>
+<body>
+  <div class="col"><div class="swatch"></div><span class="lbl">--gradient-radiant</span></div>
+  <div class="col"><div class="edge"><span>SAT.</span></div><span class="lbl">edge + text clip</span></div>
+  <div class="col"><div class="soft"></div><span class="lbl">--gradient-radiant-soft</span></div>
+</body>
+</html>

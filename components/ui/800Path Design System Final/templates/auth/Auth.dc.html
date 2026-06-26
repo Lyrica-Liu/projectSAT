@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Sign In / Sign Up" description="800Path auth screen — segmented sign in/up toggle, email & password fields" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;font-family:var(--font-sans);box-sizing:border-box;">
+
+  <span style="display:inline-flex;align-items:center;gap:9px;margin-bottom:28px;">
+    <span style="width:34px;height:34px;border-radius:10px;background:var(--gradient-radiant);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;box-shadow:var(--shadow-brand);">8</span>
+    <span style="font-weight:800;font-size:21px;letter-spacing:var(--tracking-tight);color:var(--text-strong);">800Path</span>
+  </span>
+
+  <div style="width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:var(--space-8);box-sizing:border-box;">
+
+    <!-- Segmented toggle -->
+    <div style="display:flex;padding:4px;gap:4px;background:var(--surface-sunken);border-radius:var(--radius-pill);margin-bottom:22px;">
+      <button style="flex:1;padding:8px 16px;font-family:var(--font-sans);font-size:var(--text-sm);font-weight:600;color:var(--text-strong);background:var(--surface);border:none;border-radius:var(--radius-pill);box-shadow:var(--shadow-sm);cursor:pointer;">Sign in</button>
+      <button style="flex:1;padding:8px 16px;font-family:var(--font-sans);font-size:var(--text-sm);font-weight:600;color:var(--text-muted);background:transparent;border:none;border-radius:var(--radius-pill);cursor:pointer;">Sign up</button>
+    </div>
+
+    <h1 style="font-weight:700;font-size:var(--text-lg);color:var(--text-strong);margin:0 0 4px;">Welcome back</h1>
+    <p style="font-size:var(--text-sm);color:var(--text-muted);margin:0 0 22px;">Sign in to continue your practice.</p>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <x-import component-from-global-scope="DesignSystem_4010b3.Input" label="Email" type="email" value="maya@example.com" hint-size="100%,64px"></x-import>
+      <x-import component-from-global-scope="DesignSystem_4010b3.Input" label="Password" type="password" value="password123" hint-size="100%,64px"></x-import>
+      <div style="margin-top:4px;">
+        <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" size="lg" full="{{ true }}" hint-size="100%,48px">Sign in</x-import>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:22px;font-size:var(--text-xs);color:var(--text-faint);text-align:center;max-width:320px;line-height:1.6;">By continuing, you agree to our <span style="text-decoration:underline;">Terms</span> and <span style="text-decoration:underline;">Privacy Policy</span>.</p>
+</div>
+</x-dc>
+</body>
+</html>

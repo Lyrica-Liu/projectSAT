@@ -57,7 +57,12 @@ export default function LandingPage() {
           color: "var(--text-strong)", margin: "0 0 22px",
         }}>
           Study smarter,<br />
-          <span style={{ color: "var(--lilac-500)" }}>not harder.</span>
+          <span style={{
+            background: "var(--gradient-radiant)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}>not harder.</span>
         </h1>
         <p style={{
           fontFamily: "var(--font-sans)", fontSize: "var(--text-md)", color: "var(--text-muted)",
@@ -128,7 +133,7 @@ export default function LandingPage() {
       <section style={{ padding: "0 24px 80px" }}>
         <div style={{
           maxWidth: 720, margin: "0 auto",
-          background: "var(--lilac-500)", borderRadius: "var(--radius-2xl)",
+          background: "var(--gradient-radiant)", borderRadius: "var(--radius-2xl)",
           padding: "52px 32px", textAlign: "center", boxShadow: "var(--shadow-lg)",
         }}>
           <h2 style={{
@@ -150,7 +155,7 @@ export default function LandingPage() {
         borderTop: "1px solid var(--border)", padding: "26px 24px", textAlign: "center",
         fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", color: "var(--text-faint)",
       }}>
-        PrepWise &copy; 2026 — SAT is a trademark of College Board.
+        800Path &copy; 2026 — SAT is a trademark of College Board.
       </footer>
     </div>
   );

@@ -8,15 +8,15 @@ export function Wordmark({ href = "/" }: { href?: string }) {
     <Link href={href} style={{ display: "inline-flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
       <span style={{
         width: 30, height: 30, borderRadius: 9,
-        background: "var(--lilac-500)", color: "#fff",
+        background: "var(--gradient-radiant)", color: "#fff",
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 16, lineHeight: 1,
         boxShadow: "var(--shadow-brand)", flexShrink: 0,
-      }}>P</span>
+      }}>8</span>
       <span style={{
         fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: 18,
         letterSpacing: "var(--tracking-tight)", color: "var(--text-strong)",
-      }}>PrepWise</span>
+      }}>800Path</span>
     </Link>
   );
 }

@@ -1,0 +1,23 @@
+<!-- @dsCard group="Colors" viewport="700x130" name="Difficulty scale" subtitle="Four levels — mint → butter → peach → rose" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface); font-family: var(--font-sans); display: flex; align-items: center; gap: 14px; }
+  .pill { display: inline-flex; align-items: center; gap: 7px; padding: 7px 16px; border-radius: var(--radius-pill); font-weight: 600; font-size: var(--text-sm); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .arrow { color: var(--text-faint); font-family: var(--font-mono); font-size: 13px; }
+</style>
+</head>
+<body>
+  <span class="pill" style="background:var(--mint-surface);color:var(--mint-ink)"><span class="dot"></span>Easy</span>
+  <span class="arrow">→</span>
+  <span class="pill" style="background:var(--butter-surface);color:var(--butter-ink)"><span class="dot"></span>Medium</span>
+  <span class="arrow">→</span>
+  <span class="pill" style="background:var(--peach-surface);color:var(--peach-ink)"><span class="dot"></span>Hard</span>
+  <span class="arrow">→</span>
+  <span class="pill" style="background:var(--rose-surface);color:var(--rose-ink)"><span class="dot"></span>Expert</span>
+</body>
+</html>
