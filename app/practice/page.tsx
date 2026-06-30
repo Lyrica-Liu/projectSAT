@@ -2,22 +2,44 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { TopNav, NavLink } from "@/components/ui/nav";
 import { Button, ChoiceCard } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
-import type { QuestionDomain, Difficulty } from "@/lib/types";
+import type { Difficulty } from "@/lib/types";
 
-const DOMAIN_OPTIONS: { value: QuestionDomain | "both"; label: string; desc: string }[] = [
-  { value: "both",    label: "Reading & Writing", desc: "Mix of both domains" },
-  { value: "reading", label: "Reading",           desc: "Passages & comprehension" },
-  { value: "writing", label: "Writing",           desc: "Grammar & expression" },
+const CATEGORIES: { label: string; subcategories: string[] }[] = [
+  {
+    label: "Information and Ideas",
+    subcategories: [
+      "Central Ideas and Details",
+      "Command of Evidence (Textual)",
+      "Command of Evidence (Quantitative)",
+      "Inferences",
+    ],
+  },
+  {
+    label: "Craft and Structure",
+    subcategories: [
+      "Words in Context",
+      "Text Structure and Purpose",
+      "Cross-Text Connections",
+    ],
+  },
+  {
+    label: "Expression of Ideas",
+    subcategories: ["Transitions", "Rhetorical Synthesis"],
+  },
+  {
+    label: "Standard English Conventions",
+    subcategories: ["Boundaries", "Form, Structure, and Sense"],
+  },
 ];
 
-const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string }[] = [
-  { value: "easy",   label: "Easy",   desc: "Clear passages, obvious distractors" },
-  { value: "medium", label: "Medium", desc: "Nuanced passages, some inference needed" },
-  { value: "hard",   label: "Hard",   desc: "Dense prose, highly plausible distractors" },
+const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
+  { value: "easy",        label: "Easy" },
+  { value: "medium-low",  label: "Medium Low" },
+  { value: "medium-high", label: "Medium High" },
+  { value: "hard",        label: "Hard" },
 ];
 
 const COUNT_OPTIONS = [5, 10, 15, 20];
@@ -25,189 +47,266 @@ const COUNT_OPTIONS = [5, 10, 15, 20];
 const eyebrow: React.CSSProperties = {
   fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 600,
   letterSpacing: "var(--tracking-caps)", textTransform: "uppercase",
-  color: "var(--text-faint)", margin: "0 0 12px", display: "block",
+  color: "var(--text-faint)", margin: "0 0 10px", display: "block",
 };
 
 export default function PracticeSetupPage() {
   const router = useRouter();
-  const [domain, setDomain] = useState<QuestionDomain | "both">("both");
-  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium-high");
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
-  const [loadingStage, setLoadingStage] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  function toggleCategory(cat: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(cat) ? next.delete(cat) : next.add(cat);
+      return next;
+    });
+  }
+
+  function toggleSubcategory(sub: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(sub) ? next.delete(sub) : next.add(sub);
+      return next;
+    });
+  }
+
   async function startSession() {
+    if (selected.size === 0) return;
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      router.push("/auth");
-      return;
-    }
-
-    // 1. Generate questions via Claude
-    setLoadingStage("Generating questions with AI…");
-    let generatedQuestions;
+    let sessionId: string;
     try {
       const res = await fetch("/api/generate-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain, difficulty, count }),
+        body: JSON.stringify({ subcategories: Array.from(selected), difficulty, count }),
       });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Failed to generate questions");
-      }
-      const data = await res.json();
-      generatedQuestions = data.questions;
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to generate questions");
+      sessionId = body.sessionId;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not generate questions. Please try again.");
       setLoading(false);
-      setLoadingStage("");
       return;
     }
 
-    // 2. Save questions to Supabase
-    setLoadingStage("Setting up session…");
-    const { data: savedQuestions, error: qErr } = await supabase
-      .from("questions")
-      .insert(generatedQuestions)
-      .select("id");
-
-    if (qErr || !savedQuestions) {
-      setError("Could not save questions. Please try again.");
-      setLoading(false);
-      setLoadingStage("");
-      return;
-    }
-
-    // 3. Create session
-    const { data: session, error: sErr } = await supabase
-      .from("sessions")
-      .insert({ user_id: user.id, question_count: count, domain_filter: domain })
-      .select("id")
-      .single();
-
-    if (sErr || !session) {
-      setError("Could not create session. Please try again.");
-      setLoading(false);
-      setLoadingStage("");
-      return;
-    }
-
-    // 4. Pre-create answer rows so the session page loads instantly
-    await supabase
-      .from("answers")
-      .insert(savedQuestions.map((q) => ({ session_id: session.id, question_id: q.id })));
-
-    router.push(`/practice/${session.id}`);
+    router.push(`/practice/${sessionId}`);
   }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column" }}>
       <TopNav
         homeHref="/dashboard"
-        maxWidth={760}
+        maxWidth={900}
         right={<NavLink href="/dashboard">← Dashboard</NavLink>}
       />
 
-      <main style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "56px 24px" }}>
-        <div style={{ width: "100%", maxWidth: 440 }}>
-          <h1 style={{
-            fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: "var(--text-xl)",
-            letterSpacing: "var(--tracking-snug)", color: "var(--text-strong)", margin: "0 0 6px",
-          }}>Set up your session</h1>
-          <p style={{
-            fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
-            color: "var(--text-muted)", margin: "0 0 30px",
-          }}>Pick what you want to practice and how many questions.</p>
+      <main style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "48px 24px" }}>
+        <h1 style={{
+          fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: "var(--text-xl)",
+          letterSpacing: "var(--tracking-snug)", color: "var(--text-strong)", margin: "0 0 32px",
+        }}>Set up your session</h1>
 
-          {/* Domain */}
-          <span style={eyebrow}>Domain</span>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 30 }}>
-            {DOMAIN_OPTIONS.map((opt) => (
-              <ChoiceCard
-                key={opt.value}
-                label={opt.label}
-                desc={opt.desc}
-                selected={domain === opt.value}
-                onClick={() => setDomain(opt.value)}
-              />
-            ))}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
+
+          {/* Left — category accordion + subcategory multi-select */}
+          <div>
+            <span style={eyebrow}>
+              Skills
+              {selected.size > 0 && (
+                <span style={{
+                  marginLeft: 8, fontFamily: "var(--font-mono)", fontWeight: 500,
+                  color: "var(--brand)", fontSize: "var(--text-xs)", letterSpacing: 0,
+                  textTransform: "none",
+                }}>
+                  {selected.size} selected
+                </span>
+              )}
+            </span>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {CATEGORIES.map((cat) => {
+                const isOpen = expanded.has(cat.label);
+                const selectedCount = cat.subcategories.filter((s) => selected.has(s)).length;
+
+                return (
+                  <div key={cat.label}>
+                    {/* Category header */}
+                    <button
+                      onClick={() => toggleCategory(cat.label)}
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "13px 16px",
+                        fontFamily: "var(--font-sans)", fontWeight: 600,
+                        fontSize: "var(--text-sm)", cursor: "pointer",
+                        background: isOpen ? "var(--lilac-50)" : "var(--surface)",
+                        border: `1.5px solid ${isOpen ? "var(--lilac-300)" : "var(--border-strong)"}`,
+                        borderBottom: isOpen ? "none" : `1.5px solid ${isOpen ? "var(--lilac-300)" : "var(--border-strong)"}`,
+                        borderRadius: isOpen
+                          ? "var(--radius-md) var(--radius-md) 0 0"
+                          : "var(--radius-md)",
+                        color: isOpen ? "var(--brand-ink)" : "var(--text-strong)",
+                        transition: "all var(--dur-base) var(--ease-out)",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {cat.label}
+                        {selectedCount > 0 && (
+                          <span style={{
+                            display: "inline-flex", alignItems: "center", justifyContent: "center",
+                            width: 20, height: 20, borderRadius: "var(--radius-pill)",
+                            background: "var(--lilac-500)", color: "#fff",
+                            fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700,
+                          }}>
+                            {selectedCount}
+                          </span>
+                        )}
+                      </span>
+                      <span style={{
+                        fontSize: 12, color: "var(--text-faint)",
+                        transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
+                        transition: "transform var(--dur-base) var(--ease-out)",
+                        display: "inline-block",
+                      }}>▶</span>
+                    </button>
+
+                    {/* Subcategory panel */}
+                    {isOpen && (
+                      <div style={{
+                        border: "1.5px solid var(--lilac-300)",
+                        borderTop: "none",
+                        borderRadius: "0 0 var(--radius-md) var(--radius-md)",
+                        background: "var(--surface)",
+                        padding: "6px 8px 10px",
+                      }}>
+                        {cat.subcategories.map((sub) => {
+                          const isSelected = selected.has(sub);
+                          return (
+                            <button
+                              key={sub}
+                              onClick={() => toggleSubcategory(sub)}
+                              style={{
+                                width: "100%", display: "flex", alignItems: "center", gap: 10,
+                                padding: "9px 10px", border: "none", cursor: "pointer",
+                                borderRadius: "var(--radius-sm)",
+                                background: isSelected ? "var(--lilac-50)" : "transparent",
+                                transition: "background var(--dur-fast) var(--ease-out)",
+                                textAlign: "left",
+                              }}
+                            >
+                              {/* Check indicator */}
+                              <span style={{
+                                flexShrink: 0,
+                                width: 18, height: 18, borderRadius: 5,
+                                border: isSelected ? "none" : "1.5px solid var(--border-strong)",
+                                background: isSelected ? "var(--lilac-500)" : "transparent",
+                                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                color: "#fff", fontSize: 11, fontWeight: 700,
+                                transition: "all var(--dur-fast) var(--ease-out)",
+                              }}>
+                                {isSelected && "✓"}
+                              </span>
+                              <span style={{
+                                fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
+                                fontWeight: isSelected ? 600 : 400,
+                                color: isSelected ? "var(--brand-ink)" : "var(--text-body)",
+                              }}>
+                                {sub}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Difficulty */}
-          <span style={eyebrow}>Difficulty</span>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 30 }}>
-            {DIFFICULTY_OPTIONS.map((opt) => (
-              <ChoiceCard
-                key={opt.value}
-                label={opt.label}
-                desc={opt.desc}
-                selected={difficulty === opt.value}
-                onClick={() => setDifficulty(opt.value)}
-              />
-            ))}
-          </div>
+          {/* Right — difficulty + count */}
+          <div>
+            <span style={eyebrow}>Difficulty</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
+              {DIFFICULTY_OPTIONS.map((opt) => (
+                <ChoiceCard
+                  key={opt.value}
+                  label={opt.label}
+                  selected={difficulty === opt.value}
+                  onClick={() => setDifficulty(opt.value)}
+                />
+              ))}
+            </div>
 
-          {/* Question count */}
-          <span style={eyebrow}>Number of questions</span>
-          <div style={{ display: "flex", gap: 10, marginBottom: 8 }}>
-            {COUNT_OPTIONS.map((n) => (
-              <button
-                key={n}
-                onClick={() => setCount(n)}
-                style={{
-                  flex: 1, padding: "13px 0", borderRadius: "var(--radius-md)",
-                  fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-sm)",
-                  cursor: "pointer", transition: "all var(--dur-base) var(--ease-out)",
-                  background: count === n ? "var(--lilac-50)" : "var(--surface)",
-                  border: `1.5px solid ${count === n ? "var(--lilac-300)" : "var(--border-strong)"}`,
-                  color: count === n ? "var(--brand-ink)" : "var(--text-body)",
-                  boxShadow: count === n ? `0 0 0 4px var(--focus-ring)` : "none",
-                }}
-              >
-                {n}
-              </button>
-            ))}
+            <span style={eyebrow}>Number of questions</span>
+            <div style={{ display: "flex", gap: 10 }}>
+              {COUNT_OPTIONS.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setCount(n)}
+                  style={{
+                    flex: 1, padding: "13px 0", borderRadius: "var(--radius-md)",
+                    fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-sm)",
+                    cursor: "pointer", transition: "all var(--dur-base) var(--ease-out)",
+                    background: count === n ? "var(--lilac-50)" : "var(--surface)",
+                    border: `1.5px solid ${count === n ? "var(--lilac-300)" : "var(--border-strong)"}`,
+                    color: count === n ? "var(--brand-ink)" : "var(--text-body)",
+                    boxShadow: count === n ? `0 0 0 4px var(--focus-ring)` : "none",
+                  }}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
-          <p style={{
-            fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
-            color: "var(--text-faint)", margin: "0 0 30px",
-          }}>
-            ~{Math.round(count * 0.8)} min estimated
-          </p>
+        </div>
 
+        {/* Start button */}
+        <div style={{ marginTop: 36 }}>
           {error && (
             <div style={{
               fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
               color: "var(--danger)", background: "var(--danger-surface)",
               borderRadius: "var(--radius-md)", padding: "10px 14px",
-              lineHeight: "var(--leading-normal)", marginBottom: 16,
+              lineHeight: "var(--leading-normal)", marginBottom: 14,
             }}>
               {error}
             </div>
           )}
-
           <Button
-            full
-            size="lg"
+            full size="lg"
             onClick={startSession}
-            disabled={loading}
+            disabled={selected.size === 0 || loading}
             iconRight={!loading ? <Icon name="arrow-right" size={18} /> : undefined}
           >
-            {loading ? loadingStage || "Starting…" : "Start session"}
+            {loading
+              ? "Generating questions with AI…"
+              : selected.size > 0
+              ? `Start session — ${selected.size} skill${selected.size > 1 ? "s" : ""}`
+              : "Start session"}
           </Button>
-
+          {selected.size === 0 && !loading && (
+            <p style={{
+              fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
+              color: "var(--text-faint)", textAlign: "center", marginTop: 10,
+            }}>
+              Open a category and select at least one skill to continue
+            </p>
+          )}
           {loading && (
             <p style={{
               fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
-              color: "var(--text-faint)", textAlign: "center", marginTop: 12,
+              color: "var(--text-faint)", textAlign: "center", marginTop: 10,
             }}>
-              Claude is writing your questions — this takes about 15–30 seconds.
+              Claude is writing your questions — this takes about 15–20 seconds.
             </p>
           )}
         </div>

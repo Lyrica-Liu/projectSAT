@@ -159,11 +159,10 @@ export default function ActiveSessionPage() {
   const answeredCount = questions.filter((q) => q.selected !== null).length;
   const allAnswered = answeredCount === questions.length;
   const diffTone =
-    current.question.difficulty === "easy"
-      ? "mint"
-      : current.question.difficulty === "medium"
-      ? "butter"
-      : "rose";
+    current.question.difficulty === "easy" ? "mint"
+    : current.question.difficulty === "medium-low" ? "sky"
+    : current.question.difficulty === "medium-high" ? "butter"
+    : "rose";
 
   type AnswerState = "default" | "selected" | "correct" | "incorrect" | "muted";
   function stateFor(letter: AnswerChoice): AnswerState {

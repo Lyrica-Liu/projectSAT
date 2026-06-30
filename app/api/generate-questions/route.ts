@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { SAT_GENERATOR_PROMPT } from "@/lib/prompts/sat-generator";
+import { createClient } from "@/lib/supabase/server";
 import type { QuestionDomain, QuestionSkill, Difficulty } from "@/lib/types";
 
 export const maxDuration = 120;
@@ -70,14 +71,16 @@ function subcategoriesForDomain(domain: QuestionDomain | "both"): string[] {
 }
 
 function mapDifficulty(skillDifficulty: string): Difficulty {
-  if (skillDifficulty === "LOW" || skillDifficulty === "MEDIUM-LOW") return "easy";
-  if (skillDifficulty === "MEDIUM-HIGH") return "medium";
+  if (skillDifficulty === "LOW") return "easy";
+  if (skillDifficulty === "MEDIUM-LOW") return "medium-low";
+  if (skillDifficulty === "MEDIUM-HIGH") return "medium-high";
   return "hard";
 }
 
 function appDifficultyToSkill(d: Difficulty): string {
   if (d === "easy") return "LOW";
-  if (d === "medium") return "MEDIUM-HIGH";
+  if (d === "medium-low") return "MEDIUM-LOW";
+  if (d === "medium-high") return "MEDIUM-HIGH";
   return "HIGH";
 }
 
@@ -118,11 +121,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { domain, difficulty, count } = await req.json() as {
-    domain: QuestionDomain | "both";
+  const { subcategories, difficulty, count } = await req.json() as {
+    subcategories: string[];
     difficulty: Difficulty;
     count: number;
   };
+  if (!subcategories?.length) {
+    return NextResponse.json({ error: "No subcategories provided." }, { status: 400 });
+  }
 
   // Load examples if available
   let examplesContent = "";
@@ -139,19 +145,18 @@ export async function POST(req: NextRequest) {
     ? `${SAT_GENERATOR_PROMPT}\n\n---\n\nAnnotated Examples (use as style anchors):\n\n${examplesContent}`
     : SAT_GENERATOR_PROMPT;
 
-  const categories = categoriesForDomain(domain);
-  const subcategories = subcategoriesForDomain(domain);
   const skillDifficulty = appDifficultyToSkill(difficulty);
+  const subcategoryList = subcategories.join(", ");
 
   const userMessage = `Generate ${count} SAT Reading & Writing questions in JSON format.
 
 Parameters:
+- Subcategories: ${subcategoryList}
 - Difficulty: ${skillDifficulty}
-- Categories: ${categories.join(", ")}
 - Count: ${count}
 
-Distribute questions evenly across these subcategories (vary them — do not repeat the same subcategory more than twice):
-${subcategories.join(", ")}
+Distribute the ${count} questions across these subcategories as evenly as possible: ${subcategoryList}.
+Set "subcategory" on each question to one of those exact names.
 
 Return ONLY valid JSON — no prose, no code fences. Use this exact structure:
 
@@ -159,7 +164,7 @@ Return ONLY valid JSON — no prose, no code fences. Use this exact structure:
   "questions": [
     {
       "id": 1,
-      "subcategory": "<exact subcategory name from the list above>",
+      "subcategory": "<one of: ${subcategoryList}>",
       "type": "standard",
       "passage": "...",
       "prompt": "...",
@@ -223,5 +228,46 @@ correct_answer_explanation is required for every question in JSON output.`;
     };
   });
 
-  return NextResponse.json({ questions });
+  // Do all DB writes server-side to avoid RLS issues with client-side inserts
+  const supabase = await createClient();
+
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
+  const { data: savedQuestions, error: qErr } = await supabase
+    .from("questions")
+    .insert(questions)
+    .select("id");
+
+  if (qErr || !savedQuestions) {
+    console.error("Supabase insert questions error:", qErr);
+    return NextResponse.json({ error: `Could not save questions: ${qErr?.message ?? "unknown error"}` }, { status: 500 });
+  }
+
+  const { data: session, error: sErr } = await supabase
+    .from("sessions")
+    .insert({ user_id: user.id, question_count: count, domain_filter: (() => {
+      const domains = new Set(subcategories.map((s) => SUBCATEGORY_TO_DOMAIN[s] ?? "reading"));
+      return domains.size > 1 ? "both" : (domains.values().next().value ?? "reading");
+    })() })
+    .select("id")
+    .single();
+
+  if (sErr || !session) {
+    console.error("Supabase insert session error:", sErr);
+    return NextResponse.json({ error: `Could not create session: ${sErr?.message ?? "unknown error"}` }, { status: 500 });
+  }
+
+  const { error: aErr } = await supabase
+    .from("answers")
+    .insert(savedQuestions.map((q) => ({ session_id: session.id, question_id: q.id })));
+
+  if (aErr) {
+    console.error("Supabase insert answers error:", aErr);
+    return NextResponse.json({ error: `Could not link questions to session: ${aErr.message}` }, { status: 500 });
+  }
+
+  return NextResponse.json({ sessionId: session.id });
 }

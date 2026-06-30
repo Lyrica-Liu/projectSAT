@@ -18,6 +18,7 @@ const SKILL_LABELS: Record<QuestionSkill, string> = {
   boundaries: "Boundaries",
   form_structure_sense: "Form, Structure & Sense",
   transitions: "Transitions",
+  rhetorical_synthesis: "Rhetorical Synthesis",
 };
 
 export default function DashboardPage() {
@@ -169,14 +170,20 @@ export default function DashboardPage() {
 
         {/* Main grid: CTA + Skills */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 20, marginBottom: 20 }}>
-          <Card tone="brand" padding="lg" radius="xl" shadow="none" style={{ boxShadow: "var(--shadow-brand)" }}>
+          <div style={{
+            background: "var(--gradient-radiant)",
+            borderRadius: "var(--radius-xl)",
+            padding: "28px",
+            boxShadow: "0 8px 28px rgba(168, 85, 247, 0.30)",
+            overflow: "hidden",
+          }}>
             <h2 style={{
               fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-lg)",
-              color: "var(--text-on-brand)", margin: "0 0 10px",
+              color: "#fff", margin: "0 0 10px",
             }}>Start a session</h2>
             <p style={{
               fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
-              color: "rgba(255,255,255,0.8)", margin: "0 0 24px",
+              color: "rgba(255,255,255,0.85)", margin: "0 0 24px",
               lineHeight: "var(--leading-relaxed)",
             }}>
               10 questions. ~8 minutes. Instant AI feedback.
@@ -190,7 +197,7 @@ export default function DashboardPage() {
             }}>
               Practice now →
             </Link>
-          </Card>
+          </div>
 
           <Card tone="surface" padding="lg" radius="xl" shadow="sm">
             <h2 style={{

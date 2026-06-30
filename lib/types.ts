@@ -12,7 +12,7 @@ export type QuestionSkill =
   | "transitions"
   | "rhetorical_synthesis";
 
-export type Difficulty = "easy" | "medium" | "hard";
+export type Difficulty = "easy" | "medium-low" | "medium-high" | "hard";
 
 export type QuestionStatus = "unanswered" | "answered" | "skipped";
 
