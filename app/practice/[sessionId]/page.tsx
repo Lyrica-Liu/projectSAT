@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, Card, ProgressBar, AnswerOption, Button } from "@/components/ui/ds";
+import { LoadingScreen } from "@/components/ui/nav";
 import { Icon } from "@/components/ui/icon";
 import type { Question, Answer, Session } from "@/lib/types";
 
@@ -131,26 +132,15 @@ export default function ActiveSessionPage() {
     router.push(`/results/${sessionId}`);
   }
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-faint)" }}>Loading session…</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen message="Loading session…" />;
 
   if (error) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 24px" }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--danger)", background: "var(--danger-surface)", borderRadius: "var(--radius-md)", padding: "12px 18px" }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--danger)", background: "var(--danger-surface)", borderRadius: "var(--radius-md)", padding: "12px 18px", maxWidth: 400, textAlign: "center" }}>
           {error}
         </div>
-        <button
-          onClick={() => router.push("/dashboard")}
-          style={{ fontFamily: "var(--font-sans)", fontWeight: 500, fontSize: "var(--text-sm)", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
-        >
-          ← Back to dashboard
-        </button>
+        <Button variant="ghost" onClick={() => router.push("/dashboard")}>← Back to dashboard</Button>
       </div>
     );
   }

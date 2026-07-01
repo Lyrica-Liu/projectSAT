@@ -3,6 +3,33 @@
 import Link from "next/link";
 import React from "react";
 
+export function Spinner({ size = 22, color = "var(--brand)" }: { size?: number; color?: string }) {
+  return (
+    <span style={{
+      display: "inline-block", width: size, height: size, borderRadius: "50%",
+      border: "2.5px solid var(--border-strong)",
+      borderTopColor: color,
+      animation: "spin-ring 0.7s linear infinite",
+      flexShrink: 0,
+    }} />
+  );
+}
+
+export function LoadingScreen({ message = "Loading…" }: { message?: string }) {
+  return (
+    <div style={{
+      minHeight: "100vh", background: "var(--canvas)",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center", gap: 14,
+    }}>
+      <Spinner size={28} />
+      <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-faint)", margin: 0 }}>
+        {message}
+      </p>
+    </div>
+  );
+}
+
 export function Wordmark({ href = "/" }: { href?: string }) {
   return (
     <Link href={href} style={{ display: "inline-flex", alignItems: "center", gap: 9, textDecoration: "none" }}>

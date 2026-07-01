@@ -131,6 +131,15 @@
   --dur-slow:    320ms;
 }
 
+@keyframes spin-ring {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes indeterminate-slide {
+  0%   { left: -60%; width: 60%; }
+  100% { left: 110%; width: 60%; }
+}
+
 @layer base {
   html,
   body {

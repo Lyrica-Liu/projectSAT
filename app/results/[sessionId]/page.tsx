@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { TopNav, NavLink } from "@/components/ui/nav";
+import { TopNav, NavLink, LoadingScreen } from "@/components/ui/nav";
 import { Card, Badge, ScoreRing, SkillBar, Button } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
 import type { QuestionSkill } from "@/lib/types";
@@ -19,6 +19,7 @@ const SKILL_LABELS: Record<QuestionSkill, string> = {
   boundaries: "Boundaries",
   form_structure_sense: "Form, Structure & Sense",
   transitions: "Transitions",
+  rhetorical_synthesis: "Rhetorical Synthesis",
 };
 
 const eyebrow: React.CSSProperties = {
@@ -107,13 +108,7 @@ export default function ResultsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-faint)" }}>Loading results…</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen message="Loading results…" />;
 
   if (!session) return null;
 
@@ -136,7 +131,7 @@ export default function ResultsPage() {
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "32px 24px 80px" }}>
         {/* Score hero */}
         <Card tone="surface" padding="xl" radius="xl" shadow="md" style={{ marginBottom: 20, textAlign: "center" }}>
-          <span style={eyebrow}>Session complete</span>
+          <span style={eyebrow}>Session complete 🎉</span>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
             <ScoreRing score={score} size={140} />
           </div>

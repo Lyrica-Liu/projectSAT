@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { TopNav, NavLink } from "@/components/ui/nav";
-import { Button, ChoiceCard } from "@/components/ui/ds";
+import { Button, ChoiceCard, ProgressBar } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
 import type { Difficulty } from "@/lib/types";
 
@@ -57,7 +57,9 @@ export default function PracticeSetupPage() {
   const [difficulty, setDifficulty] = useState<Difficulty>("medium-high");
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [genProgress, setGenProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   function toggleCategory(cat: string) {
     setExpanded((prev) => {
@@ -75,10 +77,22 @@ export default function PracticeSetupPage() {
     });
   }
 
+  useEffect(() => {
+    return () => { if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); };
+  }, []);
+
   async function startSession() {
     if (selected.size === 0) return;
     setLoading(true);
+    setGenProgress(0);
     setError(null);
+
+    // Animate progress from 0→88 over ~20s; never reaches 100 until done
+    let p = 0;
+    progressIntervalRef.current = setInterval(() => {
+      p = Math.min(88, p + (88 - p) * 0.06 + 0.4);
+      setGenProgress(Math.round(p));
+    }, 400);
 
     let sessionId: string;
     try {
@@ -91,11 +105,15 @@ export default function PracticeSetupPage() {
       if (!res.ok) throw new Error(body.error ?? "Failed to generate questions");
       sessionId = body.sessionId;
     } catch (err: unknown) {
+      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
       setError(err instanceof Error ? err.message : "Could not generate questions. Please try again.");
       setLoading(false);
+      setGenProgress(0);
       return;
     }
 
+    if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
+    setGenProgress(100);
     router.push(`/practice/${sessionId}`);
   }
 
@@ -302,12 +320,15 @@ export default function PracticeSetupPage() {
             </p>
           )}
           {loading && (
-            <p style={{
-              fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
-              color: "var(--text-faint)", textAlign: "center", marginTop: 10,
-            }}>
-              Claude is writing your questions — this takes about 15–20 seconds.
-            </p>
+            <div style={{ marginTop: 16 }}>
+              <ProgressBar value={genProgress} height={6} />
+              <p style={{
+                fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
+                color: "var(--text-faint)", textAlign: "center", marginTop: 8,
+              }}>
+                Hang tight — usually takes ~15 seconds.
+              </p>
+            </div>
           )}
         </div>
       </main>

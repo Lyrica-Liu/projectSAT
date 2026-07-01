@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { TopNav, NavLink } from "@/components/ui/nav";
+import { TopNav, NavLink, LoadingScreen } from "@/components/ui/nav";
 import { Card, Badge, Button } from "@/components/ui/ds";
 import type { Session } from "@/lib/types";
 
@@ -38,13 +38,7 @@ export default function HistoryPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-faint)" }}>Loading…</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
@@ -64,10 +58,22 @@ export default function HistoryPage() {
 
         {sessions.length === 0 ? (
           <Card tone="surface" padding="xl" radius="xl" shadow="sm" style={{ textAlign: "center" }}>
+            <div style={{
+              display: "inline-flex", width: 48, height: 48, borderRadius: 16,
+              background: "var(--lilac-100)", color: "var(--brand)",
+              alignItems: "center", justifyContent: "center",
+              fontSize: 22, marginBottom: 16,
+            }}>📋</div>
+            <p style={{
+              fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-base)",
+              color: "var(--text-strong)", margin: "0 0 8px",
+            }}>No sessions yet</p>
             <p style={{
               fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
-              color: "var(--text-muted)", marginBottom: 20,
-            }}>No completed sessions yet.</p>
+              color: "var(--text-muted)", marginBottom: 24, lineHeight: "var(--leading-relaxed)",
+            }}>
+              Your completed sessions will appear here.
+            </p>
             <Button onClick={() => router.push("/practice")}>Start your first session →</Button>
           </Card>
         ) : (
