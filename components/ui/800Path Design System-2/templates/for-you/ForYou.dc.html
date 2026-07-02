@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="For you" description="800Path personalized insights — four SAT R&W domains you click into for sub-category skill grasp, question accuracy, a suggested-for-you list, and weakest-first improvement areas" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+<script src="./ds-base.js"></script>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);font-family:var(--font-sans);">
+
+  <!-- Nav -->
+  <nav style="position:sticky;top:0;z-index:10;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);">
+    <div style="max-width:1040px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="display:inline-flex;align-items:center;gap:9px;">
+        <span style="width:30px;height:30px;border-radius:9px;background:var(--gradient-radiant);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;box-shadow:var(--shadow-brand);">8</span>
+        <span style="font-weight:800;font-size:18px;letter-spacing:var(--tracking-tight);color:var(--text-strong);">800Path</span>
+      </span>
+      <div style="display:flex;align-items:center;gap:18px;">
+        <span style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);">Dashboard</span>
+        <span style="font-size:var(--text-sm);font-weight:700;color:var(--brand-ink);">For you</span>
+        <span style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);">History</span>
+        <x-import component-from-global-scope="DesignSystem_4010b3.Avatar" initials="MC" tone="0" size="34" hint-size="34px,34px"></x-import>
+      </div>
+    </div>
+  </nav>
+
+  <main style="max-width:1040px;margin:0 auto;padding:40px 24px 64px;">
+    <div style="margin-bottom:24px;">
+      <h1 style="font-weight:800;font-size:var(--text-xl);color:var(--text-strong);margin:0;letter-spacing:var(--tracking-snug);">Your personalized plan</h1>
+    </div>
+
+    <!-- Summary -->
+    <div style="display:grid;grid-template-columns:auto 1fr 1.3fr;gap:16px;margin-bottom:32px;align-items:stretch;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:var(--space-6);box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center;">
+        <x-import component-from-global-scope="DesignSystem_4010b3.ScoreRing" score="68" caption="overall accuracy" hint-size="148px,170px"></x-import>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:var(--space-6);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;justify-content:center;gap:12px;">
+        <p style="font-size:var(--text-xs);font-weight:600;color:var(--text-muted);margin:0;">Overall grasp</p>
+        <p style="font-weight:800;font-size:var(--text-lg);color:var(--text-strong);margin:0;line-height:1.1;">Developing</p>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="width:26px;height:7px;border-radius:99px;background:var(--brand);"></span>
+          <span style="width:26px;height:7px;border-radius:99px;background:var(--brand);"></span>
+          <span style="width:26px;height:7px;border-radius:99px;background:var(--surface-sunken);"></span>
+          <span style="width:26px;height:7px;border-radius:99px;background:var(--surface-sunken);"></span>
+        </div>
+        <p style="font-size:var(--text-xs);color:var(--text-faint);margin:0;">Difficulty-adjusted skill level.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:var(--space-6);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;justify-content:center;gap:11px;">
+        <p style="font-size:var(--text-xs);font-weight:600;color:var(--text-muted);margin:0;">Suggested for you</p>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <sc-for list="{{ suggested }}" as="sug" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <span style="font-size:var(--text-sm);font-weight:600;color:var(--text-strong);">{{ sug.skill }}</span>
+              <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="{{ sug.levelTone }}" size="sm" hint-size="86px,22px">{{ sug.level }}</x-import>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- Four domain cards -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px;">
+      <sc-for list="{{ domains }}" as="d" hint-placeholder-count="4">
+        <button onClick="{{ d.select }}" style="position:relative;display:flex;flex-direction:column;gap:13px;cursor:pointer;text-align:left;background:var(--surface);border-radius:var(--radius-xl);padding:18px;transition:transform .16s ease;font-family:inherit;border:1.5px solid var(--border);box-shadow:var(--shadow-sm);" style-hover="transform:translateY(-2px);">
+          <sc-if value="{{ d.selected }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;inset:-1.5px;border-radius:var(--radius-xl);border:1.5px solid var(--brand);box-shadow:0 0 0 3px var(--brand-soft);pointer-events:none;"></span>
+          </sc-if>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            {{ d.iconEl }}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-faint);"><path d="m9 18 6-6-6-6"></path></svg>
+          </div>
+          <p style="font-weight:700;font-size:var(--text-sm);color:var(--text-strong);margin:0;line-height:1.25;text-align:left;">{{ d.name }}</p>
+          <div style="display:flex;flex-direction:column;gap:7px;text-align:left;">
+            {{ d.pips }}
+            <span style="font-size:var(--text-xs);font-weight:600;color:var(--text-muted);">{{ d.grasp }} grasp</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:5px;text-align:left;">
+            <span style="font-weight:800;font-size:var(--text-md);color:var(--text-strong);">{{ d.accuracy }}%</span>
+            <span style="font-size:var(--text-xs);color:var(--text-faint);">accuracy</span>
+          </div>
+        </button>
+      </sc-for>
+    </div>
+
+    <!-- Detail panel for the selected domain -->
+    <section style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-2xl);box-shadow:var(--shadow-md);overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:14px;padding:22px 26px;background:var(--surface-sunken);border-bottom:1px solid var(--border);">
+        {{ sel.iconEl }}
+        <h3 style="flex:1;font-weight:800;font-size:var(--text-lg);color:var(--text-strong);margin:0;letter-spacing:var(--tracking-snug);">{{ sel.name }}</h3>
+        <div style="text-align:right;flex-shrink:0;">
+          <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0;white-space:nowrap;">{{ sel.grasp }} grasp · {{ sel.accuracy }}% accuracy</p>
+          <p style="font-size:var(--text-xs);color:var(--text-faint);margin:3px 0 0;white-space:nowrap;">{{ sel.questions }} questions</p>
+        </div>
+      </div>
+
+      <!-- Sub-category table -->
+      <div style="padding:8px 26px 8px;">
+        <div style="display:grid;grid-template-columns:1.5fr 0.9fr 1.3fr 1fr;gap:18px;padding:12px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-wide);text-transform:uppercase;color:var(--text-faint);">Sub-category</span>
+          <span style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-wide);text-transform:uppercase;color:var(--text-faint);">Grasp</span>
+          <span style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-wide);text-transform:uppercase;color:var(--text-faint);">Accuracy</span>
+          <span style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-wide);text-transform:uppercase;color:var(--text-faint);text-align:right;">Next level</span>
+        </div>
+        <sc-for list="{{ sel.rows }}" as="row" hint-placeholder-count="3">
+          <div style="display:grid;grid-template-columns:1.5fr 0.9fr 1.3fr 1fr;gap:18px;align-items:center;padding:15px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <p style="font-weight:600;font-size:var(--text-sm);color:var(--text-strong);margin:0;">{{ row.skill }}</p>
+              <p style="font-size:var(--text-xs);color:var(--text-faint);margin:2px 0 0;">{{ row.note }}</p>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              {{ row.pips }}
+              <span style="font-size:var(--text-xs);font-weight:600;color:var(--text-muted);">{{ row.grasp }}</span>
+            </div>
+            <div>
+              <x-import component-from-global-scope="DesignSystem_4010b3.SkillBar" label="" accuracy="{{ row.accuracy }}" detail="{{ row.detail }}" hint-size="100%,38px"></x-import>
+            </div>
+            <div style="display:flex;justify-content:flex-end;">
+              <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="{{ row.levelTone }}" size="sm" hint-size="90px,24px">{{ row.level }}</x-import>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Improvement areas: weakest first, scrollable -->
+      <div style="padding:18px 26px 26px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin:0 0 12px;">
+          <p style="font-weight:700;font-size:var(--text-sm);color:var(--text-strong);margin:0;white-space:nowrap;">Improvement areas</p>
+          <span style="font-size:var(--text-xs);color:var(--text-faint);">weakest first</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;max-height:236px;overflow-y:auto;padding-right:6px;">
+          <sc-for list="{{ sel.improve }}" as="imp" hint-placeholder-count="3">
+            <div style="display:flex;gap:14px;align-items:flex-start;background:var(--surface-sunken);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;">
+              <div style="flex-shrink:0;padding-top:1px;">
+                <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="{{ imp.accTone }}" size="sm" hint-size="52px,22px">{{ imp.accuracy }}%</x-import>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:3px;">
+                  <p style="font-weight:700;font-size:var(--text-sm);color:var(--text-strong);margin:0;">{{ imp.skill }}</p>
+                  <span style="font-size:var(--text-xs);color:var(--text-faint);white-space:nowrap;flex-shrink:0;">{{ imp.grasp }} grasp</span>
+                </div>
+                <p style="font-size:var(--text-xs);color:var(--text-body);margin:0;line-height:var(--leading-relaxed);">{{ imp.advice }}</p>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top:20px;display:flex;justify-content:center;">
+          <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" hint-size="240px,44px">Practice {{ sel.name }}</x-import>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { selected: 0 };
+
+  pips(n, size) {
+    const w = size === 'sm' ? '18px' : '20px';
+    const dots = [];
+    for (let i = 0; i < 4; i++) {
+      dots.push(React.createElement('span', {
+        key: i,
+        style: {
+          width: w, height: '7px', borderRadius: '99px',
+          background: i < n ? 'var(--brand)' : 'var(--surface-sunken-2, #e6e3f2)'
+        }
+      }));
+    }
+    return React.createElement('span', { style: { display: 'inline-flex', gap: '4px' } }, dots);
+  }
+
+  componentDidMount() { if (!this._painted && window.lucide) { this._painted = true; this.forceUpdate(); } }
+
+  icon(name, size) {
+    const pascal = String(name).split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+    const nodes = (window.lucide && window.lucide.icons && window.lucide.icons[pascal]) || [];
+    const children = nodes.map((n, i) => React.createElement(n[0], Object.assign({ key: i }, n[1])));
+    return React.createElement('svg', {
+      width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+      stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round',
+      style: { display: 'block' }
+    }, children);
+  }
+
+  iconBadge(name, opts) {
+    return React.createElement('span', {
+      style: {
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        width: opts.box + 'px', height: opts.box + 'px', borderRadius: opts.radius + 'px',
+        background: opts.bg, color: opts.fg, boxShadow: opts.shadow || 'none'
+      }
+    }, this.icon(name, opts.size));
+  }
+
+  accTone(a) { return a >= 75 ? 'mint' : a >= 50 ? 'butter' : 'rose'; }
+
+  data() {
+    // accuracy = % correct on questions served. graspN/grasp = difficulty-adjusted
+    // skill level; high accuracy on EASY questions yields a modest grasp, while
+    // holding your own on HARD questions yields a high grasp at lower accuracy.
+    return [
+      {
+        name: 'Information & Ideas', icon: 'lightbulb', graspN: 1, grasp: 'Emerging', accuracy: 48,
+        questions: 25, iconBg: 'var(--sky-soft, #e3effb)', iconFg: 'var(--sky-ink, #2f6db0)',
+        rows: [
+          { skill: 'Central Ideas & Details', note: 'Main idea, summary', graspN: 2, grasp: 'Developing', accuracy: 78, detail: '78% · at Easy', level: 'Medium-low', levelTone: 'butter', advice: 'Strong on easy main-idea questions but untested higher — moving you up.' },
+          { skill: 'Inferences', note: 'Logical completion', graspN: 2, grasp: 'Developing', accuracy: 55, detail: '55% · at Med-low', level: 'Medium-low', levelTone: 'butter', advice: 'Ask "what must be true?" not "what sounds right?" Trap answers are always plausible.' },
+          { skill: 'Command of Evidence', note: 'Textual & quantitative', graspN: 1, grasp: 'Emerging', accuracy: 40, detail: '40% · at Easy', level: 'Easy', levelTone: 'mint', advice: 'Underline the exact line that proves each answer before you commit.' }
+        ]
+      },
+      {
+        name: 'Craft & Structure', icon: 'pen-tool', graspN: 3, grasp: 'Proficient', accuracy: 82,
+        questions: 21, iconBg: 'var(--lilac-soft, #ece7fb)', iconFg: 'var(--brand-ink)',
+        rows: [
+          { skill: 'Words in Context', note: 'Vocabulary, tone', graspN: 3, grasp: 'Proficient', accuracy: 90, detail: '90% · at Med-low', level: 'High', levelTone: 'rose', advice: 'Acing Med-low — moving you to High to find your real ceiling.' },
+          { skill: 'Text Structure & Purpose', note: 'Function of a part', graspN: 3, grasp: 'Proficient', accuracy: 72, detail: '72% · at Med-high', level: 'Medium-high', levelTone: 'peach', advice: 'Ask what each part does for the argument, not just what it says.' },
+          { skill: 'Cross-Text Connections', note: 'Compare two passages', graspN: 2, grasp: 'Developing', accuracy: 64, detail: '64% · at Med-low', level: 'Medium-low', levelTone: 'butter', advice: 'Map each author\'s claim in one phrase before comparing — agree, disagree, or extend.' }
+        ]
+      },
+      {
+        name: 'Expression of Ideas', icon: 'message-square', graspN: 3, grasp: 'Proficient', accuracy: 70,
+        questions: 17, iconBg: 'var(--peach-soft, #fdeadf)', iconFg: 'var(--peach-ink, #b5652f)',
+        rows: [
+          { skill: 'Rhetorical Synthesis', note: 'Use notes to meet a goal', graspN: 4, grasp: 'Strong', accuracy: 74, detail: '74% · at High', level: 'High', levelTone: 'rose', advice: 'A real strength — keep a few High-level sets a week so it holds.' },
+          { skill: 'Transitions', note: 'Logical connectors', graspN: 2, grasp: 'Developing', accuracy: 66, detail: '66% · at Med-low', level: 'Medium-low', levelTone: 'butter', advice: 'Name the relationship first — contrast, cause, example — then pick the connector.' }
+        ]
+      },
+      {
+        name: 'Standard English Conventions', icon: 'check-check', graspN: 2, grasp: 'Developing', accuracy: 60,
+        questions: 23, iconBg: 'var(--mint-soft, #dcf3ea)', iconFg: 'var(--mint-ink, #2c7d5e)',
+        rows: [
+          { skill: 'Boundaries', note: 'Punctuation, clauses', graspN: 2, grasp: 'Developing', accuracy: 58, detail: '58% · at Med-low', level: 'Medium-low', levelTone: 'butter', advice: 'A 10-question punctuation warm-up lifts this fast — it\'s rules, not reading.' },
+          { skill: 'Form, Structure & Sense', note: 'Agreement, verb tense', graspN: 2, grasp: 'Developing', accuracy: 62, detail: '62% · at Med-low', level: 'Medium-low', levelTone: 'butter', advice: 'Find the subject, then the verb — most misses are agreement across a long phrase.' }
+        ]
+      }
+    ];
+  }
+
+  // weakest first: lowest grasp, then lowest accuracy
+  byWeakness(a, b) { return (a.graspN - b.graspN) || (a.accuracy - b.accuracy); }
+
+  renderVals() {
+    const raw = this.data();
+
+    const domains = raw.map((d, i) => Object.assign({}, d, {
+      pips: this.pips(d.graspN, 'sm'),
+      iconEl: this.iconBadge(d.icon, { box: 38, radius: 11, size: 19, bg: d.iconBg, fg: d.iconFg }),
+      selected: i === this.state.selected,
+      select: () => this.setState({ selected: i })
+    }));
+
+    const s = raw[this.state.selected];
+    const sel = Object.assign({}, s, {
+      iconEl: this.iconBadge(s.icon, { box: 44, radius: 13, size: 22, bg: 'var(--surface)', fg: s.iconFg, shadow: 'var(--shadow-sm)' }),
+      rows: s.rows.map(r => Object.assign({}, r, { pips: this.pips(r.graspN) })),
+      improve: s.rows.slice().sort(this.byWeakness).map(r => Object.assign({}, r, { accTone: this.accTone(r.accuracy) }))
+    });
+
+    // global suggested-for-you: three weakest sub-categories across all domains
+    const suggested = raw
+      .reduce((acc, d) => acc.concat(d.rows), [])
+      .slice().sort(this.byWeakness).slice(0, 3);
+
+    return { domains, sel, suggested };
+  }
+}
+</script>
+</body>
+</html>

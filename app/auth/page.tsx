@@ -57,7 +57,7 @@ export default function AuthPage() {
         if (error) {
           setError(error.message);
         } else if (data.session) {
-          window.location.href = "/dashboard";
+          window.location.href = "/onboarding";
           return;
         } else {
           setSuccessMsg("Check your email to confirm your account, then sign in.");

@@ -10,7 +10,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      const { data: { user } } = await supabase.auth.getUser();
+      const destination = user?.user_metadata?.onboarding_complete ? next : "/onboarding";
+      return NextResponse.redirect(`${origin}${destination}`);
     }
   }
 

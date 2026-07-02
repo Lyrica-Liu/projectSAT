@@ -212,11 +212,20 @@ correct_answer_explanation is required for every question in JSON output.`;
     return NextResponse.json({ error: "Claude returned malformed JSON." }, { status: 502 });
   }
 
+  // Do all DB writes server-side to avoid RLS issues with client-side inserts
+  const supabase = await createClient();
+
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
   // Map generated questions to the app's Question shape (minus id/created_at — Supabase adds those)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const questions = (parsed.questions as any[]).map((q) => {
     const subcategory: string = q.subcategory ?? "Central Ideas and Details";
     return {
+      user_id:     user.id,
       domain:      SUBCATEGORY_TO_DOMAIN[subcategory] ?? "reading",
       skill:       SUBCATEGORY_TO_SKILL[subcategory]  ?? "central_idea",
       difficulty:  mapDifficulty(skillDifficulty),
@@ -227,14 +236,6 @@ correct_answer_explanation is required for every question in JSON output.`;
       explanation: q.correct_answer_explanation ?? "",
     };
   });
-
-  // Do all DB writes server-side to avoid RLS issues with client-side inserts
-  const supabase = await createClient();
-
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
 
   const { data: savedQuestions, error: qErr } = await supabase
     .from("questions")

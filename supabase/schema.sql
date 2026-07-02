@@ -54,6 +54,7 @@ create type if not exists public.difficulty_level as enum ('easy', 'medium', 'ha
 
 create table if not exists public.questions (
   id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
   domain      public.question_domain  not null,
   skill       public.question_skill   not null,
   difficulty  public.difficulty_level not null default 'medium',
@@ -64,6 +65,8 @@ create table if not exists public.questions (
   explanation text not null,
   created_at  timestamptz default now() not null
 );
+
+create index if not exists questions_user_id_idx on public.questions (user_id);
 
 -- ───────────────────────────────────────────
 -- 3. Sessions
@@ -114,9 +117,15 @@ create policy "profiles_select_own" on public.profiles
 create policy "profiles_update_own" on public.profiles
   for update using (auth.uid() = id);
 
--- questions: any authenticated user can read
-create policy "questions_read" on public.questions
-  for select using (auth.role() = 'authenticated');
+-- questions: users can only read and insert their own
+create policy "questions_select_own" on public.questions
+  for select using (auth.uid() = user_id);
+
+create policy "questions_insert_own" on public.questions
+  for insert with check (auth.uid() = user_id);
+
+create policy "questions_delete_own" on public.questions
+  for delete using (auth.uid() = user_id);
 
 -- sessions: users can CRUD their own sessions
 create policy "sessions_select_own" on public.sessions
