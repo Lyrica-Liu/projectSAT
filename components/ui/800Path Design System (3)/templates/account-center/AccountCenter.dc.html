@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Account Center" description="800Path account settings — edit name, account info, current & target scores, and all onboarding answers (grade, test date, focus, goals) in one place with live save state" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);font-family:var(--font-sans);">
+
+  <!-- Nav -->
+  <nav style="position:sticky;top:0;z-index:10;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);">
+    <div style="max-width:1040px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="display:inline-flex;align-items:center;gap:9px;">
+        <span style="width:30px;height:30px;border-radius:9px;background:var(--dark-900);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">8</span>
+        <span style="font-weight:800;font-size:18px;letter-spacing:var(--tracking-tight);color:var(--text-strong);">800Path</span>
+      </span>
+      <div style="display:flex;align-items:center;gap:18px;">
+        <span style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);">Dashboard</span>
+        <span style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);">For you</span>
+        <span style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);">History</span>
+        <x-import component-from-global-scope="DesignSystem_4010b3.Avatar" initials="{{ initials }}" tone="0" size="34" hint-size="34px,34px"></x-import>
+      </div>
+    </div>
+  </nav>
+
+  <main style="max-width:760px;margin:0 auto;padding:40px 24px 96px;">
+    <div style="margin-bottom:28px;">
+      <h1 style="font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:var(--text-2xl);color:var(--text-strong);margin:0;letter-spacing:var(--tracking-snug);">Account center</h1>
+      <p style="font-size:var(--text-sm);color:var(--text-muted);margin:6px 0 0;">Update your details and tune the answers that shape your plan.</p>
+    </div>
+
+    <!-- Profile header -->
+    <div style="display:flex;align-items:center;gap:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-2xl);box-shadow:var(--shadow-sm);padding:22px 26px;margin-bottom:22px;">
+      <x-import component-from-global-scope="DesignSystem_4010b3.Avatar" initials="{{ initials }}" tone="0" size="60" hint-size="60px,60px"></x-import>
+      <div style="flex:1;">
+        <p style="font-weight:800;font-size:var(--text-lg);color:var(--text-strong);margin:0;">{{ displayName }}</p>
+        <p style="font-size:var(--text-sm);color:var(--text-muted);margin:2px 0 0;">{{ email }} · Grade {{ grade }}</p>
+      </div>
+      <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="lilac" size="md" hint-size="120px,28px">{{ daysLabel }}</x-import>
+    </div>
+
+    <!-- SECTION: Account info -->
+    <section style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-2xl);box-shadow:var(--shadow-sm);padding:26px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:var(--brand-soft);color:var(--brand-ink);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+        <h2 style="font-weight:700;font-size:var(--text-md);color:var(--text-strong);margin:0;">Account info</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <x-import component-from-global-scope="DesignSystem_4010b3.Input" label="First name" value="{{ firstName }}" onChange="{{ onFirst }}" placeholder="Maya" hint-size="100%,64px"></x-import>
+        <x-import component-from-global-scope="DesignSystem_4010b3.Input" label="Last name" value="{{ lastName }}" onChange="{{ onLast }}" placeholder="Chen" hint-size="100%,64px"></x-import>
+        <x-import component-from-global-scope="DesignSystem_4010b3.Input" label="Email" type="email" value="{{ email }}" onChange="{{ onEmail }}" placeholder="you@email.com" hint-size="100%,64px"></x-import>
+        <div>
+          <p style="font-size:var(--text-sm);font-weight:600;color:var(--text-body);margin:0 0 9px;">Grade level</p>
+          <div style="display:flex;gap:8px;">
+            <sc-for list="{{ grades }}" as="g" hint-placeholder-count="5">
+              <button onClick="{{ g.set }}" style="position:relative;flex:1;padding:11px 0;border:1.5px solid var(--border);background:var(--surface);border-radius:var(--radius-md);font-family:inherit;font-size:var(--text-sm);font-weight:700;color:var(--text-body);cursor:pointer;" style-hover="border-color:var(--brand-200, #c9bef2);">
+                <sc-if value="{{ g.active }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:-1.5px;border-radius:var(--radius-md);border:1.5px solid var(--brand);background:var(--brand-soft);"></span></sc-if>
+                <span style="position:relative;">{{ g.label }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: Scores -->
+    <section style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-2xl);box-shadow:var(--shadow-sm);padding:26px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:var(--brand-soft);color:var(--brand-ink);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+        <h2 style="font-weight:700;font-size:var(--text-md);color:var(--text-strong);margin:0;">Scores</h2>
+      </div>
+      <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0 0 20px;padding-left:42px;">Your current score calibrates difficulty; your target guides which sets we pick.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start;">
+        <!-- current score -->
+        <div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:var(--text-sm);font-weight:600;color:var(--text-body);">Current score</span>
+            <span style="font-weight:800;font-size:var(--text-lg);color:var(--text-strong);font-family:var(--font-mono);">{{ currentLabel }}</span>
+          </div>
+          <input type="range" min="400" max="1600" step="10" value="{{ current }}" onInput="{{ onCurrent }}" style="width:100%;accent-color:var(--brand);cursor:pointer;" />
+          <div style="display:flex;justify-content:space-between;margin-top:6px;">
+            <span style="font-size:var(--text-xs);color:var(--text-faint);">400</span>
+            <span style="font-size:var(--text-xs);color:var(--text-faint);">1600</span>
+          </div>
+          <button onClick="{{ onNoScore }}" style="position:relative;margin-top:12px;padding:8px 14px;border:1.5px solid var(--border);background:var(--surface);border-radius:var(--radius-pill);font-family:inherit;font-size:var(--text-xs);font-weight:600;color:var(--text-body);cursor:pointer;" style-hover="border-color:var(--brand-200, #c9bef2);">
+            <sc-if value="{{ noScore }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:-1.5px;border-radius:var(--radius-pill);border:1.5px solid var(--brand);background:var(--brand-soft);"></span></sc-if>
+            <span style="position:relative;">🤷 Haven't tested yet</span>
+          </button>
+        </div>
+        <!-- target score -->
+        <div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:var(--text-sm);font-weight:600;color:var(--text-body);">Target score</span>
+            <span style="font-weight:800;font-size:var(--text-lg);color:var(--brand-ink);font-family:var(--font-mono);">{{ target }}</span>
+          </div>
+          <input type="range" min="1000" max="1600" step="10" value="{{ target }}" onInput="{{ onTarget }}" style="width:100%;accent-color:var(--brand);cursor:pointer;" />
+          <div style="display:flex;justify-content:space-between;margin-top:6px;">
+            <span style="font-size:var(--text-xs);color:var(--text-faint);">1000</span>
+            <span style="font-size:var(--text-xs);color:var(--text-faint);">1600</span>
+          </div>
+          <div style="margin-top:12px;display:inline-flex;align-items:center;gap:7px;background:var(--surface-sunken);border-radius:var(--radius-pill);padding:7px 13px;">
+            <span style="font-size:15px;">📈</span>
+            <span style="font-size:var(--text-xs);font-weight:600;color:var(--text-muted);">{{ gapLabel }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: Plan preferences (onboarding answers) -->
+    <section style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-2xl);box-shadow:var(--shadow-sm);padding:26px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:var(--brand-soft);color:var(--brand-ink);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span>
+        <h2 style="font-weight:700;font-size:var(--text-md);color:var(--text-strong);margin:0;">Plan preferences</h2>
+      </div>
+      <p style="font-size:var(--text-xs);color:var(--text-muted);margin:0 0 20px;padding-left:42px;">The answers from your setup — change them anytime.</p>
+
+      <div style="display:flex;flex-direction:column;gap:22px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:end;">
+          <x-import component-from-global-scope="DesignSystem_4010b3.Input" label="When's test day?" type="date" value="{{ testDate }}" onChange="{{ onDate }}" hint-size="100%,64px"></x-import>
+          <div>
+            <p style="font-size:var(--text-sm);font-weight:600;color:var(--text-body);margin:0 0 9px;">Reading vs. Writing focus</p>
+            <x-import component-from-global-scope="DesignSystem_4010b3.SegmentedControl" options="{{ rwOptions }}" value="{{ rw }}" onChange="{{ onRw }}" hint-size="100%,44px"></x-import>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:var(--text-sm);font-weight:600;color:var(--text-body);margin:0 0 10px;">What are you here for? <span style="color:var(--text-faint);font-weight:500;">(pick any)</span></p>
+          <div style="display:flex;flex-wrap:wrap;gap:9px;">
+            <sc-for list="{{ goalChips }}" as="c" hint-placeholder-count="5">
+              <button onClick="{{ c.toggle }}" style="position:relative;padding:9px 14px;border:1.5px solid var(--border);background:var(--surface);border-radius:var(--radius-pill);font-family:inherit;font-size:var(--text-sm);font-weight:600;color:var(--text-body);cursor:pointer;" style-hover="border-color:var(--brand-200, #c9bef2);">
+                <sc-if value="{{ c.active }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:-1.5px;border-radius:var(--radius-pill);border:1.5px solid var(--brand);background:var(--brand-soft);"></span></sc-if>
+                <span style="position:relative;">{{ c.label }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Sticky save bar -->
+  <sc-if value="{{ dirty }}" hint-placeholder-val="{{ false }}">
+    <div style="position:sticky;bottom:0;z-index:20;background:rgba(255,255,255,0.9);backdrop-filter:blur(10px);border-top:1px solid var(--border);">
+      <div style="max-width:760px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <span style="display:inline-flex;align-items:center;gap:8px;font-size:var(--text-sm);color:var(--text-muted);"><span style="width:8px;height:8px;border-radius:50%;background:var(--peach-ink);"></span>You have unsaved changes</span>
+        <div style="display:flex;gap:10px;">
+          <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="ghost" onClick="{{ onReset }}" hint-size="90px,44px">Discard</x-import>
+          <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" onClick="{{ onSave }}" hint-size="130px,44px">Save changes</x-import>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Saved toast -->
+  <sc-if value="{{ justSaved }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:30;display:inline-flex;align-items:center;gap:9px;background:var(--text-strong);color:#fff;border-radius:var(--radius-pill);padding:11px 20px;box-shadow:var(--shadow-lg);font-size:var(--text-sm);font-weight:600;">
+      <span>✅</span> Changes saved
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.saved = {
+      firstName: 'Maya', lastName: 'Chen', email: 'maya.chen@email.com',
+      grade: '11', current: 1080, noScore: false, target: 1400,
+      testDate: '2026-11-07', rw: 'Balanced', goals: ['🎯 A specific score', '🧠 Master weak skills']
+    };
+    this.state = Object.assign({}, this.saved, { justSaved: false });
+  }
+
+  set(patch) { this.setState(Object.assign({ justSaved: false }, patch)); }
+
+  isDirty() {
+    const s = this.state;
+    const k = this.saved;
+    return s.firstName !== k.firstName || s.lastName !== k.lastName || s.email !== k.email ||
+      s.grade !== k.grade || s.current !== k.current || s.noScore !== k.noScore ||
+      s.target !== k.target || s.testDate !== k.testDate || s.rw !== k.rw ||
+      s.goals.join('|') !== k.goals.join('|');
+  }
+
+  onSave() {
+    this.saved = {
+      firstName: this.state.firstName, lastName: this.state.lastName, email: this.state.email,
+      grade: this.state.grade, current: this.state.current, noScore: this.state.noScore,
+      target: this.state.target, testDate: this.state.testDate, rw: this.state.rw,
+      goals: this.state.goals.slice()
+    };
+    this.setState({ justSaved: true });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ justSaved: false }), 2200);
+  }
+
+  onReset() { this.setState(Object.assign({}, this.saved, { justSaved: false })); }
+
+  renderVals() {
+    const st = this.state;
+    const first = st.firstName || '';
+    const last = st.lastName || '';
+    const displayName = (first + ' ' + last).trim() || 'Your name';
+    const initials = ((first[0] || '') + (last[0] || '')).toUpperCase() || 'M';
+
+    const grades = ['9', '10', '11', '12', 'Other'].map(g => ({
+      label: g, active: st.grade === g, set: () => this.set({ grade: g })
+    }));
+
+    const goalDefs = ['🎯 A specific score', '📅 Build a study habit', '😌 Beat test anxiety', '⏱️ Get faster', '🧠 Master weak skills'];
+    const goalChips = goalDefs.map(g => ({
+      label: g,
+      active: st.goals.indexOf(g) !== -1,
+      toggle: () => this.set({ goals: st.goals.indexOf(g) !== -1 ? st.goals.filter(x => x !== g) : st.goals.concat(g) })
+    }));
+
+    const gap = st.target - st.current;
+    const gapLabel = st.noScore ? 'Set a current score to see your climb'
+      : (gap > 0 ? ('+' + gap + ' points to your goal') : 'You\'ve hit your target! 🎉');
+
+    // days until test
+    let daysLabel = 'No test date set';
+    if (st.testDate) {
+      const d = Math.ceil((new Date(st.testDate) - new Date('2026-07-01')) / 86400000);
+      daysLabel = d > 0 ? (d + ' days to test day') : 'Test day has passed';
+    }
+
+    return {
+      firstName: first, lastName: last, email: st.email, grade: st.grade,
+      displayName, initials, grades,
+      current: st.current, currentLabel: st.noScore ? 'Not set' : String(st.current), noScore: st.noScore,
+      target: st.target, gapLabel, daysLabel,
+      testDate: st.testDate, rw: st.rw, rwOptions: ['Reading', 'Balanced', 'Writing'], goalChips,
+      dirty: this.isDirty(), justSaved: st.justSaved,
+      onFirst: (e) => this.set({ firstName: e.target.value }),
+      onLast: (e) => this.set({ lastName: e.target.value }),
+      onEmail: (e) => this.set({ email: e.target.value }),
+      onCurrent: (e) => this.set({ current: Number(e.target.value), noScore: false }),
+      onNoScore: () => this.set({ noScore: !st.noScore }),
+      onTarget: (e) => this.set({ target: Number(e.target.value) }),
+      onDate: (e) => this.set({ testDate: e.target.value }),
+      onRw: (v) => this.set({ rw: v }),
+      onSave: () => this.onSave(),
+      onReset: () => this.onReset()
+    };
+  }
+}
+</script>
+</body>
+</html>

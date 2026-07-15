@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Practice Session" description="A single SAT practice question screen — passage, graded answer options, explanation, navigation" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);font-family:var(--font-sans);">
+
+  <!-- Header -->
+  <header style="position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--border);">
+    <div style="max-width:720px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="display:inline-flex;align-items:center;gap:9px;">
+        <span style="width:30px;height:30px;border-radius:9px;background:var(--dark-900);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">8</span>
+        <span style="font-weight:800;font-size:18px;letter-spacing:-0.02em;color:var(--text-strong);">800Path</span>
+      </span>
+      <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-faint);">1 / 10 answered</span>
+    </div>
+    <div style="height:6px;background:var(--surface-sunken);">
+      <div style="width:10%;height:100%;background:var(--brand);border-radius:999px;"></div>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <main style="max-width:720px;width:100%;margin:0 auto;padding:30px 24px 48px;box-sizing:border-box;">
+
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+      <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="sky" hint-size="70px,24px">Reading</x-import>
+      <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="lilac" hint-size="90px,24px">Inferences</x-import>
+      <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="butter" dot="{{ true }}" hint-size="80px,24px">Medium</x-import>
+    </div>
+
+    <div style="background:var(--surface-sunken);border-radius:16px;padding:24px;margin-bottom:22px;">
+      <p style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);margin:0 0 10px;">Passage</p>
+      <p style="font-size:14px;color:var(--text-body);line-height:1.65;margin:0;">Marine biologist Dr. Lena Okafor noted that the reef's recovery, though encouraging, remained fragile. Coral that had bleached two summers earlier was regaining color, yet the surrounding fish populations had not rebounded at the same pace. She cautioned that visible signs of health could mask slower, structural changes still underway beneath the surface.</p>
+    </div>
+
+    <p style="font-weight:700;font-size:18px;color:var(--text-strong);line-height:1.25;margin:0 0 18px;">Which choice best states the main idea of the passage?</p>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+      <x-import component-from-global-scope="DesignSystem_4010b3.AnswerOption" letter="A" state="muted" hint-size="100%,52px">The reef has fully recovered from the earlier bleaching event.</x-import>
+      <x-import component-from-global-scope="DesignSystem_4010b3.AnswerOption" letter="B" state="correct" hint-size="100%,52px">Surface signs of recovery may not reflect the reef's deeper condition.</x-import>
+      <x-import component-from-global-scope="DesignSystem_4010b3.AnswerOption" letter="C" state="incorrect" hint-size="100%,52px">Fish populations recover faster than coral after bleaching.</x-import>
+      <x-import component-from-global-scope="DesignSystem_4010b3.AnswerOption" letter="D" state="muted" hint-size="100%,52px">Dr. Okafor believes the reef will never recover.</x-import>
+    </div>
+
+    <div style="background:var(--mint-surface);border-radius:16px;padding:18px 20px;margin-bottom:24px;">
+      <p style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--mint-ink);opacity:0.85;margin:0 0 8px;">Nice — correct!</p>
+      <p style="font-size:14px;color:var(--mint-ink);line-height:1.65;margin:0;">Dr. Okafor warns that visible health "could mask slower, structural changes," so apparent recovery may not reflect the deeper state of the reef.</p>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="ghost" hint-size="120px,40px">Previous</x-import>
+      <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="secondary" hint-size="110px,40px">Next</x-import>
+    </div>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

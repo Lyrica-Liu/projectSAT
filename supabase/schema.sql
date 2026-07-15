@@ -47,10 +47,11 @@ create type if not exists public.question_skill as enum (
   'text_structure',
   'boundaries',
   'form_structure_sense',
-  'transitions'
+  'transitions',
+  'rhetorical_synthesis'
 );
 
-create type if not exists public.difficulty_level as enum ('easy', 'medium', 'hard');
+create type if not exists public.difficulty_level as enum ('easy', 'medium-low', 'medium-high', 'hard');
 
 create table if not exists public.questions (
   id          uuid primary key default gen_random_uuid(),

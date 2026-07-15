@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="./styles.css">
+<style>
+  html,body{margin:0;padding:0;}
+  .tile{width:1280px;height:854px;display:flex;font-family:var(--font-sans, sans-serif);}
+  .main{flex:0 0 960px;height:854px;background:var(--lilac-500);display:flex;align-items:center;justify-content:center;}
+  .wordmark{color:#ffffff;font-weight:800;font-size:170px;letter-spacing:-4px;line-height:1;white-space:nowrap;}
+  .swatches{flex:0 0 320px;height:854px;display:flex;flex-direction:column;}
+  .swatch{flex:1;}
+</style>
+</head>
+<body>
+<div class="tile">
+  <div class="main"><div class="wordmark">800Path</div></div>
+  <div class="swatches">
+    <div class="swatch" style="background:var(--lilac-300);"></div>
+    <div class="swatch" style="background:var(--lilac-500);"></div>
+    <div class="swatch" style="background:var(--lilac-600);"></div>
+    <div class="swatch" style="background:var(--lilac-700);"></div>
+  </div>
+</div>
+</body>
+</html>

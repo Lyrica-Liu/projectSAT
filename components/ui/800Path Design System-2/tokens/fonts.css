@@ -1,7 +1,0 @@
-/* 800Path webfonts — loaded from Google Fonts.
-   Plus Jakarta Sans: clean, friendly humanist-geometric sans (UI + display).
-   JetBrains Mono: tabular mono for indices, scores, small labels.
-   NOTE: the original projectSAT codebase used system-ui / Inter. These are a
-   deliberate brand substitution for the requested Notion/Instagram-style
-   minimalist feel — swap the @import if you have licensed brand fonts. */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');

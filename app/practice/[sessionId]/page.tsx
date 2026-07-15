@@ -36,10 +36,17 @@ export default function ActiveSessionPage() {
   const [error, setError] = useState<string | null>(null);
 
   const loadSession = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.replace("/auth");
+      return;
+    }
+
     const { data: sessionData, error: sErr } = await supabase
       .from("sessions")
       .select("*")
       .eq("id", sessionId)
+      .eq("user_id", user.id)
       .single();
 
     if (sErr || !sessionData) {
@@ -62,41 +69,19 @@ export default function ActiveSessionPage() {
       .order("id");
 
     if (!answerRows || answerRows.length === 0) {
-      const { data: questionPool } = await supabase
-        .from("questions")
-        .select("*")
-        .order("created_at")
-        .limit(sessionData.question_count);
-
-      if (!questionPool || questionPool.length === 0) {
-        setError("No questions available yet. Check back soon!");
-        setLoading(false);
-        return;
-      }
-
-      const { data: newAnswers } = await supabase
-        .from("answers")
-        .insert(questionPool.map((q: Question) => ({ session_id: sessionId, question_id: q.id })))
-        .select("*");
-
-      setQuestions(
-        (questionPool as Question[]).map((q, i) => ({
-          question: q,
-          answer: newAnswers?.[i] ?? null,
-          selected: null,
-          revealed: false,
-        }))
-      );
-    } else {
-      setQuestions(
-        answerRows.map((row: Answer & { question: Question }) => ({
-          question: row.question,
-          answer: row,
-          selected: row.user_answer as AnswerChoice | null,
-          revealed: row.user_answer !== null,
-        }))
-      );
+      setError("Session data missing. Please start a new session.");
+      setLoading(false);
+      return;
     }
+
+    setQuestions(
+      answerRows.map((row: Answer & { question: Question }) => ({
+        question: row.question,
+        answer: row,
+        selected: row.user_answer as AnswerChoice | null,
+        revealed: row.user_answer !== null,
+      }))
+    );
 
     setLoading(false);
   }, [sessionId, supabase, router]);

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Sign In / Sign Up" description="800Path auth screen — split editorial brand panel + segmented sign in/up form" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+</helmet>
+<div style="min-height:100vh;display:flex;background:var(--canvas);font-family:var(--font-sans);box-sizing:border-box;">
+
+  <!-- LEFT: editorial brand panel -->
+  <aside style="position:relative;flex:0 0 44%;min-width:320px;max-width:560px;background:var(--dark-900);display:flex;flex-direction:column;justify-content:space-between;padding:var(--space-12) var(--space-10);box-sizing:border-box;">
+    <span style="display:inline-flex;align-items:center;gap:9px;">
+      <span style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.12);color:var(--text-on-dark);display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;">8</span>
+      <span style="font-weight:800;font-size:19px;letter-spacing:var(--tracking-tight);color:var(--text-on-dark);">800Path</span>
+    </span>
+
+    <div>
+      <p style="font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:var(--text-3xl);line-height:1.15;letter-spacing:var(--tracking-snug);color:var(--text-on-dark);margin:0 0 var(--space-4);">"Steady, deliberate progress — <span style="background:var(--gradient-radiant);-webkit-background-clip:text;background-clip:text;color:transparent;font-style:normal;">one session at a time.</span>"</p>
+      <p style="font-size:var(--text-sm);color:var(--text-on-dark-muted);margin:0;">The practice companion for self-studiers.</p>
+    </div>
+
+    <p style="font-size:var(--text-xs);color:var(--text-on-dark-faint);margin:0;">© 2026 800Path</p>
+  </aside>
+
+  <!-- RIGHT: form -->
+  <main style="flex:1;display:flex;align-items:center;justify-content:center;padding:var(--space-16) var(--space-8);box-sizing:border-box;">
+    <div style="width:100%;max-width:380px;box-sizing:border-box;">
+
+      <!-- Segmented toggle -->
+      <div style="display:flex;padding:4px;gap:4px;background:var(--surface-sunken);border-radius:var(--radius-lg);margin-bottom:28px;">
+        <button style="flex:1;padding:8px 16px;font-family:var(--font-sans);font-size:var(--text-sm);font-weight:700;color:#fff;background:var(--brand);border:1.5px solid var(--brand);border-radius:var(--radius-md);box-shadow:0 2px 6px color-mix(in srgb, var(--brand) 30%, transparent);cursor:pointer;">Sign in</button>
+        <button style="flex:1;padding:8px 16px;font-family:var(--font-sans);font-size:var(--text-sm);font-weight:600;color:var(--text-muted);background:transparent;border:1.5px solid transparent;border-radius:var(--radius-md);cursor:pointer;">Sign up</button>
+      </div>
+
+      <h1 style="font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:var(--text-2xl);color:var(--text-strong);margin:0 0 6px;">Welcome back</h1>
+      <p style="font-size:var(--text-sm);color:var(--text-muted);margin:0 0 28px;">Sign in to continue your practice.</p>
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <x-import component-from-global-scope="DesignSystem_4010b3.Input" label="Email" type="email" value="maya@example.com" hint-size="100%,64px"></x-import>
+        <x-import component-from-global-scope="DesignSystem_4010b3.Input" label="Password" type="password" value="password123" hint-size="100%,64px"></x-import>
+        <div style="margin-top:4px;">
+          <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" size="lg" full="{{ true }}" hint-size="100%,48px">Sign in</x-import>
+        </div>
+      </div>
+
+      <p style="margin-top:24px;font-size:var(--text-xs);color:var(--text-faint);line-height:1.6;">By continuing, you agree to our <span style="text-decoration:underline;">Terms</span> and <span style="text-decoration:underline;">Privacy Policy</span>.</p>
+    </div>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 980, &quot;height&quot;: 640}}"></script>
+</body>
+</html>

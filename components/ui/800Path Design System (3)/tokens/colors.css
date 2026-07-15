@@ -1,0 +1,121 @@
+/* ─────────────────────────────────────────────────────────────
+   800Path — Color tokens
+   A mature, academic palette. Deep ink-blue is the brand hero; muted
+   jewel tones (forest, slate, burgundy, ochre, terracotta) form a
+   restrained accent family for skill categories, badges and surfaces.
+   Neutrals are warm-cool "ink" grays — never pure black. Canvas reads
+   as warm parchment rather than a tinted pastel.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* ── Brand: navy, deepened toward the radiant violet/blue rather than
+     a grayed-down slate — reads richer, less muted ── */
+  --lilac-50:  #eef0fa;
+  --lilac-100: #dde1f5;
+  --lilac-200: #b9c1ea;
+  --lilac-300: #8d97d6;
+  --lilac-400: #5f6bb8;
+  --lilac-500: #3d4694;  /* primary */
+  --lilac-600: #2d3573;  /* primary hover */
+  --lilac-700: #232a58;  /* text on light pastel */
+
+  /* ── Jewel-tone accent family — kept strictly within blue / purple / pink.
+     "mint", "sky", "butter", "peach", "rose" slot names are historical;
+     values below form the difficulty ramp in order:
+     mint=blue → butter=blue-violet → peach=violet → rose=pink. ── */
+  --mint-surface:   #dbe6fb;
+  --mint-ink:       #2c5adf;
+  --sky-surface:    #e1defb;
+  --sky-ink:        #6941d6;
+  --butter-surface: #e1defb;
+  --butter-ink:     #6941d6;
+  --peach-surface:  #f4defa;
+  --peach-ink:      #a437c9;
+  --rose-surface:   #fbdcec;
+  --rose-ink:       #d63f92;
+
+  /* ── Extra in-family tones for variety across category chips, icons,
+     and small accents — still strictly blue / indigo / violet / magenta / pink. ── */
+  --indigo-surface: #dee3fb;
+  --indigo-ink:     #4145d6;
+  --violet-surface: #ece0fb;
+  --violet-ink:     #8b3ce0;
+  --magenta-surface:#fbdcf0;
+  --magenta-ink:    #c93fa8;
+  --cobalt-surface: #dcebfb;
+  --cobalt-ink:     #1a6fd6;
+
+  /* ── Neutrals (ink) — cool near-navy grays, not warm library gray ── */
+  --ink-900: #191b2e;  /* primary text — deep navy-black */
+  --ink-700: #33364d;  /* body */
+  --ink-500: #5b5e78;  /* muted text — still clearly readable */
+  --ink-400: #82849c;  /* faint — metadata only */
+  --ink-300: #bcbdd0;
+  --line:    #e6e6f0;  /* hairline borders */
+  --line-strong: #d5d6e6;
+
+  /* ── Surfaces ── */
+  --canvas:    #f6f5fb;  /* page background — soft cool-white, hint of violet */
+  --surface:   #ffffff;  /* cards */
+  --surface-2: #eeedf8;  /* sunken / muted fills */
+  --overlay:   rgba(20, 20, 40, 0.35); /* modal scrim */
+
+  /* ── Semantic (kept in-family — blue for success, purple for warning,
+     pink for danger; no green/yellow) ── */
+  --success:         #2c5adf;
+  --success-surface: #dbe6fb;
+  --warning:         #6941d6;
+  --warning-surface: #e1defb;
+  --danger:          #d63f92;
+  --danger-surface:  #fbdcec;
+
+  /* ── Semantic aliases ── */
+  --brand:            var(--lilac-500);
+  --brand-hover:      var(--lilac-600);
+  --brand-soft:       var(--lilac-100);
+  --brand-ink:        var(--lilac-700);
+  --text-strong:      var(--ink-900);
+  --text-body:        var(--ink-700);
+  --text-muted:       var(--ink-500);
+  --text-faint:       var(--ink-400);
+  --text-on-brand:    #ffffff;
+  --border:           var(--line);
+  --border-strong:    var(--line-strong);
+  --surface-card:     var(--surface);
+  --surface-sunken:   var(--surface-2);
+  --bg-canvas:        var(--canvas);
+  --focus-ring:       rgba(93, 86, 224, 0.28);
+
+  /* ── Refined accent — warm pink-peach used sparingly for premium,
+     high-end touches (progress fills on dark, active-state accents).
+     Never a primary UI color — a quiet accent against navy/dark. ── */
+  --gold-400: #f0a8c4;
+  --gold-500: #d63f92;
+  --gold-600: #a83172;
+
+  /* ── Dark surface family — editorial/high-impact sections only ──
+     (hero panels, welcome/marketing moments). Not for everyday UI chrome. */
+  --dark-950: #14152c;  /* deepest navy, page-level dark */
+  --dark-900: #1c1e3f;  /* primary dark surface */
+  --dark-800: #272a54;  /* raised card on dark */
+  --dark-700: #343869;  /* hover/active on dark */
+  --dark-border: #3d4170;
+  --text-on-dark:        #f5f4fe;
+  --text-on-dark-muted:  #bfc0e0;
+  --text-on-dark-faint:  #8d8fb8;
+
+  /* ── Radiant gradient — a signature moment, not a background ──
+     The original warm pink→violet→blue "radiant" sweep, brought back as
+     the brand's one pop accent. Use at most ONCE per page: a hero accent,
+     a single stat ring, one highlighted card. Never tile across cards or
+     nav chrome — everyday UI still runs on the academic navy/ink palette. */
+  --gradient-radiant:      linear-gradient(125deg, #ff5fa2 0%, #a855f7 50%, #5b8def 100%); /* @kind color */
+  --gradient-radiant-soft: linear-gradient(125deg, #ff9cc4 0%, #c79bf7 50%, #9bb8f5 100%); /* @kind color */
+
+  /* ── Pop accents — vivid, saturated, used sparingly for badges, chips,
+     highlights, and small delightful details against the academic base.
+     Not for large surfaces or primary buttons. ── */
+  --pop-pink:    #ff5fa2;
+  --pop-violet:  #a855f7;
+  --pop-blue:    #5b8def;
+  --pop-coral:   #ff7a59;
+}

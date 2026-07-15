@@ -1,0 +1,7 @@
+/* 800Path webfonts — loaded from Google Fonts.
+   EB Garamond: classic literary/academic display serif — headline & hero
+   moments only, italic-capable for an editorial voice.
+   Source Sans 3: clean, serious humanist sans for UI + body — mature and
+   legible, less playful than a rounded geometric sans.
+   JetBrains Mono: tabular mono for indices, scores, small labels. */
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700;800&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap');
