@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { TopNav, NavLink, LoadingScreen } from "@/components/ui/nav";
+import { AppNav, LoadingScreen } from "@/components/ui/nav";
 import { Card, Badge, ScoreRing, SkillBar, Button } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
 import type { QuestionSkill } from "@/lib/types";
@@ -122,11 +122,7 @@ export default function ResultsPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
-      <TopNav
-        homeHref="/dashboard"
-        maxWidth={720}
-        right={<NavLink href="/dashboard">Dashboard</NavLink>}
-      />
+      <AppNav maxWidth={720} />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "32px 24px 80px" }}>
         {/* Score hero */}

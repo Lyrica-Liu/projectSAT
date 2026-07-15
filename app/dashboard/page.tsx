@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { TopNav, NavLink, LoadingScreen } from "@/components/ui/nav";
-import { Card, Avatar, Badge, SkillBar, Button } from "@/components/ui/ds";
+import { AppNav, LoadingScreen } from "@/components/ui/nav";
+import { Card, Badge, SkillBar, Button } from "@/components/ui/ds";
 import type { Session, SkillStat, QuestionSkill } from "@/lib/types";
 
 const SKILL_LABELS: Record<QuestionSkill, string> = {
@@ -111,27 +111,7 @@ export default function DashboardPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
-      <TopNav
-        homeHref="/dashboard"
-        right={
-          <>
-            <NavLink href="/history">History</NavLink>
-            <form action="/auth/signout" method="post" style={{ display: "inline" }}>
-              <button
-                type="submit"
-                style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  fontFamily: "var(--font-sans)", fontWeight: 500,
-                  fontSize: "var(--text-sm)", color: "var(--text-muted)", padding: "6px 4px",
-                }}
-              >
-                Sign out
-              </button>
-            </form>
-            <Avatar name={displayName} size={32} />
-          </>
-        }
-      />
+      <AppNav />
 
       <main style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px" }}>
         {/* Greeting */}

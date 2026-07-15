@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { TopNav, NavLink } from "@/components/ui/nav";
+import { AppNav } from "@/components/ui/nav";
 import { Button, ChoiceCard, ProgressBar } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
 import type { Difficulty } from "@/lib/types";
@@ -119,11 +119,7 @@ export default function PracticeSetupPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column" }}>
-      <TopNav
-        homeHref="/dashboard"
-        maxWidth={900}
-        right={<NavLink href="/dashboard">← Dashboard</NavLink>}
-      />
+      <AppNav maxWidth={900} />
 
       <main style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "48px 24px" }}>
         <h1 style={{

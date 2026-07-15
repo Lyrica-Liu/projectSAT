@@ -1,76 +1,101 @@
 @import "tailwindcss";
 
 :root {
-  /* ── Brand: Lilac / periwinkle ── */
-  --lilac-50:  #f4f3fe;
-  --lilac-100: #ebe9fd;
-  --lilac-200: #dad6fb;
-  --lilac-300: #c0b8f7;
-  --lilac-400: #a294f0;
-  --lilac-500: #8472e8;
-  --lilac-600: #6f5bd8;
-  --lilac-700: #5a47b8;
+  /* ── Brand: navy, deepened toward the radiant violet/blue ── */
+  --lilac-50:  #eef0fa;
+  --lilac-100: #dde1f5;
+  --lilac-200: #b9c1ea;
+  --lilac-300: #8d97d6;
+  --lilac-400: #5f6bb8;
+  --lilac-500: #3d4694;
+  --lilac-600: #2d3573;
+  --lilac-700: #232a58;
 
-  /* ── Pastel accent family ── */
-  --mint-surface:   #e7f7ef;
-  --mint-ink:       #1f7a57;
-  --sky-surface:    #e8f2fe;
-  --sky-ink:        #245f9f;
-  --rose-surface:   #fdeaf1;
-  --rose-ink:       #b1426e;
-  --butter-surface: #fbf3dd;
-  --butter-ink:     #8c6913;
-  --peach-surface:  #fcebe2;
-  --peach-ink:      #b35a30;
+  /* ── Jewel-tone accent family ── */
+  --mint-surface:   #dbe6fb;
+  --mint-ink:       #2c5adf;
+  --sky-surface:    #e1defb;
+  --sky-ink:        #6941d6;
+  --butter-surface: #e1defb;
+  --butter-ink:     #6941d6;
+  --peach-surface:  #f4defa;
+  --peach-ink:      #a437c9;
+  --rose-surface:   #fbdcec;
+  --rose-ink:       #d63f92;
 
-  /* ── Radiant gradient — pink→violet→periwinkle. Use sparingly:
-     borders, text-clip highlights, logo mark. Never as a page fill. ── */
+  --indigo-surface: #dee3fb;
+  --indigo-ink:     #4145d6;
+  --violet-surface: #ece0fb;
+  --violet-ink:     #8b3ce0;
+  --magenta-surface:#fbdcf0;
+  --magenta-ink:    #c93fa8;
+  --cobalt-surface: #dcebfb;
+  --cobalt-ink:     #1a6fd6;
+
+  /* ── Radiant gradient ── */
   --gradient-radiant:      linear-gradient(125deg, #ff5fa2 0%, #a855f7 50%, #5b8def 100%);
   --gradient-radiant-soft: linear-gradient(125deg, #ff9cc4 0%, #c79bf7 50%, #9bb8f5 100%);
 
   /* ── Neutrals ── */
-  --ink-900: #1f1d26;
-  --ink-700: #353240;
-  --ink-500: #57535f;
-  --ink-400: #7b7783;
-  --ink-300: #b6b2bf;
-  --line:    #ecebf1;
-  --line-strong: #dddbe6;
+  --ink-900: #191b2e;
+  --ink-700: #33364d;
+  --ink-500: #5b5e78;
+  --ink-400: #82849c;
+  --ink-300: #bcbdd0;
+  --line:         #e6e6f0;
+  --line-strong:  #d5d6e6;
 
   /* ── Surfaces ── */
-  --canvas:    #f7f5fc;
+  --canvas:    #f6f5fb;
   --surface:   #ffffff;
-  --surface-2: #f3f1f9;
-  --overlay:   rgba(42, 40, 51, 0.32);
+  --surface-2: #eeedf8;
+  --overlay:   rgba(20, 20, 40, 0.35);
 
   /* ── Semantic ── */
-  --success:         #1f7a57;
-  --success-surface: #e7f7ef;
-  --warning:         #8c6913;
-  --warning-surface: #fbf3dd;
-  --danger:          #c25275;
-  --danger-surface:  #fdeaf1;
+  --success:         #2c5adf;
+  --success-surface: #dbe6fb;
+  --warning:         #6941d6;
+  --warning-surface: #e1defb;
+  --danger:          #d63f92;
+  --danger-surface:  #fbdcec;
 
   /* ── Semantic aliases ── */
-  --brand:         var(--lilac-500);
-  --brand-hover:   var(--lilac-600);
-  --brand-soft:    var(--lilac-100);
-  --brand-ink:     var(--lilac-700);
-  --text-strong:   var(--ink-900);
-  --text-body:     var(--ink-700);
-  --text-muted:    var(--ink-500);
-  --text-faint:    var(--ink-400);
-  --text-on-brand: #ffffff;
-  --border:        var(--line);
-  --border-strong: var(--line-strong);
+  --brand:          var(--lilac-500);
+  --brand-hover:    var(--lilac-600);
+  --brand-soft:     var(--lilac-100);
+  --brand-ink:      var(--lilac-700);
+  --text-strong:    var(--ink-900);
+  --text-body:      var(--ink-700);
+  --text-muted:     var(--ink-500);
+  --text-faint:     var(--ink-400);
+  --text-on-brand:  #ffffff;
+  --border:         var(--line);
+  --border-strong:  var(--line-strong);
   --surface-card:   var(--surface);
   --surface-sunken: var(--surface-2);
-  --bg-canvas:     var(--canvas);
-  --focus-ring:    rgba(132, 114, 232, 0.35);
+  --bg-canvas:      var(--canvas);
+  --focus-ring:     rgba(93, 86, 224, 0.28);
+
+  /* ── Dark surface family ── */
+  --dark-950: #14152c;
+  --dark-900: #1c1e3f;
+  --dark-800: #272a54;
+  --dark-700: #343869;
+  --dark-border: #3d4170;
+  --text-on-dark:        #f5f4fe;
+  --text-on-dark-muted:  #bfc0e0;
+  --text-on-dark-faint:  #8d8fb8;
+
+  /* ── Pop accents ── */
+  --pop-pink:   #ff5fa2;
+  --pop-violet: #a855f7;
+  --pop-blue:   #5b8def;
+  --pop-coral:  #ff7a59;
 
   /* ── Typography ── */
-  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans:  "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "EB Garamond", Georgia, serif;
+  --font-mono:  "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --weight-regular:  400;
   --weight-medium:   500;
   --weight-semibold: 600;
@@ -85,6 +110,7 @@
   --text-2xl:  2.25rem;
   --text-3xl:  3rem;
   --text-4xl:  3.75rem;
+  --text-5xl:  4.75rem;
   --leading-tight:   1.1;
   --leading-snug:    1.25;
   --leading-normal:  1.5;
@@ -121,7 +147,7 @@
   --shadow-sm:    0 1px 3px rgba(42, 40, 51, 0.05), 0 1px 2px rgba(42, 40, 51, 0.04);
   --shadow-md:    0 4px 14px rgba(82, 70, 150, 0.07), 0 1px 3px rgba(42, 40, 51, 0.04);
   --shadow-lg:    0 12px 32px rgba(82, 70, 150, 0.10), 0 2px 6px rgba(42, 40, 51, 0.05);
-  --shadow-brand: 0 8px 22px rgba(132, 114, 232, 0.28);
+  --shadow-brand: 0 8px 22px rgba(61, 70, 148, 0.30);
 
   /* ── Motion ── */
   --ease-out:    cubic-bezier(0.22, 0.61, 0.36, 1);

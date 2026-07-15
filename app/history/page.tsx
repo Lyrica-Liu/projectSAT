@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { TopNav, NavLink, LoadingScreen } from "@/components/ui/nav";
+import { AppNav, LoadingScreen } from "@/components/ui/nav";
 import { Card, Badge, Button } from "@/components/ui/ds";
 import type { Session } from "@/lib/types";
 
@@ -42,11 +42,7 @@ export default function HistoryPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
-      <TopNav
-        homeHref="/dashboard"
-        maxWidth={720}
-        right={<NavLink href="/dashboard">← Dashboard</NavLink>}
-      />
+      <AppNav maxWidth={720} />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px" }}>
         <h1 style={{
