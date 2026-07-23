@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/practice", "/results", "/history"];
+const PROTECTED_PREFIXES = ["/dashboard", "/practice", "/results", "/history", "/plan"];
 
 function getSupabaseEnv(name: string) {
   return process.env[name]?.trim();

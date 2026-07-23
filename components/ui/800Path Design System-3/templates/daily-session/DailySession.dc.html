@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Daily Session" description="800Path daily plan session — day intro, timed module with graded questions, and wrap-up with streak and tomorrow preview. Math days render the placeholder shell." -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);font-family:var(--font-sans);">
+  <header style="position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--border);">
+    <div style="max-width:720px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="display:inline-flex;align-items:center;gap:9px;">
+        <span style="width:30px;height:30px;border-radius:9px;background:var(--dark-900);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">8</span>
+        <span style="font-weight:800;font-size:18px;letter-spacing:var(--tracking-tight);color:var(--text-strong);">800Path</span>
+      </span>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <sc-if value="{{ isIntro }}" hint-placeholder-val="{{ true }}">
+          <a href="../plan-overview/PlanOverview.dc.html" style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);text-decoration:none;">← My plan</a>
+        </sc-if>
+        <span style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);">Day {{ day }} · {{ subjLabel }}</span>
+        <sc-if value="{{ isQuiz }}" hint-placeholder-val="{{ false }}">
+          <span style="display:inline-flex;align-items:center;gap:14px;">
+            <span style="display:inline-flex;gap:5px;align-items:center;">
+              <sc-for list="{{ qDots }}" as="d" hint-placeholder-count="3">
+                <span style="display:inline-flex;">
+                  <sc-if value="{{ d.done }}" hint-placeholder-val="{{ false }}"><span style="width:9px;height:9px;border-radius:50%;background:var(--brand);"></span></sc-if>
+                  <sc-if value="{{ d.current }}" hint-placeholder-val="{{ true }}"><span style="width:9px;height:9px;border-radius:50%;background:var(--gradient-radiant);"></span></sc-if>
+                  <sc-if value="{{ d.up }}" hint-placeholder-val="{{ false }}"><span style="width:9px;height:9px;border-radius:50%;background:var(--surface-sunken);border:1px solid var(--line-strong);box-sizing:border-box;"></span></sc-if>
+                </span>
+              </sc-for>
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:var(--text-sm);font-weight:700;color:var(--text-strong);background:var(--surface-sunken);border-radius:var(--radius-pill);padding:5px 12px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>{{ clock }}</span>
+            <button onClick="{{ askExit }}" style="border:1.5px solid var(--border);background:var(--surface);border-radius:var(--radius-pill);font-family:inherit;font-size:var(--text-xs);font-weight:700;color:var(--text-muted);padding:6px 14px;cursor:pointer;" style-hover="border-color:var(--rose-ink);color:var(--rose-ink);">Exit</button>
+          </span>
+        </sc-if>
+      </div>
+    </div>
+    <sc-if value="{{ isQuiz }}" hint-placeholder-val="{{ false }}">
+      <div style="height:6px;background:var(--surface-sunken);">{{ progressEl }}</div>
+    </sc-if>
+  </header>
+
+  <main style="max-width:720px;width:100%;margin:0 auto;padding:36px 24px 64px;box-sizing:border-box;">
+
+    <!-- INTRO -->
+    <sc-if value="{{ isIntro }}" hint-placeholder-val="{{ true }}">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-2xl);box-shadow:var(--shadow-lg);padding:var(--space-12);text-align:center;">
+        <span style="display:inline-flex;width:56px;height:56px;border-radius:50%;background:var(--gradient-radiant);color:#fff;align-items:center;justify-content:center;font-weight:800;font-size:22px;box-shadow:var(--shadow-md);margin-bottom:18px;">{{ day }}</span>
+        <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);margin:0 0 8px;">Day {{ day }} of 30 · {{ subjLabel }}</p>
+        <h1 style="font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:var(--text-2xl);color:var(--text-strong);margin:0 0 10px;letter-spacing:var(--tracking-snug);">{{ focus }}</h1>
+        <p style="font-size:var(--text-md);color:var(--text-muted);line-height:var(--leading-relaxed);margin:0 auto 28px;max-width:440px;">A short warm-up, then a timed module. Work carefully — accuracy first, pace second.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;max-width:400px;margin:0 auto 28px;text-align:left;">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-sunken);border-radius:var(--radius-lg);padding:12px 16px;"><span style="font-size:var(--text-sm);color:var(--text-muted);">Warm-up check</span><span style="font-size:var(--text-sm);font-weight:700;color:var(--text-strong);">1 question</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-sunken);border-radius:var(--radius-lg);padding:12px 16px;"><span style="font-size:var(--text-sm);color:var(--text-muted);">Timed module</span><span style="font-size:var(--text-sm);font-weight:700;color:var(--text-strong);">{{ moduleMeta }}</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-sunken);border-radius:var(--radius-lg);padding:12px 16px;"><span style="font-size:var(--text-sm);color:var(--text-muted);">Counts toward</span><span style="font-size:var(--text-sm);font-weight:700;color:var(--text-strong);">Streak · Day {{ day }} check</span></div>
+        </div>
+        <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" size="lg" onClick="{{ begin }}" hint-size="220px,52px">Begin the module →</x-import>
+        <p style="font-size:var(--text-xs);color:var(--text-faint);margin:14px 0 0;">The timer starts when you begin. You can only complete one day per day.</p>
+      </div>
+    </sc-if>
+
+    <!-- QUIZ -->
+    <sc-if value="{{ isQuiz }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <sc-if value="{{ isMathShell }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface);border:1px dashed var(--line-strong);border-radius:var(--radius-xl);padding:var(--space-8);text-align:center;margin-bottom:22px;">
+            <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--peach-ink);margin:0 0 8px;">Math module · preview shell</p>
+            <p style="font-size:var(--text-sm);color:var(--text-muted);line-height:var(--leading-relaxed);margin:0;max-width:420px;display:inline-block;">Generated math questions will appear here. The flow below shows the module structure with a sample item.</p>
+          </div>
+        </sc-if>
+        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+          <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="{{ subjTone }}" hint-size="70px,24px">{{ subjLabel }}</x-import>
+          <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="lilac" hint-size="90px,24px">{{ q.skill }}</x-import>
+          <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="{{ q.diffTone }}" dot="{{ true }}" hint-size="80px,24px">{{ q.diff }}</x-import>
+        </div>
+        <sc-if value="{{ q.hasPassage }}" hint-placeholder-val="{{ true }}">
+          <div style="background:var(--surface-sunken);border-radius:var(--radius-xl);padding:var(--space-6);margin-bottom:22px;">
+            <p style="font-size:var(--text-xs);font-weight:600;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);margin:0 0 10px;">Passage</p>
+            <p style="font-size:var(--text-sm);color:var(--text-body);line-height:var(--leading-relaxed);margin:0;">{{ q.passage }}</p>
+          </div>
+        </sc-if>
+        <p style="font-weight:700;font-size:var(--text-md);color:var(--text-strong);line-height:var(--leading-snug);margin:0 0 18px;">{{ q.prompt }}</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+          <sc-for list="{{ opts }}" as="o" hint-placeholder-count="4">
+            <x-import component-from-global-scope="DesignSystem_4010b3.AnswerOption" letter="{{ o.letter }}" state="{{ o.state }}" onClick="{{ o.pick }}" hint-size="100%,52px">{{ o.text }}</x-import>
+          </sc-for>
+        </div>
+        <sc-if value="{{ showCorrect }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--mint-surface);border-radius:var(--radius-xl);padding:18px 20px;margin-bottom:24px;">
+            <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--mint-ink);opacity:0.85;margin:0 0 8px;">Nice — correct</p>
+            <p style="font-size:var(--text-sm);color:var(--mint-ink);line-height:var(--leading-relaxed);margin:0;">{{ q.explain }}</p>
+          </div>
+        </sc-if>
+        <sc-if value="{{ showIncorrect }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--rose-surface);border-radius:var(--radius-xl);padding:18px 20px;margin-bottom:24px;">
+            <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--rose-ink);opacity:0.85;margin:0 0 8px;">Not quite — here's why</p>
+            <p style="font-size:var(--text-sm);color:var(--rose-ink);line-height:var(--leading-relaxed);margin:0;">{{ q.explain }}</p>
+          </div>
+        </sc-if>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:var(--font-mono);font-size:var(--text-xs);color:var(--text-faint);">{{ qLabel }}</span>
+          <sc-if value="{{ showFeedback }}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" onClick="{{ nextQ }}" hint-size="130px,42px">{{ nextLabel }}</x-import>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- WRAP-UP -->
+    <sc-if value="{{ isWrap }}" hint-placeholder-val="{{ false }}">
+      <div style="background:linear-gradient(var(--surface),var(--surface)) padding-box, var(--gradient-radiant) border-box;border:4px solid transparent;border-radius:var(--radius-2xl);box-shadow:var(--shadow-md);padding:var(--space-12);text-align:center;">
+        <span style="display:inline-flex;width:56px;height:56px;border-radius:50%;background:var(--brand);color:#fff;align-items:center;justify-content:center;margin-bottom:18px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);margin:0 0 8px;">Day {{ day }} of 30 complete</p>
+        <h1 style="font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:var(--text-2xl);color:var(--text-strong);margin:0 0 10px;letter-spacing:var(--tracking-snug);">Well earned.</h1>
+        <p style="font-size:var(--text-md);color:var(--text-muted);line-height:var(--leading-relaxed);margin:0 auto 26px;max-width:420px;">{{ wrapLine }}</p>
+        <div style="display:flex;gap:12px;max-width:440px;margin:0 auto 26px;">
+          <div style="flex:1;background:var(--surface-sunken);border-radius:var(--radius-lg);padding:var(--space-4);"><p style="font-weight:800;font-size:var(--text-xl);color:var(--text-strong);margin:0;line-height:1.1;">{{ accuracy }}%</p><p style="font-size:var(--text-xs);color:var(--text-muted);margin:4px 0 0;">today's accuracy</p></div>
+          <div style="flex:1;background:var(--surface-sunken);border-radius:var(--radius-lg);padding:var(--space-4);"><p style="font-weight:800;font-size:var(--text-xl);color:var(--text-strong);margin:0;line-height:1.1;">{{ newStreak }}</p><p style="font-size:var(--text-xs);color:var(--text-muted);margin:4px 0 0;">day streak</p></div>
+          <div style="flex:1;background:var(--surface-sunken);border-radius:var(--radius-lg);padding:var(--space-4);"><p style="font-weight:800;font-size:var(--text-xl);color:var(--indigo-ink);margin:0;line-height:1.1;">+10</p><p style="font-size:var(--text-xs);color:var(--text-muted);margin:4px 0 0;">projected pts</p></div>
+        </div>
+        <div style="background:var(--surface-sunken);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-4) var(--space-5);max-width:440px;margin:0 auto 28px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-size:var(--text-sm);color:var(--text-muted);text-align:left;">Tomorrow · <strong style="color:var(--text-strong);">Day {{ tmwDay }} · {{ tmwSubj }}</strong> — {{ tmwFocus }}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:var(--text-xs);color:var(--text-faint);white-space:nowrap;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Opens tomorrow</span>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;">
+          <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" size="lg" onClick="{{ goResults }}" hint-size="190px,48px">See full results →</x-import>
+          <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="secondary" size="lg" onClick="{{ goPlan }}" hint-size="170px,48px">Back to my plan</x-import>
+        </div>
+      </div>
+    </sc-if>
+
+  </main>
+
+  <sc-if value="{{ showExit }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:50;background:var(--overlay);display:flex;align-items:center;justify-content:center;padding:24px;">
+      <div style="background:var(--surface);border-radius:var(--radius-2xl);box-shadow:var(--shadow-lg);padding:var(--space-8);max-width:400px;text-align:center;">
+        <h2 style="font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:var(--text-lg);color:var(--text-strong);margin:0 0 10px;">Pause here?</h2>
+        <p style="font-size:var(--text-sm);color:var(--text-muted);line-height:var(--leading-relaxed);margin:0 0 22px;">The timer keeps today's module honest. If you leave now, Day {{ day }} stays open and today's answers won't be saved.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" size="lg" full="{{ true }}" onClick="{{ cancelExit }}" hint-size="100%,48px">Keep going</x-import>
+          <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="ghost" full="{{ true }}" onClick="{{ doExit }}" hint-size="100%,42px">Leave anyway</x-import>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;day&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:12,&quot;min&quot;:1,&quot;max&quot;:30,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Session&quot;},&quot;subject&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;auto&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;english&quot;,&quot;math&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Session&quot;}}">
+class Component extends DCLogic {
+  state = { phase: 'intro', qi: 0, sel: null, correctCount: 0, secondsLeft: 18 * 60, showExit: false, storedDay: null };
+
+  componentDidMount() {
+    try { const d = parseInt(localStorage.getItem('800path_plan_day'), 10); if (d) this.setState({ storedDay: d }); } catch (e) {}
+  }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  planDay() { return Math.min(30, Math.max(1, parseInt(this.props.day ?? this.state.storedDay ?? 12, 10) || 12)); }
+
+  finishDay(day, accuracy) {
+    clearInterval(this._t);
+    try {
+      localStorage.setItem('800path_plan_day', String(Math.min(30, day + 1)));
+      localStorage.setItem('800path_streak', String(day));
+      localStorage.setItem('800path_acc_' + day, String(accuracy));
+    } catch (e) {}
+    this.setState({ phase: 'wrap' });
+  }
+
+  isMathDay() {
+    const day = this.planDay();
+    const subj = this.props.subject ?? 'auto';
+    return subj === 'auto' ? day % 3 === 0 : subj === 'math';
+  }
+
+  focusFor(d) {
+    const engSkills = ['Words in Context', 'Central Ideas & Details', 'Command of Evidence', 'Inferences', 'Text Structure & Purpose', 'Transitions', 'Rhetorical Synthesis', 'Boundaries', 'Cross-Text Connections', 'Form, Structure, & Sense'];
+    const mathUnits = ['Algebra — Linear Equations', 'Advanced Math — Nonlinear Functions', 'Problem-Solving & Data Analysis', 'Geometry & Trigonometry'];
+    if (d % 3 === 0) return mathUnits[(d / 3 - 1) % 4];
+    return engSkills[(d - Math.floor(d / 3) - 1) % 10];
+  }
+
+  begin() {
+    const isMath = this.isMathDay();
+    this.setState({ phase: 'quiz', qi: 0, sel: null, correctCount: 0, secondsLeft: (isMath ? 22 : 18) * 60 });
+    clearInterval(this._t);
+    this._t = setInterval(() => {
+      this.setState(s => s.phase === 'quiz' && s.secondsLeft > 0 ? { secondsLeft: s.secondsLeft - 1 } : null);
+    }, 1000);
+  }
+
+  questions(isMath) {
+    if (isMath) return [
+      { skill: 'Warm-up', diff: 'Easy', diffTone: 'mint', hasPassage: false, prompt: 'If 3x + 5 = 20, what is the value of x?', options: ['3', '5', '15', '25/3'], correct: 1, explain: 'Subtract 5 from both sides (3x = 15), then divide by 3: x = 5.' },
+      { skill: 'Algebra', diff: 'Medium', diffTone: 'butter', hasPassage: false, prompt: 'A line passes through (0, 4) and (2, 10). What is its slope?', options: ['2', '3', '4', '6'], correct: 1, explain: 'Slope = (10 − 4) / (2 − 0) = 6 / 2 = 3.' },
+      { skill: 'Algebra', diff: 'Hard', diffTone: 'peach', hasPassage: false, prompt: 'If f(x) = 2x² − 3x and f(a) = 9, which could be the value of a?', options: ['−3', '−3/2', '3', '9/2'], correct: 2, explain: '2(3)² − 3(3) = 18 − 9 = 9, so a = 3 works.' }
+    ];
+    return [
+      { skill: 'Warm-up', diff: 'Easy', diffTone: 'mint', hasPassage: true, passage: 'The museum\u2019s new wing, though modest in size, transformed how visitors moved through the collection: instead of a fixed route, galleries now opened onto one another, inviting wandering.', prompt: 'The passage suggests the new wing\u2019s main effect was to', options: ['increase the museum\u2019s total exhibition space', 'change how visitors navigate the collection', 'reduce crowding in the older galleries', 'showcase a newly acquired collection'], correct: 1, explain: 'The passage centers on movement — \u201ctransformed how visitors moved,\u201d \u201cinviting wandering\u201d — not size or crowding.' },
+      { skill: 'Words in Context', diff: 'Medium', diffTone: 'butter', hasPassage: true, passage: 'Early naturalists\u2019 field notes were often perfunctory — a date, a location, a species name — but Mora\u2019s journals were different: pages of careful observation, sketches, and questions that anticipated debates decades away.', prompt: 'As used in the text, \u201cperfunctory\u201d most nearly means', options: ['inaccurate', 'cursory', 'private', 'formal'], correct: 1, explain: 'Perfunctory notes are contrasted with \u201cpages of careful observation\u201d — brief and mechanical, i.e. cursory.' },
+      { skill: 'Command of Evidence', diff: 'Hard', diffTone: 'peach', hasPassage: true, passage: 'Researchers assumed urban birdsong grew louder to compete with traffic. But when Ferreira\u2019s team compared recordings across forty years, pitch had shifted upward more than volume had risen — songs moved above the noise rather than over it.', prompt: 'Which finding best supports the passage\u2019s conclusion?', options: ['Urban birds sing more often at dawn than rural birds', 'Recordings show rising average song volume since 1985', 'Song frequencies rose most near the loudest roadways', 'Bird populations declined in the noisiest districts'], correct: 2, explain: 'The claim is that pitch, not volume, adapted to noise — higher frequencies nearest the loudest noise directly supports it.' }
+    ];
+  }
+
+  renderVals() {
+    const st = this.state;
+    const day = this.planDay();
+    const isMath = this.isMathDay();
+    const qs = this.questions(isMath);
+    const q = qs[Math.min(st.qi, qs.length - 1)];
+    const answered = st.sel !== null;
+    const correct = answered && st.sel === q.correct;
+
+    const opts = q.options.map((text, i) => {
+      let state = 'default';
+      if (answered) {
+        if (i === q.correct) state = 'correct';
+        else if (i === st.sel) state = 'incorrect';
+        else state = 'muted';
+      }
+      return { letter: 'ABCD'[i], text, state, pick: answered ? undefined : () => this.setState(s => ({ sel: i, correctCount: s.correctCount + (i === q.correct ? 1 : 0) })) };
+    });
+
+    const focus = this.focusFor(day);
+    const tmwDay = Math.min(30, day + 1);
+    const tmwIsMath = tmwDay % 3 === 0;
+
+    const mm = Math.floor(st.secondsLeft / 60), ss = st.secondsLeft % 60;
+    const last = st.qi === qs.length - 1;
+    const accuracy = Math.round((st.correctCount / qs.length) * 100);
+
+    return {
+      day, focus, subjLabel: isMath ? 'Math' : 'English', subjTone: isMath ? 'peach' : 'mint',
+      isMathShell: isMath && st.phase === 'quiz',
+      moduleMeta: isMath ? '12 questions · 22 min' : '12 questions · 18 min',
+      isIntro: st.phase === 'intro', isQuiz: st.phase === 'quiz', isWrap: st.phase === 'wrap',
+      clock: mm + ':' + (ss < 10 ? '0' : '') + ss,
+      progressEl: React.createElement('div', { style: { width: ((st.qi + (answered ? 1 : 0)) / qs.length * 100) + '%', height: '100%', background: 'var(--brand)', borderRadius: '999px', transition: 'width .3s var(--ease-out)' } }),
+      q, opts, showFeedback: answered,
+      showCorrect: answered && correct, showIncorrect: answered && !correct,
+      qLabel: (st.qi + 1) + ' / ' + qs.length + (st.qi === 0 ? ' · warm-up' : ' · module'),
+      nextLabel: last ? 'Finish day →' : 'Next →',
+      nextQ: () => last ? this.finishDay(day, accuracy) : this.setState(s => ({ qi: s.qi + 1, sel: null })),
+      qDots: qs.map((_, i) => ({ done: i < st.qi || (i === st.qi && answered), current: i === st.qi && !answered, up: i > st.qi })),
+      showExit: st.showExit,
+      askExit: () => this.setState({ showExit: true }),
+      cancelExit: () => this.setState({ showExit: false }),
+      doExit: () => { window.location.href = '../plan-overview/PlanOverview.dc.html'; },
+      accuracy, newStreak: day,
+      wrapLine: accuracy >= 67 ? 'Solid, careful work today. Your projection ticked up — come back tomorrow and keep it climbing.' : 'Every day counts, even the hard ones. Tomorrow\u2019s module will revisit what tripped you up.',
+      tmwDay, tmwSubj: tmwIsMath ? 'Math' : 'English', tmwFocus: this.focusFor(tmwDay),
+      begin: () => this.begin(),
+      goResults: () => { window.location.href = '../results/Results.dc.html'; },
+      goPlan: () => { window.location.href = '../plan-overview/PlanOverview.dc.html'; }
+    };
+  }
+}
+</script>
+</body>
+</html>

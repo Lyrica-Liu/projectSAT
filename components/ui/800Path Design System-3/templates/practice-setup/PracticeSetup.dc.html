@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Practice Setup" description="800Path session setup — choose domain and number of questions" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);display:flex;flex-direction:column;font-family:var(--font-sans);">
+
+  <!-- Nav -->
+  <nav style="position:sticky;top:0;z-index:10;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);">
+    <div style="max-width:760px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="display:inline-flex;align-items:center;gap:9px;">
+        <span style="width:30px;height:30px;border-radius:9px;background:var(--dark-900);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">8</span>
+        <span style="font-weight:800;font-size:18px;letter-spacing:var(--tracking-tight);color:var(--text-strong);">800Path</span>
+      </span>
+      <div style="display:flex;align-items:center;gap:18px;"><a href="../plan-overview/PlanOverview.dc.html" style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);text-decoration:none;">My plan</a><a href="../dashboard/Dashboard.dc.html" style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);text-decoration:none;">Dashboard</a><span style="font-size:var(--text-sm);font-weight:700;color:var(--brand-ink);">Extra practice</span><a href="../history/History.dc.html" style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);text-decoration:none;">History</a></div>
+    </div>
+  </nav>
+
+  <main style="flex:1;display:flex;align-items:flex-start;justify-content:center;padding:56px 24px;">
+    <div style="width:100%;max-width:440px;">
+      <h1 style="font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:var(--text-2xl);color:var(--text-strong);margin:0 0 6px;letter-spacing:var(--tracking-snug);">Extra practice</h1>
+      <p style="font-size:var(--text-sm);color:var(--text-muted);margin:0 0 30px;">Pick anything you like — extra sessions sharpen skills but don't advance your 30-day plan. <a href="../for-you/ForYou.dc.html" style="color:var(--brand-ink);font-weight:600;">See what's picked for you →</a></p>
+
+      <p class="pw-eyebrow" style="margin:0 0 12px;">Domain</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:30px;">
+        <x-import component-from-global-scope="DesignSystem_4010b3.ChoiceCard" label="Reading &amp; Writing" desc="Mix of both domains" selected="{{ true }}" hint-size="100%,64px"></x-import>
+        <x-import component-from-global-scope="DesignSystem_4010b3.ChoiceCard" label="Reading" desc="Passages &amp; comprehension" hint-size="100%,64px"></x-import>
+        <x-import component-from-global-scope="DesignSystem_4010b3.ChoiceCard" label="Writing" desc="Grammar &amp; expression" hint-size="100%,64px"></x-import>
+      </div>
+
+      <p class="pw-eyebrow" style="margin:0 0 12px;">Number of questions</p>
+      <div style="display:flex;gap:10px;margin-bottom:8px;">
+        <button style="flex:1;padding:13px 0;border-radius:var(--radius-md);font-family:var(--font-sans);font-weight:700;font-size:var(--text-sm);cursor:pointer;background:var(--surface);border:1.5px solid var(--border-strong);color:var(--text-body);">5</button>
+        <button style="flex:1;padding:13px 0;border-radius:var(--radius-md);font-family:var(--font-sans);font-weight:700;font-size:var(--text-sm);cursor:pointer;color:#fff;background:var(--brand);border:1.5px solid var(--brand);box-shadow:0 3px 8px color-mix(in srgb, var(--brand) 30%, transparent);">10</button>
+        <button style="flex:1;padding:13px 0;border-radius:var(--radius-md);font-family:var(--font-sans);font-weight:700;font-size:var(--text-sm);cursor:pointer;background:var(--surface);border:1.5px solid var(--border-strong);color:var(--text-body);">15</button>
+        <button style="flex:1;padding:13px 0;border-radius:var(--radius-md);font-family:var(--font-sans);font-weight:700;font-size:var(--text-sm);cursor:pointer;background:var(--surface);border:1.5px solid var(--border-strong);color:var(--text-body);">20</button>
+      </div>
+      <p style="font-size:var(--text-xs);color:var(--text-faint);margin:0 0 30px;">~8 min estimated</p>
+
+      <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" size="lg" full="{{ true }}" hint-size="100%,48px">Start session</x-import>
+    </div>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

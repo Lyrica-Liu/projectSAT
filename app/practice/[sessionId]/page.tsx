@@ -33,7 +33,10 @@ export default function ActiveSessionPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [generatingNext, setGeneratingNext] = useState(false);
+  const [planLinked, setPlanLinked] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const loadSession = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -62,11 +65,18 @@ export default function ActiveSessionPage() {
 
     setSession(sessionData);
 
+    const { data: planDayRow } = await supabase
+      .from("plan_days")
+      .select("id")
+      .eq("session_id", sessionId)
+      .maybeSingle();
+    setPlanLinked(!!planDayRow);
+
     const { data: answerRows } = await supabase
       .from("answers")
       .select("*, question:questions(*)")
       .eq("session_id", sessionId)
-      .order("id");
+      .order("position");
 
     if (!answerRows || answerRows.length === 0) {
       setError("Session data missing. Please start a new session.");
@@ -108,13 +118,60 @@ export default function ActiveSessionPage() {
 
   async function finishSession() {
     setSubmitting(true);
-    const correct = questions.filter((q) => q.selected === q.question.answer);
-    const score = Math.round((correct.length / questions.length) * 100);
-    await supabase
-      .from("sessions")
-      .update({ completed_at: new Date().toISOString(), score })
-      .eq("id", sessionId);
+    if (planLinked) {
+      const res = await fetch("/api/finish-plan-day", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setActionError(body.error ?? "Could not finish session.");
+        setSubmitting(false);
+        return;
+      }
+    } else {
+      const correct = questions.filter((q) => q.selected === q.question.answer);
+      const score = Math.round((correct.length / questions.length) * 100);
+      await supabase
+        .from("sessions")
+        .update({ completed_at: new Date().toISOString(), score })
+        .eq("id", sessionId);
+    }
     router.push(`/results/${sessionId}`);
+  }
+
+  async function goNext() {
+    const target = session?.question_count ?? questions.length;
+    const atFrontier = currentIndex === questions.length - 1;
+
+    if (atFrontier && questions.length < target) {
+      setGeneratingNext(true);
+      setActionError(null);
+      try {
+        const res = await fetch("/api/plan-next-question", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Could not load the next question.");
+        if (body.question && body.answer) {
+          setQuestions((prev) => [
+            ...prev,
+            { question: body.question, answer: body.answer, selected: null, revealed: false },
+          ]);
+          setCurrentIndex((i) => i + 1);
+        }
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : "Could not load the next question.");
+      } finally {
+        setGeneratingNext(false);
+      }
+      return;
+    }
+
+    setCurrentIndex((i) => Math.min(questions.length - 1, i + 1));
   }
 
   if (loading) return <LoadingScreen message="Loading session…" />;
@@ -131,8 +188,11 @@ export default function ActiveSessionPage() {
   }
 
   const current = questions[currentIndex];
+  const sessionTarget = session?.question_count ?? questions.length;
   const answeredCount = questions.filter((q) => q.selected !== null).length;
-  const allAnswered = answeredCount === questions.length;
+  const allAnswered = answeredCount === sessionTarget && questions.length === sessionTarget;
+  const atFrontier = currentIndex === questions.length - 1;
+  const hasMoreToGenerate = questions.length < sessionTarget;
   const diffTone =
     current.question.difficulty === "easy" ? "mint"
     : current.question.difficulty === "medium-low" ? "sky"
@@ -154,11 +214,11 @@ export default function ActiveSessionPage() {
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-sm)", color: "var(--text-strong)" }}>
             Q{currentIndex + 1}{" "}
-            <span style={{ color: "var(--text-faint)", fontWeight: 500 }}>of {questions.length}</span>
+            <span style={{ color: "var(--text-faint)", fontWeight: 500 }}>of {sessionTarget}</span>
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>
-              {answeredCount}/{questions.length} answered
+              {answeredCount}/{sessionTarget} answered
             </span>
             {allAnswered && (
               <Button size="sm" onClick={finishSession} disabled={submitting}>
@@ -168,7 +228,7 @@ export default function ActiveSessionPage() {
           </div>
         </div>
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 24px 12px" }}>
-          <ProgressBar value={questions.length > 0 ? (answeredCount / questions.length) * 100 : 0} height={6} />
+          <ProgressBar value={sessionTarget > 0 ? (answeredCount / sessionTarget) * 100 : 0} height={6} />
         </div>
       </header>
 
@@ -267,6 +327,15 @@ export default function ActiveSessionPage() {
         )}
 
         {/* Navigation */}
+        {actionError && (
+          <p style={{
+            fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--danger)",
+            background: "var(--danger-surface)", borderRadius: "var(--radius-md)",
+            padding: "10px 14px", margin: "0 0 14px",
+          }}>
+            {actionError}
+          </p>
+        )}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Button
             variant="ghost"
@@ -276,21 +345,22 @@ export default function ActiveSessionPage() {
           >
             Previous
           </Button>
-          {currentIndex < questions.length - 1 ? (
-            <Button
-              variant="secondary"
-              onClick={() => setCurrentIndex((i) => i + 1)}
-              iconRight={<Icon name="arrow-right" size={17} />}
-            >
-              Next
-            </Button>
-          ) : (
+          {atFrontier && !hasMoreToGenerate ? (
             <Button
               onClick={finishSession}
               disabled={submitting || !allAnswered}
               iconRight={<Icon name="arrow-right" size={17} />}
             >
-              Finish session
+              {submitting ? "Saving…" : "Finish session"}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              onClick={goNext}
+              disabled={generatingNext || (atFrontier && hasMoreToGenerate && !current.revealed)}
+              iconRight={<Icon name="arrow-right" size={17} />}
+            >
+              {generatingNext ? "Loading…" : "Next"}
             </Button>
           )}
         </div>

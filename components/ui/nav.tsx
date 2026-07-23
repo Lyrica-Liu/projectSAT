@@ -93,9 +93,10 @@ export function TopNav({
 }
 
 const NAV_LINKS = [
+  { href: "/plan",      label: "My plan"  },
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/practice", label: "Practice" },
-  { href: "/history", label: "History" },
+  { href: "/practice",  label: "Extra practice" },
+  { href: "/history",   label: "History"  },
 ];
 
 export function AppNav({ maxWidth = 1040 }: { maxWidth?: number }) {
@@ -168,16 +169,16 @@ export function AppNav({ maxWidth = 1040 }: { maxWidth?: number }) {
             </button>
           </form>
           {displayName && (
-            <div style={{
+            <Link href="/account" style={{
               width: 32, height: 32, borderRadius: "50%",
               background: "var(--gradient-radiant)",
               display: "flex", alignItems: "center", justifyContent: "center",
               color: "#fff", fontFamily: "var(--font-sans)",
               fontWeight: 700, fontSize: 13, flexShrink: 0,
-              boxShadow: "var(--shadow-brand)",
+              boxShadow: "var(--shadow-brand)", textDecoration: "none",
             }}>
               {displayName[0].toUpperCase()}
-            </div>
+            </Link>
           )}
         </div>
       </div>

@@ -263,7 +263,7 @@ correct_answer_explanation is required for every question in JSON output.`;
 
   const { error: aErr } = await supabase
     .from("answers")
-    .insert(savedQuestions.map((q) => ({ session_id: session.id, question_id: q.id })));
+    .insert(savedQuestions.map((q, i) => ({ session_id: session.id, question_id: q.id, position: i })));
 
   if (aErr) {
     console.error("Supabase insert answers error:", aErr);

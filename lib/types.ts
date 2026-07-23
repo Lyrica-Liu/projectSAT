@@ -55,6 +55,7 @@ export interface Answer {
   user_answer: "A" | "B" | "C" | "D" | null;
   is_correct: boolean | null;
   time_spent_seconds: number | null;
+  position: number;
   question?: Question;
 }
 
@@ -67,4 +68,24 @@ export interface SkillStat {
   total: number;
   correct: number;
   accuracy: number;
+}
+
+export interface PlanDayRow {
+  id: string;
+  user_id: string;
+  day_number: number;
+  session_id: string | null;
+  score: number | null;
+  completed_at: string | null;
+  started_at: string;
+  subcategory: string | null;
+  difficulty: Difficulty | null;
+}
+
+export interface CategoryProgressRow {
+  id: string;
+  user_id: string;
+  subcategory: string;
+  difficulty: Difficulty;
+  updated_at: string;
 }

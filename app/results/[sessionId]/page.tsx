@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { AppNav, LoadingScreen } from "@/components/ui/nav";
 import { Card, Badge, ScoreRing, SkillBar, Button } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
-import type { QuestionSkill } from "@/lib/types";
+import { getPlanDay, getCurrentPlanDay } from "@/lib/plan";
+import type { QuestionSkill, PlanDayRow } from "@/lib/types";
 
 const SKILL_LABELS: Record<QuestionSkill, string> = {
   central_idea: "Central Idea",
@@ -55,6 +56,8 @@ export default function ResultsPage() {
   } | null>(null);
   const [answers, setAnswers] = useState<AnswerRow[]>([]);
   const [skillMap, setSkillMap] = useState<Record<string, { total: number; correct: number }>>({});
+  const [planDay, setPlanDay] = useState<PlanDayRow | null>(null);
+  const [nextDay, setNextDay] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -102,6 +105,46 @@ export default function ResultsPage() {
         if (row.is_correct) map[skill].correct++;
       });
       setSkillMap(map);
+
+      // Mark plan day complete if this session belongs to one
+      const { data: pdRow } = await supabase
+        .from("plan_days")
+        .select("*")
+        .eq("session_id", sessionId)
+        .maybeSingle();
+
+      if (pdRow) {
+        setPlanDay(pdRow as PlanDayRow);
+        if (!pdRow.completed_at) {
+          const sessionScore = sessionData.score ??
+            (rows.length > 0 ? Math.round(rows.filter((r) => r.is_correct).length / rows.length * 100) : 0);
+          await supabase
+            .from("plan_days")
+            .update({ completed_at: new Date().toISOString(), score: sessionScore })
+            .eq("id", pdRow.id);
+
+          // Find next unlocked day
+          const { data: allRows } = await supabase
+            .from("plan_days")
+            .select("day_number, completed_at")
+            .eq("user_id", user.id);
+          const doneNums = (allRows ?? [])
+            .filter((r) => r.completed_at || r.day_number === pdRow.day_number)
+            .map((r) => r.day_number);
+          const next = getCurrentPlanDay(doneNums);
+          if (next <= 30) setNextDay(next);
+        } else {
+          // Already marked — find next day
+          const { data: allRows } = await supabase
+            .from("plan_days")
+            .select("day_number, completed_at")
+            .eq("user_id", user.id);
+          const doneNums = (allRows ?? []).filter((r) => r.completed_at).map((r) => r.day_number);
+          const next = getCurrentPlanDay(doneNums);
+          if (next <= 30) setNextDay(next);
+        }
+      }
+
       setLoading(false);
     }
     load();
@@ -127,7 +170,11 @@ export default function ResultsPage() {
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "32px 24px 80px" }}>
         {/* Score hero */}
         <Card tone="surface" padding="xl" radius="xl" shadow="md" style={{ marginBottom: 20, textAlign: "center" }}>
-          <span style={eyebrow}>Session complete 🎉</span>
+          <span style={eyebrow}>
+            {planDay
+              ? `Day ${planDay.day_number} complete 🎉`
+              : "Session complete 🎉"}
+          </span>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
             <ScoreRing score={score} size={140} />
           </div>
@@ -137,10 +184,37 @@ export default function ResultsPage() {
           }}>
             {correctCount} of {totalCount} correct
           </p>
+          {planDay && (
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--brand)", fontWeight: 600, margin: "0 0 4px" }}>
+              {getPlanDay(planDay.day_number)?.focus}
+            </p>
+          )}
           <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: 0, textTransform: "capitalize" }}>
             {session.domain_filter === "both" ? "Reading & Writing" : session.domain_filter}
           </p>
         </Card>
+
+        {/* Plan day next-step CTA */}
+        {planDay && nextDay && (
+          <Card tone="lilac" padding="lg" radius="xl" shadow="sm" style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+            <div>
+              <p style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-sm)", color: "var(--brand-ink)", margin: "0 0 3px" }}>
+                Day {nextDay} is now unlocked
+              </p>
+              <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: 0 }}>
+                {getPlanDay(nextDay)?.focus} · {getPlanDay(nextDay)?.subject === "english" ? "English" : "Math"}
+              </p>
+            </div>
+            <Link href={`/plan/${nextDay}`} style={{
+              display: "inline-flex", alignItems: "center", padding: "8px 16px",
+              background: "var(--brand)", color: "#fff",
+              fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
+              borderRadius: "var(--radius-pill)", textDecoration: "none", flexShrink: 0,
+            }}>
+              Begin Day {nextDay} →
+            </Link>
+          </Card>
+        )}
 
         {/* AI Feedback */}
         {session.feedback_text && (

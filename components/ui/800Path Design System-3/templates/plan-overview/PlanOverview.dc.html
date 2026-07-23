@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Plan Overview" description="800Path 30-day plan — vertical journey path (20 English / 10 Math days in E,E,M sequence), streak, score projection, grace day, milestone badges" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);font-family:var(--font-sans);">
+  <nav style="position:sticky;top:0;z-index:10;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);">
+    <div style="max-width:1080px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="display:inline-flex;align-items:center;gap:9px;">
+        <span style="width:30px;height:30px;border-radius:9px;background:var(--dark-900);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;">8</span>
+        <span style="font-weight:800;font-size:18px;letter-spacing:var(--tracking-tight);color:var(--text-strong);">800Path</span>
+      </span>
+      <div style="display:flex;align-items:center;gap:18px;">
+        <span style="font-size:var(--text-sm);font-weight:700;color:var(--brand-ink);">My plan</span>
+        <a href="../dashboard/Dashboard.dc.html" style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);text-decoration:none;">Dashboard</a>
+        <a href="../practice-setup/PracticeSetup.dc.html" style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);text-decoration:none;">Extra practice</a>
+        <a href="../history/History.dc.html" style="font-size:var(--text-sm);font-weight:500;color:var(--text-muted);text-decoration:none;">History</a>
+        <x-import component-from-global-scope="DesignSystem_4010b3.Avatar" initials="MC" tone="0" size="34" hint-size="34px,34px"></x-import>
+      </div>
+    </div>
+  </nav>
+
+  <main style="max-width:1080px;margin:0 auto;padding:40px 24px 80px;">
+    <div style="margin-bottom:34px;">
+      <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);margin:0 0 10px;">Your study plan</p>
+      <h1 style="font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:var(--text-2xl);color:var(--text-strong);margin:0 0 8px;letter-spacing:var(--tracking-snug);">The 30-Day Path</h1>
+      <p style="font-size:var(--text-md);color:var(--text-muted);margin:0;max-width:560px;line-height:var(--leading-relaxed);">Twenty days of English, ten of Math — two English, one Math, repeating. One focused day at a time; the next day opens only when today's work is done.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:300px 1fr;gap:32px;align-items:start;">
+
+      <!-- Sidebar -->
+      <aside style="position:sticky;top:86px;display:flex;flex-direction:column;gap:16px;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:var(--space-5);box-shadow:var(--shadow-sm);">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
+            <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);margin:0;">Progress</p>
+            <p style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:700;color:var(--text-strong);margin:0;">Day {{ cur }} <span style="color:var(--text-faint);font-weight:500;">/ 30</span></p>
+          </div>
+          <x-import component-from-global-scope="DesignSystem_4010b3.ProgressBar" value="{{ pct }}" hint-size="100%,8px"></x-import>
+          <div style="display:flex;gap:10px;margin-top:16px;">
+            <div style="flex:1;background:var(--surface-sunken);border-radius:var(--radius-lg);padding:12px;text-align:center;">
+              <p style="font-weight:800;font-size:var(--text-xl);color:var(--text-strong);margin:0;line-height:1.1;">{{ streak }}</p>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:4px 0 0;">day streak</p>
+            </div>
+            <div style="flex:1;background:var(--surface-sunken);border-radius:var(--radius-lg);padding:12px;text-align:center;">
+              <p style="font-weight:800;font-size:var(--text-xl);color:var(--text-strong);margin:0;line-height:1.1;">{{ done }}</p>
+              <p style="font-size:var(--text-xs);color:var(--text-muted);margin:4px 0 0;">days complete</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:var(--space-5);box-shadow:var(--shadow-sm);">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;">
+            <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);margin:0;">Score projection</p>
+            <p style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:700;color:var(--indigo-ink);margin:0;">{{ projScore }}</p>
+          </div>
+          <svg viewBox="0 0 240 78" style="display:block;width:100%;height:auto;">
+            <polyline points="{{ sparkFuture }}" fill="none" stroke="var(--line-strong)" stroke-width="2" stroke-dasharray="3 4" stroke-linecap="round"></polyline>
+            <polyline points="{{ sparkPast }}" fill="none" stroke="var(--indigo-ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+            <circle cx="{{ sparkCx }}" cy="{{ sparkCy }}" r="4" fill="var(--indigo-ink)"></circle>
+          </svg>
+          <p style="font-size:var(--text-xs);color:var(--text-muted);margin:8px 0 0;line-height:var(--leading-normal);">Updates after every completed day. Target: <strong style="color:var(--text-strong);">1450</strong> by Day 30.</p>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:var(--space-5);box-shadow:var(--shadow-sm);">
+          <p style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);margin:0 0 12px;">Milestones</p>
+          <div style="display:flex;gap:12px;">
+            <sc-for list="{{ medals }}" as="m" hint-placeholder-count="3">
+              <div style="flex:1;text-align:center;">
+                <sc-if value="{{ m.earned }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;width:44px;height:44px;border-radius:50%;background:var(--dark-900);color:var(--gold-400);align-items:center;justify-content:center;font-size:18px;box-shadow:var(--shadow-sm);">★</span></sc-if>
+                <sc-if value="{{ m.locked }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;width:44px;height:44px;border-radius:50%;background:var(--surface-sunken);color:var(--ink-300);align-items:center;justify-content:center;font-size:18px;border:1px dashed var(--line-strong);box-sizing:border-box;">★</span></sc-if>
+                <p style="font-size:var(--text-xs);font-weight:700;color:var(--text-strong);margin:8px 0 0;">Day {{ m.day }}</p>
+                <p style="font-size:var(--text-xs);color:var(--text-faint);margin:2px 0 0;">{{ m.name }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--brand-soft);border:1px solid var(--lilac-100);border-radius:var(--radius-xl);padding:var(--space-4) var(--space-5);">
+          <p style="font-size:var(--text-sm);font-weight:700;color:var(--brand-ink);margin:0 0 4px;">Grace day</p>
+          <p style="font-size:var(--text-xs);color:var(--brand-ink);margin:0;line-height:var(--leading-normal);">{{ graceLine }}</p>
+        </div>
+      </aside>
+
+      <!-- Path -->
+      <div style="position:relative;">
+        <span style="position:absolute;left:21px;top:16px;bottom:16px;width:2px;background:var(--line-strong);"></span>
+        <sc-for list="{{ items }}" as="it" hint-placeholder-count="8">
+          <div style="position:relative;">
+
+            <sc-if value="{{ it.isWeek }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:30px 0 12px 60px;font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);">{{ it.label }}</p>
+            </sc-if>
+
+            <sc-if value="{{ it.isWeekSum }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:16px;padding:8px 0;">
+                <span style="width:44px;display:flex;justify-content:center;"><span style="width:30px;height:30px;border-radius:50%;background:var(--brand-soft);color:var(--brand-ink);display:inline-flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span></span>
+                <div onClick="{{ it.expand }}" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--brand-soft);border:1px solid var(--lilac-100);border-radius:var(--radius-lg);padding:12px 16px;cursor:pointer;" style-hover="border-color:var(--lilac-300);">
+                  <p style="font-size:var(--text-sm);color:var(--brand-ink);margin:0;"><strong>{{ it.label }}</strong> — {{ it.range }} · avg {{ it.avg }}%{{ it.badge }}</p>
+                  <span style="font-size:var(--text-xs);font-weight:700;color:var(--brand-ink);white-space:nowrap;">Show days ↓</span>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ it.isMilestone }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:16px;padding:8px 0;">
+                <span style="width:44px;display:flex;justify-content:center;"><span style="width:34px;height:34px;border-radius:50%;background:var(--dark-900);color:var(--gold-400);display:inline-flex;align-items:center;justify-content:center;font-size:15px;box-shadow:var(--shadow-sm);">★</span></span>
+                <p style="font-size:var(--text-sm);font-weight:700;color:var(--text-strong);margin:0;">{{ it.label }} <span style="font-weight:500;color:var(--text-muted);">— {{ it.sub }}</span></p>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ it.isDone }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:16px;padding:5px 0;">
+                <span style="width:44px;display:flex;justify-content:center;"><span style="width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:inline-flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span></span>
+                <div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;">
+                  <p style="font-size:var(--text-sm);color:var(--text-muted);margin:0;"><strong style="color:var(--text-strong);">Day {{ it.num }}</strong> · {{ it.subj }} — {{ it.focus }}</p>
+                  <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="{{ it.tone }}" size="sm" hint-size="48px,22px">{{ it.accLabel }}</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ it.isToday }}" hint-placeholder-val="{{ false }}">
+              <div id="plan-today" style="display:flex;align-items:flex-start;gap:16px;padding:10px 0;">
+                <span style="width:44px;display:flex;justify-content:center;padding-top:14px;"><span style="width:34px;height:34px;border-radius:50%;background:var(--gradient-radiant);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;box-shadow:var(--shadow-md);">{{ it.num }}</span></span>
+                <div style="flex:1;background:linear-gradient(var(--surface),var(--surface)) padding-box, var(--gradient-radiant) border-box;border:3px solid transparent;border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:var(--space-6);">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                    <x-import component-from-global-scope="DesignSystem_4010b3.Badge" tone="{{ it.tone }}" hint-size="70px,24px">{{ it.subj }}</x-import>
+                    <span style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--text-faint);">Today · Day {{ it.num }} of 30</span>
+                  </div>
+                  <h2 style="font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:var(--text-lg);color:var(--text-strong);margin:0 0 6px;">{{ it.focus }}</h2>
+                  <p style="font-size:var(--text-sm);color:var(--text-muted);margin:0 0 6px;">{{ it.meta }}</p>
+                  <p style="font-size:var(--text-sm);color:var(--text-body);line-height:var(--leading-relaxed);margin:0 0 18px;">Steady work compounds. Settle in, take your time, and let today's module do its job.</p>
+                  <x-import component-from-global-scope="DesignSystem_4010b3.Button" variant="primary" size="lg" onClick="{{ beginToday }}" hint-size="180px,48px">{{ it.beginLabel }}</x-import>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ it.isLocked }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:16px;padding:5px 0;opacity:0.72;">
+                <span style="width:44px;display:flex;justify-content:center;"><span style="width:30px;height:30px;border-radius:50%;background:var(--surface);border:1.5px solid var(--line-strong);color:var(--ink-300);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;box-sizing:border-box;">{{ it.num }}</span></span>
+                <div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface-sunken);border:1px dashed var(--line-strong);border-radius:var(--radius-lg);padding:12px 16px;">
+                  <p style="font-size:var(--text-sm);color:var(--text-muted);margin:0;"><strong style="color:var(--text-body);">Day {{ it.num }}</strong> · {{ it.subj }} — {{ it.focus }}</p>
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:var(--text-xs);color:var(--text-faint);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{{ it.lockNote }}</span>
+                </div>
+              </div>
+            </sc-if>
+
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;currentDay&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:12,&quot;min&quot;:1,&quot;max&quot;:30,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Plan state&quot;},&quot;graceUsed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Plan state&quot;}}">
+class Component extends DCLogic {
+  state = { storedDay: null, expanded: [] };
+
+  componentDidMount() {
+    try { const d = parseInt(localStorage.getItem('800path_plan_day'), 10); if (d) this.setState({ storedDay: d }); } catch (e) {}
+    setTimeout(() => {
+      const el = document.getElementById('plan-today');
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 230, behavior: 'smooth' });
+    }, 600);
+  }
+
+  beginToday() { window.location.href = '../daily-session/DailySession.dc.html'; }
+
+  renderVals() {
+    const cur = Math.min(30, Math.max(1, parseInt(this.props.currentDay ?? this.state.storedDay ?? 12, 10) || 12));
+    const graceUsed = this.props.graceUsed ?? false;
+    const done = cur - 1;
+
+    const weeks = [[1, 7, 'Week 1 · Laying foundations'], [8, 14, 'Week 2 · Building momentum'], [15, 21, 'Week 3 · Sharpening skills'], [22, 28, 'Week 4 · Approaching mastery'], [29, 30, 'Final stretch']];
+    const acc = d => Math.round((7 + (d * 13) % 5) / 12 * 100); // correct-of-12 → %
+
+    const items = [];
+    let ei = 0, mi = 0;
+    for (const w of weeks) {
+      const [a, b, label] = w;
+      if (b < cur && this.state.expanded.indexOf(a) === -1) {
+        // fully-completed week, collapsed — keep skill counters in sync
+        let sum = 0;
+        for (let d = a; d <= b; d++) { sum += acc(d); if (d % 3 === 0) mi++; else ei++; }
+        items.push({ isWeekSum: true, label, range: 'Days ' + a + '–' + b + ' complete', avg: Math.round(sum / (b - a + 1)), badge: (a <= 10 && 10 <= b) ? ' · ★ Foundations badge' : (a <= 20 && 20 <= b) ? ' · ★ Momentum badge' : '', expand: () => this.setState(s => ({ expanded: s.expanded.concat(a) })) });
+        continue;
+      }
+      items.push({ isWeek: true, label });
+      for (let d = a; d <= b; d++) { this.pushDay(items, d, cur, acc, ei, mi); if (d % 3 === 0) mi++; else ei++; }
+    }
+    return this.finishVals(cur, items);
+  }
+
+  pushDay(items, d, cur, acc, ei, mi) {
+    {
+      const isMath = d % 3 === 0;
+      let subj = isMath ? 'Math' : 'English';
+      let tone = isMath ? 'peach' : 'mint';
+      let focus = isMath ? this.mathUnits()[mi % 4] : this.engSkills()[ei % 10];
+      let meta = isMath ? 'Warm-up check · 12 questions · 22 min timed' : 'Warm-up check · 12 questions · 18 min timed';
+      if (d === 30) { subj = 'Finale'; tone = 'lilac'; focus = 'Score Report & Retrospective'; meta = 'Full 30-day review · skill growth · goal check-in'; }
+      const it = { num: d, subj, tone, focus, meta };
+      if (d < cur) {
+        it.isDone = true;
+        it.accLabel = acc(d) + '%';
+      } else if (d === cur) {
+        it.isToday = true;
+        it.beginLabel = 'Begin Day ' + d + ' →';
+      } else {
+        it.isLocked = true;
+        it.lockNote = d === cur + 1 ? 'Opens tomorrow' : 'After Day ' + (d - 1);
+      }
+      items.push(it);
+      if (d === 10 && d < cur) items.push({ isMilestone: true, label: 'Milestone · Day 10', sub: 'Foundations badge earned' });
+      if (d === 20 && d < cur) items.push({ isMilestone: true, label: 'Milestone · Day 20', sub: 'Momentum badge earned' });
+    }
+  }
+
+  engSkills() { return ['Words in Context', 'Central Ideas & Details', 'Command of Evidence', 'Inferences', 'Text Structure & Purpose', 'Transitions', 'Rhetorical Synthesis', 'Boundaries', 'Cross-Text Connections', 'Form, Structure, & Sense']; }
+  mathUnits() { return ['Algebra — Linear Equations', 'Advanced Math — Nonlinear Functions', 'Problem-Solving & Data Analysis', 'Geometry & Trigonometry']; }
+
+  finishVals(cur, items) {
+    const done = cur - 1;
+    const graceUsed = this.props.graceUsed ?? false;
+    // Score projection sparkline: 1050 → 1450 over 30 days
+    const score = d => 1050 + (400 * d) / 30;
+    const pt = (d, wiggle) => {
+      const x = 6 + (d / 30) * 228;
+      const y = 68 - ((score(d) + (wiggle ? Math.sin(d * 1.7) * 14 : 0) - 1020) / 470) * 58;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    };
+    const past = [], future = [];
+    for (let d = 0; d <= done; d++) past.push(pt(d, d > 0 && d < done));
+    for (let d = done; d <= 30; d++) future.push(pt(d, false));
+    const lastPt = past[past.length - 1].split(',');
+
+    const medals = [
+      { day: 10, name: 'Foundations', earned: done >= 10, locked: done < 10 },
+      { day: 20, name: 'Momentum', earned: done >= 20, locked: done < 20 },
+      { day: 30, name: 'Summit', earned: done >= 30, locked: done < 30 }
+    ];
+
+    return {
+      cur, done, streak: done, pct: Math.round((done / 30) * 100),
+      projScore: Math.round(score(done) / 10) * 10,
+      sparkPast: past.join(' '), sparkFuture: future.join(' '),
+      sparkCx: lastPt[0], sparkCy: lastPt[1],
+      medals,
+      graceLine: graceUsed ? 'Used this week — the path pauses if you miss another day. Back on track tomorrow.' : 'One missed day per week won\u2019t break your streak. Unused this week — nicely done.',
+      items,
+      beginToday: () => this.beginToday()
+    };
+  }
+}
+</script>
+</body>
+</html>

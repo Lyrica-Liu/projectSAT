@@ -162,3 +162,75 @@ create policy "answers_update_own" on public.answers
       where s.id = session_id and s.user_id = auth.uid()
     )
   );
+
+-- ───────────────────────────────────────────
+-- 6. Plan Days (30-day structured program)
+-- ───────────────────────────────────────────
+-- Run this section independently if adding to an existing DB.
+
+create table if not exists public.plan_days (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users (id) on delete cascade,
+  day_number   int  not null check (day_number between 1 and 30),
+  session_id   uuid references public.sessions (id) on delete set null,
+  score        int,           -- accuracy % when completed
+  completed_at timestamptz,
+  started_at   timestamptz default now() not null,
+  unique (user_id, day_number)
+);
+
+create index if not exists plan_days_user_id_idx on public.plan_days (user_id);
+create index if not exists plan_days_session_id_idx on public.plan_days (session_id);
+
+alter table public.plan_days enable row level security;
+
+create policy "plan_days_select_own" on public.plan_days
+  for select using (auth.uid() = user_id);
+
+create policy "plan_days_insert_own" on public.plan_days
+  for insert with check (auth.uid() = user_id);
+
+create policy "plan_days_update_own" on public.plan_days
+  for update using (auth.uid() = user_id);
+
+create policy "plan_days_delete_own" on public.plan_days
+  for delete using (auth.uid() = user_id);
+
+-- ───────────────────────────────────────────
+-- 7. Adaptive difficulty support
+-- ───────────────────────────────────────────
+-- Run this section independently if adding to an existing DB.
+
+-- Play order within a session, so the adaptive algorithm can replay
+-- "what happened so far" deterministically (uuid ids aren't sortable).
+alter table public.answers add column if not exists position int not null default 0;
+
+-- Assignment computed after English slot 11 finishes, for slots 12-20.
+-- (difficulty is plain text here to match questions.difficulty /
+-- sessions.domain_filter, which are text in the live DB, not enums.)
+alter table public.plan_days add column if not exists subcategory text;
+alter table public.plan_days add column if not exists difficulty text;
+
+-- A user's saved difficulty per SAT category — seeds the next session on
+-- that category, and ranks weakest categories for the slot 12-20 assignment.
+create table if not exists public.category_progress (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users (id) on delete cascade,
+  subcategory  text not null,
+  difficulty   text not null,
+  updated_at   timestamptz default now() not null,
+  unique (user_id, subcategory)
+);
+
+create index if not exists category_progress_user_id_idx on public.category_progress (user_id);
+
+alter table public.category_progress enable row level security;
+
+create policy "category_progress_select_own" on public.category_progress
+  for select using (auth.uid() = user_id);
+
+create policy "category_progress_insert_own" on public.category_progress
+  for insert with check (auth.uid() = user_id);
+
+create policy "category_progress_update_own" on public.category_progress
+  for update using (auth.uid() = user_id);
