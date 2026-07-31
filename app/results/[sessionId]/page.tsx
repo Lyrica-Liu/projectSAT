@@ -7,8 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 import { AppNav, LoadingScreen } from "@/components/ui/nav";
 import { Card, Badge, ScoreRing, SkillBar, Button } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
-import { getPlanDay, getCurrentPlanDay } from "@/lib/plan";
+import { getPlanDay, getCurrentPlanDay, calcStreak } from "@/lib/plan";
 import type { QuestionSkill, PlanDayRow } from "@/lib/types";
+
+const MILESTONE_LABELS: Record<number, string> = { 10: "Foundations", 20: "Momentum", 30: "Summit" };
 
 const SKILL_LABELS: Record<QuestionSkill, string> = {
   central_idea: "Central Idea",
@@ -58,6 +60,8 @@ export default function ResultsPage() {
   const [skillMap, setSkillMap] = useState<Record<string, { total: number; correct: number }>>({});
   const [planDay, setPlanDay] = useState<PlanDayRow | null>(null);
   const [nextDay, setNextDay] = useState<number | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -133,6 +137,7 @@ export default function ResultsPage() {
             .map((r) => r.day_number);
           const next = getCurrentPlanDay(doneNums);
           if (next <= 30) setNextDay(next);
+          setStreak(calcStreak((allRows ?? []).map((r) => r.day_number === pdRow.day_number ? { completed_at: new Date().toISOString() } : r)));
         } else {
           // Already marked — find next day
           const { data: allRows } = await supabase
@@ -142,7 +147,26 @@ export default function ResultsPage() {
           const doneNums = (allRows ?? []).filter((r) => r.completed_at).map((r) => r.day_number);
           const next = getCurrentPlanDay(doneNums);
           if (next <= 30) setNextDay(next);
+          setStreak(calcStreak(allRows ?? []));
         }
+      }
+
+      // Generate AI feedback if this session doesn't have it yet
+      if (!sessionData.feedback_text) {
+        setFeedbackLoading(true);
+        fetch("/api/generate-feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        })
+          .then((res) => res.json())
+          .then((body) => {
+            if (body.feedback_text) {
+              setSession((prev) => prev ? { ...prev, feedback_text: body.feedback_text } : prev);
+            }
+          })
+          .catch(() => {})
+          .finally(() => setFeedbackLoading(false));
       }
 
       setLoading(false);
@@ -175,6 +199,24 @@ export default function ResultsPage() {
               ? `Day ${planDay.day_number} complete 🎉`
               : "Session complete 🎉"}
           </span>
+          {planDay && (
+            <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+              {streak > 0 && (
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 6, background: "var(--surface-sunken)",
+                  borderRadius: "var(--radius-pill)", padding: "6px 14px", fontSize: "var(--text-xs)",
+                  fontWeight: 700, color: "var(--text-strong)",
+                }}>🔥 {streak}-day streak</span>
+              )}
+              {MILESTONE_LABELS[planDay.day_number] && (
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 6, background: "var(--surface-sunken)",
+                  borderRadius: "var(--radius-pill)", padding: "6px 14px", fontSize: "var(--text-xs)",
+                  fontWeight: 700, color: "var(--text-strong)",
+                }}>★ {MILESTONE_LABELS[planDay.day_number]} badge earned · Day {planDay.day_number}</span>
+              )}
+            </div>
+          )}
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
             <ScoreRing score={score} size={140} />
           </div>
@@ -217,7 +259,7 @@ export default function ResultsPage() {
         )}
 
         {/* AI Feedback */}
-        {session.feedback_text && (
+        {(session.feedback_text || feedbackLoading) && (
           <Card tone="lilac" padding="lg" radius="xl" shadow="none" style={{ marginBottom: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
               <Icon name="sparkles" size={16} color="var(--brand-ink)" />
@@ -226,9 +268,9 @@ export default function ResultsPage() {
             <p style={{
               fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
               color: "var(--brand-ink)", lineHeight: "var(--leading-relaxed)",
-              margin: 0, whiteSpace: "pre-wrap",
+              margin: 0, whiteSpace: "pre-wrap", opacity: feedbackLoading && !session.feedback_text ? 0.6 : 1,
             }}>
-              {session.feedback_text}
+              {session.feedback_text ?? "Putting together your feedback…"}
             </p>
           </Card>
         )}

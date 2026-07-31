@@ -133,6 +133,17 @@ export default function DashboardPage() {
       ? Math.round(sessions.reduce((acc, s) => acc + (s.score ?? 0), 0) / sessions.length)
       : null;
 
+  const now = Date.now();
+  const daysAgo = (s: Session) => s.completed_at ? (now - new Date(s.completed_at).getTime()) / 86400000 : Infinity;
+  const lastWeek = sessions.filter((s) => daysAgo(s) <= 7);
+  const priorWeek = sessions.filter((s) => daysAgo(s) > 7 && daysAgo(s) <= 14);
+  const lastWeekAvg = lastWeek.length > 0 ? Math.round(lastWeek.reduce((a, s) => a + (s.score ?? 0), 0) / lastWeek.length) : null;
+  const priorWeekAvg = priorWeek.length > 0 ? Math.round(priorWeek.reduce((a, s) => a + (s.score ?? 0), 0) / priorWeek.length) : null;
+  const vsLastWeek = lastWeekAvg != null && priorWeekAvg != null ? lastWeekAvg - priorWeekAvg : null;
+
+  const last3Days = sessions.filter((s) => daysAgo(s) <= 3);
+  const bestRecentAccuracy = last3Days.length > 0 ? Math.max(...last3Days.map((s) => s.score ?? 0)) : null;
+
   const sortedSkills = [...skillStats].sort((a, b) => a.accuracy - b.accuracy);
   const weakestSkill = sortedSkills.length > 0 ? SKILL_LABELS[sortedSkills[0].skill] : null;
 
@@ -142,7 +153,6 @@ export default function DashboardPage() {
     difficulty: progressByCategory.get(cat.subcategory) ?? null,
   }));
 
-  const planPct = Math.round((doneCt / 30) * 100);
   const allDone = currentDay > 30;
 
   const eyebrow: React.CSSProperties = {
@@ -182,10 +192,15 @@ export default function DashboardPage() {
           borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: 24,
         }}>
           {[
-            { label: "Plan progress", value: `Day ${Math.min(currentDay, 30)}`, sub: "/ 30" },
-            { label: "Avg. accuracy",  value: avgScore != null ? `${avgScore}%` : "—", sub: null },
-            { label: "Day streak",     value: streak > 0 ? `${streak}` : "—",    sub: streak > 0 ? "🔥" : null },
-            { label: "Weakest skill",  value: weakestSkill ?? "—",               sub: null, small: true },
+            { label: "Plan progress", value: `Day ${Math.min(currentDay, 30)}`, sub: "/ 30", color: undefined },
+            { label: "Avg. accuracy",  value: avgScore != null ? `${avgScore}%` : "—", sub: null, color: undefined },
+            {
+              label: "Vs. last week",
+              value: vsLastWeek != null ? `${vsLastWeek >= 0 ? "+" : ""}${vsLastWeek}%` : "—",
+              sub: null,
+              color: vsLastWeek == null ? undefined : vsLastWeek >= 0 ? "var(--indigo-ink)" : "var(--rose-ink)",
+            },
+            { label: "Weakest skill",  value: weakestSkill ?? "—",               sub: null, small: true, color: undefined },
           ].map((s) => (
             <div key={s.label} style={{ background: "var(--surface)", padding: "var(--space-5)" }}>
               <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-muted)", margin: "0 0 8px" }}>{s.label}</p>
@@ -193,7 +208,7 @@ export default function DashboardPage() {
                 fontFamily: (s as { small?: boolean }).small ? "var(--font-sans)" : "var(--font-mono)",
                 fontWeight: 800,
                 fontSize: (s as { small?: boolean }).small ? "var(--text-base)" : "var(--text-xl)",
-                color: "var(--text-strong)", margin: 0, lineHeight: 1.1,
+                color: s.color ?? "var(--text-strong)", margin: 0, lineHeight: 1.1,
               }}>
                 {s.value}
                 {s.sub && <span style={{ fontSize: "var(--text-sm)", fontWeight: 500, color: "var(--text-faint)", marginLeft: 4 }}>{s.sub}</span>}
@@ -316,9 +331,9 @@ export default function DashboardPage() {
               </div>
               <div style={{ flex: 1, background: "var(--surface-sunken)", borderRadius: "var(--radius-md)", padding: "10px 14px", textAlign: "center" }}>
                 <p style={{ fontWeight: 800, fontSize: "var(--text-lg)", color: "var(--text-strong)", margin: 0, lineHeight: 1.1 }}>
-                  {planPct}%
+                  {bestRecentAccuracy != null ? `${bestRecentAccuracy}%` : "—"}
                 </p>
-                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "3px 0 0" }}>of plan done ⭐</p>
+                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "3px 0 0" }}>best in last 3 days ⭐</p>
               </div>
             </div>
           </Card>
@@ -357,8 +372,8 @@ export default function DashboardPage() {
                 <h2 style={{ fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: 0 }}>
                   Recent sessions
                 </h2>
-                <Link href="/history" style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 500, color: "var(--text-faint)", textDecoration: "none" }}>
-                  View all →
+                <Link href="/for-you" style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 500, color: "var(--text-faint)", textDecoration: "none" }}>
+                  See insights →
                 </Link>
               </div>
               {sessions.slice(0, 5).map((s, i) => {

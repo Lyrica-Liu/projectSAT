@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card, Button, Input } from "@/components/ui/ds";
-import { Wordmark } from "@/components/ui/nav";
+import { Button, Input } from "@/components/ui/ds";
 
 function GoogleIcon() {
   return (
@@ -79,200 +78,187 @@ export default function AuthPage() {
   }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "var(--canvas)",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "48px 20px",
-    }}>
-      <div style={{ marginBottom: 28 }}>
-        <Wordmark href="/" />
-      </div>
+    <div style={{ minHeight: "100vh", display: "flex", background: "var(--canvas)", fontFamily: "var(--font-sans)", boxSizing: "border-box" }}>
 
-      <Card tone="surface" padding="xl" radius="xl" shadow="md" style={{ width: "100%", maxWidth: 380 }}>
-        {/* Mode toggle */}
-        <div style={{
-          display: "flex",
-          background: "var(--surface-sunken)",
-          borderRadius: 999,
-          padding: 4,
-          gap: 4,
-          marginBottom: 24,
-        }}>
-          <button
-            type="button"
-            onClick={() => switchMode("signin")}
-            style={{
-              flex: 1,
-              padding: "9px 0",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 600,
-              fontSize: "0.875rem",
-              background: mode === "signin" ? "var(--surface)" : "transparent",
-              border: "none",
-              borderRadius: 999,
-              cursor: "pointer",
-              color: mode === "signin" ? "var(--text-strong)" : "var(--text-muted)",
-              boxShadow: mode === "signin" ? "var(--shadow-sm)" : "none",
-              transition: "all 0.15s ease",
-            }}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("signup")}
-            style={{
-              flex: 1,
-              padding: "9px 0",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 600,
-              fontSize: "0.875rem",
-              background: mode === "signup" ? "var(--surface)" : "transparent",
-              border: "none",
-              borderRadius: 999,
-              cursor: "pointer",
-              color: mode === "signup" ? "var(--text-strong)" : "var(--text-muted)",
-              boxShadow: mode === "signup" ? "var(--shadow-sm)" : "none",
-              transition: "all 0.15s ease",
-            }}
-          >
-            Sign up
-          </button>
-        </div>
-
-        <h1 style={{
-          fontFamily: "var(--font-sans)",
-          fontWeight: 700,
-          fontSize: "1.25rem",
-          color: "var(--text-strong)",
-          margin: "0 0 6px",
-        }}>
-          {mode === "signin" ? "Welcome back" : "Create your account"}
-        </h1>
-        <p style={{
-          fontFamily: "var(--font-sans)",
-          fontSize: "0.875rem",
-          color: "var(--text-muted)",
-          margin: "0 0 20px",
-          lineHeight: 1.5,
-        }}>
-          {mode === "signin"
-            ? "Sign in to continue your practice."
-            : "Start improving your SAT score today."}
-        </p>
-
-        {/* Google sign-in */}
-        <button
-          type="button"
-          onClick={signInWithGoogle}
-          disabled={loading}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 10, padding: "11px 0", marginBottom: 16,
-            background: "var(--surface)", border: "1.5px solid var(--border-strong)",
-            borderRadius: "var(--radius-pill)", cursor: "pointer",
-            fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "0.875rem",
-            color: "var(--text-strong)", transition: "border-color 0.15s ease",
-          }}
-        >
-          <GoogleIcon />
-          Continue with Google
-        </button>
-
-        {/* Divider */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.75rem", color: "var(--text-faint)", whiteSpace: "nowrap" }}>or continue with email</span>
-          <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-        </div>
-
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: 16 }}
-          onKeyDown={(e) => { if (e.key === "Enter" && !loading) doAuth(); }}
-        >
-          {mode === "signup" && (
-            <Input
-              label="Display name"
-              placeholder="Your name"
-              value={displayName}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              onChange={(e: any) => setDisplayName(e.target.value)}
-            />
-          )}
-          <Input
-            label="Email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onChange={(e: any) => setEmail(e.target.value)}
-          />
-          <Input
-            label="Password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onChange={(e: any) => setPassword(e.target.value)}
-          />
-
-          {error && (
-            <div style={{
-              fontSize: "0.8rem",
-              color: "#b1426e",
-              background: "#fdeaf1",
-              border: "1px solid #f1bccd",
-              borderRadius: 10,
-              padding: "10px 14px",
-              lineHeight: 1.5,
-            }}>
-              {error}
-            </div>
-          )}
-          {successMsg && (
-            <div style={{
-              fontSize: "0.8rem",
-              color: "#1f7a57",
-              background: "#e7f7ef",
-              border: "1px solid #b4e8ce",
-              borderRadius: 10,
-              padding: "10px 14px",
-              lineHeight: 1.5,
-            }}>
-              {successMsg}
-            </div>
-          )}
-
-          <Button
-            full
-            size="lg"
-            type="button"
-            onClick={doAuth}
-            disabled={loading}
-            style={{ marginTop: 4 }}
-          >
-            {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
-          </Button>
-        </div>
-      </Card>
-
-      <p style={{
-        marginTop: 22,
-        fontFamily: "var(--font-sans)",
-        fontSize: "0.75rem",
-        color: "var(--text-faint)",
-        textAlign: "center",
-        maxWidth: 320,
-        lineHeight: 1.6,
+      {/* Left: editorial brand panel */}
+      <aside style={{
+        position: "relative", flex: "0 0 44%", minWidth: 320, maxWidth: 560,
+        background: "var(--dark-900)", display: "flex", flexDirection: "column",
+        justifyContent: "space-between", padding: "var(--space-12) var(--space-10)", boxSizing: "border-box",
       }}>
-        By continuing, you agree to our{" "}
-        <span style={{ textDecoration: "underline", cursor: "pointer" }}>Terms</span> and{" "}
-        <span style={{ textDecoration: "underline", cursor: "pointer" }}>Privacy Policy</span>.
-      </p>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
+          <span style={{
+            width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,0.12)", color: "var(--text-on-dark)",
+            display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 17,
+          }}>8</span>
+          <span style={{ fontWeight: 800, fontSize: 19, letterSpacing: "var(--tracking-tight)", color: "var(--text-on-dark)" }}>800Path</span>
+        </span>
+
+        <div>
+          <p style={{
+            fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500,
+            fontSize: "var(--text-3xl)", lineHeight: 1.15, letterSpacing: "var(--tracking-snug)",
+            color: "var(--text-on-dark)", margin: "0 0 var(--space-4)",
+          }}>
+            &ldquo;Steady, deliberate progress —{" "}
+            <span style={{ background: "var(--gradient-radiant)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", fontStyle: "normal" }}>
+              one session at a time.
+            </span>&rdquo;
+          </p>
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-on-dark-muted)", margin: 0 }}>
+            The practice companion for self-studiers.
+          </p>
+        </div>
+
+        <p style={{ fontSize: "var(--text-xs)", color: "var(--text-on-dark-faint)", margin: 0 }}>© 2026 800Path</p>
+      </aside>
+
+      {/* Right: form */}
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--space-16) var(--space-8)", boxSizing: "border-box" }}>
+        <div style={{ width: "100%", maxWidth: 380, boxSizing: "border-box" }}>
+
+          {/* Segmented toggle */}
+          <div style={{ display: "flex", padding: 4, gap: 4, background: "var(--surface-sunken)", borderRadius: "var(--radius-lg)", marginBottom: 28 }}>
+            <button
+              type="button"
+              onClick={() => switchMode("signin")}
+              style={{
+                flex: 1, padding: "8px 16px", fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
+                fontWeight: mode === "signin" ? 700 : 600,
+                color: mode === "signin" ? "#fff" : "var(--text-muted)",
+                background: mode === "signin" ? "var(--brand)" : "transparent",
+                border: mode === "signin" ? "1.5px solid var(--brand)" : "1.5px solid transparent",
+                borderRadius: "var(--radius-md)", cursor: "pointer",
+                boxShadow: mode === "signin" ? "var(--shadow-brand)" : "none",
+                transition: "all var(--dur-base) var(--ease-out)",
+              }}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode("signup")}
+              style={{
+                flex: 1, padding: "8px 16px", fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
+                fontWeight: mode === "signup" ? 700 : 600,
+                color: mode === "signup" ? "#fff" : "var(--text-muted)",
+                background: mode === "signup" ? "var(--brand)" : "transparent",
+                border: mode === "signup" ? "1.5px solid var(--brand)" : "1.5px solid transparent",
+                borderRadius: "var(--radius-md)", cursor: "pointer",
+                boxShadow: mode === "signup" ? "var(--shadow-brand)" : "none",
+                transition: "all var(--dur-base) var(--ease-out)",
+              }}
+            >
+              Sign up
+            </button>
+          </div>
+
+          <h1 style={{
+            fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500,
+            fontSize: "var(--text-2xl)", color: "var(--text-strong)", margin: "0 0 6px",
+          }}>
+            {mode === "signin" ? "Welcome back" : "Create your account"}
+          </h1>
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: "0 0 28px" }}>
+            {mode === "signin"
+              ? "Sign in to continue your practice."
+              : "Start improving your SAT score today."}
+          </p>
+
+          {/* Google sign-in */}
+          <button
+            type="button"
+            onClick={signInWithGoogle}
+            disabled={loading}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 10, padding: "11px 0", marginBottom: 16,
+              background: "var(--surface)", border: "1.5px solid var(--border-strong)",
+              borderRadius: "var(--radius-pill)", cursor: "pointer",
+              fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
+              color: "var(--text-strong)", transition: "border-color var(--dur-base)",
+            }}
+          >
+            <GoogleIcon />
+            Continue with Google
+          </button>
+
+          {/* Divider */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+            <span style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", whiteSpace: "nowrap" }}>or continue with email</span>
+            <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+          </div>
+
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: 16 }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !loading) doAuth(); }}
+          >
+            {mode === "signup" && (
+              <Input
+                label="Display name"
+                placeholder="Your name"
+                value={displayName}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onChange={(e: any) => setDisplayName(e.target.value)}
+              />
+            )}
+            <Input
+              label="Email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onChange={(e: any) => setEmail(e.target.value)}
+            />
+            <Input
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onChange={(e: any) => setPassword(e.target.value)}
+            />
+
+            {error && (
+              <div style={{
+                fontSize: "var(--text-xs)", color: "var(--danger)", background: "var(--danger-surface)",
+                border: "1px solid var(--danger)", borderRadius: "var(--radius-sm)", padding: "10px 14px",
+                lineHeight: "var(--leading-normal)",
+              }}>
+                {error}
+              </div>
+            )}
+            {successMsg && (
+              <div style={{
+                fontSize: "var(--text-xs)", color: "var(--mint-ink)", background: "var(--mint-surface)",
+                border: "1px solid var(--mint-ink)", borderRadius: "var(--radius-sm)", padding: "10px 14px",
+                lineHeight: "var(--leading-normal)",
+              }}>
+                {successMsg}
+              </div>
+            )}
+
+            <div style={{ marginTop: 4 }}>
+              <Button
+                full
+                size="lg"
+                type="button"
+                onClick={doAuth}
+                disabled={loading}
+              >
+                {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+              </Button>
+            </div>
+          </div>
+
+          <p style={{ marginTop: 24, fontSize: "var(--text-xs)", color: "var(--text-faint)", lineHeight: 1.6 }}>
+            By continuing, you agree to our{" "}
+            <span style={{ textDecoration: "underline", cursor: "pointer" }}>Terms</span> and{" "}
+            <span style={{ textDecoration: "underline", cursor: "pointer" }}>Privacy Policy</span>.
+          </p>
+        </div>
+      </main>
     </div>
   );
 }

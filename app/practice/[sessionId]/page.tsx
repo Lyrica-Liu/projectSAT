@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Badge, Card, ProgressBar, AnswerOption, Button } from "@/components/ui/ds";
 import { LoadingScreen } from "@/components/ui/nav";
 import { Icon } from "@/components/ui/icon";
+import { getPlanDay } from "@/lib/plan";
 import type { Question, Answer, Session } from "@/lib/types";
 
 type AnswerChoice = "A" | "B" | "C" | "D";
@@ -35,6 +36,9 @@ export default function ActiveSessionPage() {
   const [submitting, setSubmitting] = useState(false);
   const [generatingNext, setGeneratingNext] = useState(false);
   const [planLinked, setPlanLinked] = useState(false);
+  const [planDayNumber, setPlanDayNumber] = useState<number | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [showExit, setShowExit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -67,10 +71,15 @@ export default function ActiveSessionPage() {
 
     const { data: planDayRow } = await supabase
       .from("plan_days")
-      .select("id")
+      .select("id, day_number")
       .eq("session_id", sessionId)
       .maybeSingle();
     setPlanLinked(!!planDayRow);
+    if (planDayRow) {
+      setPlanDayNumber(planDayRow.day_number);
+      const durationMins = getPlanDay(planDayRow.day_number)?.durationMins ?? 18;
+      setSecondsLeft(durationMins * 60);
+    }
 
     const { data: answerRows } = await supabase
       .from("answers")
@@ -99,6 +108,15 @@ export default function ActiveSessionPage() {
   useEffect(() => {
     loadSession();
   }, [loadSession]);
+
+  useEffect(() => {
+    if (!planLinked || secondsLeft == null) return;
+    const interval = setInterval(() => {
+      setSecondsLeft((s) => (s != null && s > 0 ? s - 1 : s));
+    }, 1000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planLinked, secondsLeft == null]);
 
   async function selectAnswer(choice: AnswerChoice) {
     const state = questions[currentIndex];
@@ -130,6 +148,8 @@ export default function ActiveSessionPage() {
         setSubmitting(false);
         return;
       }
+      router.push(`/plan/${planDayNumber}`);
+      return;
     } else {
       const correct = questions.filter((q) => q.selected === q.question.answer);
       const score = Math.round((correct.length / questions.length) * 100);
@@ -139,6 +159,10 @@ export default function ActiveSessionPage() {
         .eq("id", sessionId);
     }
     router.push(`/results/${sessionId}`);
+  }
+
+  function leaveSession() {
+    router.push("/plan");
   }
 
   async function goNext() {
@@ -220,6 +244,23 @@ export default function ActiveSessionPage() {
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>
               {answeredCount}/{sessionTarget} answered
             </span>
+            {planLinked && secondsLeft != null && (
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-strong)",
+                background: "var(--surface-sunken)", borderRadius: "var(--radius-pill)", padding: "5px 12px",
+              }}>
+                <Icon name="target" size={13} />
+                {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:{String(secondsLeft % 60).padStart(2, "0")}
+              </span>
+            )}
+            {planLinked && (
+              <button onClick={() => setShowExit(true)} style={{
+                border: "1.5px solid var(--border)", background: "var(--surface)", borderRadius: "var(--radius-pill)",
+                fontFamily: "inherit", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--text-muted)",
+                padding: "6px 14px", cursor: "pointer",
+              }}>Exit</button>
+            )}
             {allAnswered && (
               <Button size="sm" onClick={finishSession} disabled={submitting}>
                 {submitting ? "Saving…" : "Finish →"}
@@ -365,6 +406,27 @@ export default function ActiveSessionPage() {
           )}
         </div>
       </main>
+
+      {/* Exit confirmation */}
+      {showExit && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
+        }}>
+          <div style={{ background: "var(--surface)", borderRadius: "var(--radius-2xl)", boxShadow: "var(--shadow-lg)", padding: "var(--space-8)", maxWidth: 400, textAlign: "center" }}>
+            <h2 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500, fontSize: "var(--text-lg)", color: "var(--text-strong)", margin: "0 0 10px" }}>
+              Pause here?
+            </h2>
+            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", lineHeight: "var(--leading-relaxed)", margin: "0 0 22px" }}>
+              Your answers so far are already saved, so you can pick up right where you left off — today&apos;s day just won&apos;t be marked complete yet.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <Button size="lg" full onClick={() => setShowExit(false)}>Keep going</Button>
+              <Button variant="ghost" full onClick={leaveSession}>Leave anyway</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

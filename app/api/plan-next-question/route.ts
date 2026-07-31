@@ -61,7 +61,16 @@ export async function POST(req: NextRequest) {
   const usedStems = new Set(history.map((h) => h.question!.stem));
 
   const targetTier = pickNextTier(state.currentDifficulty);
-  const tryTiers = [targetTier, state.currentDifficulty, ...TIER_ORDER];
+
+  // If the target tier's pool is exhausted (only 10 questions exist per
+  // category x tier), fall back to the nearest tier to where the user
+  // actually is right now — not a fixed easy-first order, which would
+  // otherwise always cascade down to "easy" regardless of current tier.
+  const currentRank = TIER_ORDER.indexOf(state.currentDifficulty);
+  const byDistance = TIER_ORDER.slice().sort(
+    (a, b) => Math.abs(TIER_ORDER.indexOf(a) - currentRank) - Math.abs(TIER_ORDER.indexOf(b) - currentRank)
+  );
+  const tryTiers = [targetTier, ...byDistance.filter((t) => t !== targetTier)];
 
   let candidate: ReturnType<typeof getBankQuestions>[number] | null = null;
   for (const tier of tryTiers) {

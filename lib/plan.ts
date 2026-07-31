@@ -141,8 +141,21 @@ export const DIFFICULTY_TONES: Record<string, string> = {
   hard: "rose",
 };
 
-/** Consecutive calendar days with at least one plan completion, ending today or yesterday. */
+/**
+ * Consecutive calendar days with at least one plan completion, ending today
+ * or yesterday. Tolerates one missed day per rolling 7-day window (a "grace
+ * day") without breaking the streak — that day just doesn't add to the count.
+ */
 export function calcStreak(rows: { completed_at: string | null }[]): number {
+  return walkStreak(rows).streak;
+}
+
+/** Whether this week's grace day (one forgiven miss per 7-day window) has already been used. */
+export function isGraceDayUsed(rows: { completed_at: string | null }[]): boolean {
+  return walkStreak(rows).graceUsed;
+}
+
+function walkStreak(rows: { completed_at: string | null }[]): { streak: number; graceUsed: boolean } {
   const dates = new Set(
     rows
       .filter((r) => r.completed_at)
@@ -150,6 +163,8 @@ export function calcStreak(rows: { completed_at: string | null }[]): number {
   );
 
   let streak = 0;
+  let graceUsed = false;
+  let daysSinceWindowStart = 0;
   const today = new Date();
   today.setHours(12, 0, 0, 0);
 
@@ -158,17 +173,26 @@ export function calcStreak(rows: { completed_at: string | null }[]): number {
     d.setDate(d.getDate() - offset);
     const key = d.toISOString().slice(0, 10);
 
+    daysSinceWindowStart++;
+    if (daysSinceWindowStart > 7) {
+      daysSinceWindowStart = 1;
+      graceUsed = false;
+    }
+
     if (dates.has(key)) {
       streak++;
     } else if (offset === 0) {
       // Today not done yet — still count from yesterday
+      daysSinceWindowStart--;
       continue;
+    } else if (!graceUsed) {
+      graceUsed = true;
     } else {
       break;
     }
   }
 
-  return streak;
+  return { streak, graceUsed };
 }
 
 /** Next day the user should work on (first incomplete day, or 31 if all done). */

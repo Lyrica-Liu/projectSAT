@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AppNav } from "@/components/ui/nav";
 import { Button, ChoiceCard, ProgressBar } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
@@ -124,8 +125,12 @@ export default function PracticeSetupPage() {
       <main style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "48px 24px" }}>
         <h1 style={{
           fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: "var(--text-xl)",
-          letterSpacing: "var(--tracking-snug)", color: "var(--text-strong)", margin: "0 0 32px",
+          letterSpacing: "var(--tracking-snug)", color: "var(--text-strong)", margin: "0 0 8px",
         }}>Set up your session</h1>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: "0 0 32px" }}>
+          Pick anything you like — extra sessions sharpen skills but don&apos;t advance your 30-day plan.{" "}
+          <Link href="/for-you" style={{ color: "var(--brand-ink)", fontWeight: 600 }}>See what&apos;s picked for you →</Link>
+        </p>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
 

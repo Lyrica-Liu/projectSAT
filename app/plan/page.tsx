@@ -11,19 +11,22 @@ import {
   DIFFICULTY_LABELS,
   DIFFICULTY_TONES,
   calcStreak,
+  isGraceDayUsed,
   getCurrentPlanDay,
   englishSlotNumber,
 } from "@/lib/plan";
 import type { PlanDayRow } from "@/lib/types";
 
 const MILESTONE_DAYS = [10, 20, 30];
-const MILESTONE_LABELS: Record<number, string> = { 10: "Phase 1", 20: "Phase 2", 30: "Finish Line" };
+const MILESTONE_LABELS: Record<number, string> = { 10: "Foundations", 20: "Momentum", 30: "Summit" };
 
 export default function PlanPage() {
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [planRows, setPlanRows] = useState<PlanDayRow[]>([]);
+  const [baselineScore, setBaselineScore] = useState<number | null>(null);
+  const [targetScore, setTargetScore] = useState<number | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const todayRef = useRef<HTMLAnchorElement>(null);
 
@@ -39,6 +42,8 @@ export default function PlanPage() {
         .order("day_number");
 
       setPlanRows(data ?? []);
+      setBaselineScore(user.user_metadata?.baseline_score ?? null);
+      setTargetScore(user.user_metadata?.target_score ?? null);
       setLoading(false);
     }
     load();
@@ -60,8 +65,27 @@ export default function PlanPage() {
   const completedSet = new Set(completedNums);
   const currentDay = getCurrentPlanDay(completedNums);
   const streak = calcStreak(planRows);
+  const graceUsed = isGraceDayUsed(planRows);
   const doneCt = completedNums.length;
   const pct = Math.round((doneCt / 30) * 100);
+
+  // Score projection: linear from your starting score to your target across
+  // the 30 days, using real onboarding/account numbers (not a guess).
+  const projBaseline = baselineScore ?? 1050;
+  const projTarget = targetScore ?? 1450;
+  const projScoreAt = (d: number) => projBaseline + ((projTarget - projBaseline) * d) / 30;
+  const currentProjection = Math.round(projScoreAt(doneCt) / 10) * 10;
+
+  const projW = 240, projH = 78, projPadL = 6, projPadR = 6;
+  const projYMin = Math.min(projBaseline, projTarget) - 20;
+  const projYMax = Math.max(projBaseline, projTarget) + 20;
+  const projX = (d: number) => projPadL + (d / 30) * (projW - projPadL - projPadR);
+  const projY = (score: number) => projH - 10 - ((score - projYMin) / (projYMax - projYMin)) * (projH - 20);
+  const pastPts: string[] = [];
+  for (let d = 0; d <= doneCt; d++) pastPts.push(`${projX(d).toFixed(1)},${projY(projScoreAt(d)).toFixed(1)}`);
+  const futurePts: string[] = [];
+  for (let d = doneCt; d <= 30; d++) futurePts.push(`${projX(d).toFixed(1)},${projY(projScoreAt(d)).toFixed(1)}`);
+  const [lastPastX, lastPastY] = (pastPts[pastPts.length - 1] ?? `${projX(0)},${projY(projBaseline)}`).split(",");
 
   const avgScore =
     completedRows.length > 0
@@ -138,6 +162,34 @@ export default function PlanPage() {
                 </p>
               </Card>
             )}
+
+            {/* Score projection */}
+            <Card tone="surface" padding="md" radius="xl" shadow="sm">
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={eyebrow}>Score projection</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--indigo-ink)" }}>
+                  {currentProjection}
+                </span>
+              </div>
+              <svg viewBox={`0 0 ${projW} ${projH}`} style={{ display: "block", width: "100%", height: "auto" }}>
+                <polyline points={futurePts.join(" ")} fill="none" stroke="var(--line-strong)" strokeWidth={2} strokeDasharray="3 4" strokeLinecap="round" />
+                <polyline points={pastPts.join(" ")} fill="none" stroke="var(--indigo-ink)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx={lastPastX} cy={lastPastY} r={4} fill="var(--indigo-ink)" />
+              </svg>
+              <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "8px 0 0", lineHeight: "var(--leading-normal)" }}>
+                Updates after every completed day. Target: <strong style={{ color: "var(--text-strong)" }}>{projTarget}</strong> by Day 30.
+              </p>
+            </Card>
+
+            {/* Grace day */}
+            <Card tone="lilac" padding="md" radius="xl" shadow="none">
+              <p style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--brand-ink)", margin: "0 0 4px" }}>Grace day</p>
+              <p style={{ fontSize: "var(--text-xs)", color: "var(--brand-ink)", margin: 0, lineHeight: "var(--leading-normal)" }}>
+                {graceUsed
+                  ? "Used this week — the streak pauses if you miss another day. Back on track next week."
+                  : "One missed day per week won't break your streak. Unused this week — nicely done."}
+              </p>
+            </Card>
 
             {/* Milestones */}
             <Card tone="surface" padding="md" radius="xl" shadow="sm">

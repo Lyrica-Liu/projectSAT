@@ -96,7 +96,7 @@ const NAV_LINKS = [
   { href: "/plan",      label: "My plan"  },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/practice",  label: "Extra practice" },
-  { href: "/history",   label: "History"  },
+  { href: "/for-you",   label: "For you"  },
 ];
 
 export function AppNav({ maxWidth = 1040 }: { maxWidth?: number }) {

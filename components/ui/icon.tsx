@@ -4,6 +4,7 @@ import {
   ArrowRight, ArrowLeft, Sparkles, Target, Zap,
   Coffee, Compass, MessageCircleHeart, UserCheck,
   TrendingUp, CalendarCheck, Wallet,
+  Lightbulb, PenTool, MessageSquare, CheckCheck, ChevronRight,
 } from "lucide-react";
 
 const ICONS = {
@@ -19,6 +20,11 @@ const ICONS = {
   "trending-up":           TrendingUp,
   "calendar-check":        CalendarCheck,
   wallet:                  Wallet,
+  lightbulb:               Lightbulb,
+  "pen-tool":              PenTool,
+  "message-square":        MessageSquare,
+  "check-check":           CheckCheck,
+  "chevron-right":         ChevronRight,
 } as const;
 
 type IconName = keyof typeof ICONS;
