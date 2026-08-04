@@ -78,7 +78,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "var(--canvas)", fontFamily: "var(--font-sans)", boxSizing: "border-box" }}>
+    <div style={{ minHeight: "100vh", display: "flex", background: "var(--canvas)", fontFamily: "var(--font-sans)", boxSizing: "border-box", zoom: 1.15 }}>
 
       {/* Left: editorial brand panel */}
       <aside style={{

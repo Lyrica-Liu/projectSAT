@@ -172,7 +172,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
       <AppNav />
 
       <main style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px 64px" }}>

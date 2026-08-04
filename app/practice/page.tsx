@@ -136,7 +136,7 @@ export default function PracticeSetupPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", zoom: 1.15 }}>
       <AppNav maxWidth={900} />
 
       <main style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "48px 24px" }}>

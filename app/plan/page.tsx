@@ -77,7 +77,7 @@ export default function PlanPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
       <AppNav />
 
       <main style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px 80px" }}>

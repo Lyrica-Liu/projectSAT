@@ -198,7 +198,7 @@ export default function ResultsPage() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
       <AppNav maxWidth={720} />
 
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "32px 24px 80px" }}>

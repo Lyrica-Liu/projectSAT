@@ -54,7 +54,12 @@ function locateBlock(content: string, subcategory: string, difficulty: string): 
   if (!skillMatch) throw new Error(`Could not find skill header for "${subcategory}"`);
   const skillStart = skillMatch.index;
 
-  const nextSkillRegex = /^[ \t]*•\s+.+$/gm;
+  // Only match known subcategory headers here — Rhetorical Synthesis questions
+  // embed their own "• <note>" bullet lines (synthesis notes), which a generic
+  // "any bulleted line" regex would mistake for the start of the next skill
+  // section, truncating the block before later difficulty tiers.
+  const otherSubcategories = Object.keys(CATEGORY_OF).filter((s) => s !== subcategory);
+  const nextSkillRegex = new RegExp(`^[ \\t]*•\\s+(?:${otherSubcategories.map(escapeRegex).join("|")})\\s*$`, "gm");
   nextSkillRegex.lastIndex = skillStart + skillMatch[0].length;
   const nextSkillMatch = nextSkillRegex.exec(content);
   const skillEnd = nextSkillMatch ? nextSkillMatch.index : content.length;

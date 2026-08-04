@@ -429,7 +429,7 @@ export default function ForYouPage() {
 
   if (withDataEnglish.length === 0 && withDataMath.length === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
         <AppNav />
         <main style={{ maxWidth: 1040, margin: "0 auto", padding: "40px 24px" }}>
           <h1 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500, fontSize: "var(--text-2xl)", color: "var(--text-strong)", margin: "0 0 20px" }}>
@@ -484,7 +484,7 @@ export default function ForYouPage() {
   const weakest = activeWithData.slice().sort(byWeakness).slice(0, 3);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
       <AppNav />
 
       <main style={{ maxWidth: 1040, margin: "0 auto", padding: "40px 24px 64px" }}>

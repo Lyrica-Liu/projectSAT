@@ -232,7 +232,7 @@ export default function ActiveSessionPage() {
 
   if (error) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 24px" }}>
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 24px", zoom: 1.15 }}>
         <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--danger)", background: "var(--danger-surface)", borderRadius: "var(--radius-md)", padding: "12px 18px", maxWidth: 400, textAlign: "center" }}>
           {error}
         </div>
@@ -262,7 +262,7 @@ export default function ActiveSessionPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", zoom: 1.15 }}>
       {/* Sticky header */}
       <header style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>

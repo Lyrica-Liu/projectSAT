@@ -162,7 +162,7 @@ export default function DailySessionPage() {
 
   if (state === "locked") {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
         {headerRow}
         <main style={{ maxWidth: 520, margin: "80px auto", padding: "0 24px", textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
@@ -187,7 +187,7 @@ export default function DailySessionPage() {
       : "Every day counts, even the hard ones. Tomorrow's module will revisit what tripped you up.";
 
     return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
         {headerRow}
         <main style={{ maxWidth: 560, margin: "0 auto", padding: "48px 24px 80px" }}>
           <div style={{
@@ -266,7 +266,7 @@ export default function DailySessionPage() {
   const sessionLength = isMath ? MATH_SESSION_LENGTH : ENGLISH_SESSION_LENGTH;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
       {headerRow}
 
       <main style={{ maxWidth: 560, margin: "0 auto", padding: "48px 24px 80px" }}>
