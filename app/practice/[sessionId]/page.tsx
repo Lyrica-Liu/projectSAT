@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Badge, Card, ProgressBar, AnswerOption, Button } from "@/components/ui/ds";
+import { Badge, Card, ProgressBar, AnswerOption, Button, Input } from "@/components/ui/ds";
 import { LoadingScreen } from "@/components/ui/nav";
 import { Icon } from "@/components/ui/icon";
 import { getPlanDay } from "@/lib/plan";
+import { gradeGridAnswer } from "@/lib/grading";
 import type { Question, Answer, Session } from "@/lib/types";
 
 type AnswerChoice = "A" | "B" | "C" | "D";
@@ -15,6 +16,8 @@ interface QuestionState {
   question: Question;
   answer: Answer | null;
   selected: AnswerChoice | null;
+  gridValue: string | null;
+  correct: boolean | null;
   revealed: boolean;
 }
 
@@ -41,73 +44,76 @@ export default function ActiveSessionPage() {
   const [showExit, setShowExit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const loadSession = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.replace("/auth");
-      return;
-    }
-
-    const { data: sessionData, error: sErr } = await supabase
-      .from("sessions")
-      .select("*")
-      .eq("id", sessionId)
-      .eq("user_id", user.id)
-      .single();
-
-    if (sErr || !sessionData) {
-      setError("Session not found.");
-      setLoading(false);
-      return;
-    }
-
-    if (sessionData.completed_at) {
-      router.replace(`/results/${sessionId}`);
-      return;
-    }
-
-    setSession(sessionData);
-
-    const { data: planDayRow } = await supabase
-      .from("plan_days")
-      .select("id, day_number")
-      .eq("session_id", sessionId)
-      .maybeSingle();
-    setPlanLinked(!!planDayRow);
-    if (planDayRow) {
-      setPlanDayNumber(planDayRow.day_number);
-      const durationMins = getPlanDay(planDayRow.day_number)?.durationMins ?? 18;
-      setSecondsLeft(durationMins * 60);
-    }
-
-    const { data: answerRows } = await supabase
-      .from("answers")
-      .select("*, question:questions(*)")
-      .eq("session_id", sessionId)
-      .order("position");
-
-    if (!answerRows || answerRows.length === 0) {
-      setError("Session data missing. Please start a new session.");
-      setLoading(false);
-      return;
-    }
-
-    setQuestions(
-      answerRows.map((row: Answer & { question: Question }) => ({
-        question: row.question,
-        answer: row,
-        selected: row.user_answer as AnswerChoice | null,
-        revealed: row.user_answer !== null,
-      }))
-    );
-
-    setLoading(false);
-  }, [sessionId, supabase, router]);
+  const [gridDraft, setGridDraft] = useState("");
 
   useEffect(() => {
+    async function loadSession() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.replace("/auth");
+        return;
+      }
+
+      const { data: sessionData, error: sErr } = await supabase
+        .from("sessions")
+        .select("*")
+        .eq("id", sessionId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (sErr || !sessionData) {
+        setError("Session not found.");
+        setLoading(false);
+        return;
+      }
+
+      if (sessionData.completed_at) {
+        router.replace(`/results/${sessionId}`);
+        return;
+      }
+
+      setSession(sessionData);
+
+      const { data: planDayRow } = await supabase
+        .from("plan_days")
+        .select("id, day_number")
+        .eq("session_id", sessionId)
+        .maybeSingle();
+      setPlanLinked(!!planDayRow);
+      if (planDayRow) {
+        setPlanDayNumber(planDayRow.day_number);
+        const durationMins = getPlanDay(planDayRow.day_number)?.durationMins ?? 18;
+        setSecondsLeft(durationMins * 60);
+      }
+
+      const { data: answerRows } = await supabase
+        .from("answers")
+        .select("*, question:questions(*)")
+        .eq("session_id", sessionId)
+        .order("position");
+
+      if (!answerRows || answerRows.length === 0) {
+        setError("Session data missing. Please start a new session.");
+        setLoading(false);
+        return;
+      }
+
+      setQuestions(
+        answerRows.map((row: Answer & { question: Question }) => ({
+          question: row.question,
+          answer: row,
+          selected: row.user_answer as AnswerChoice | null,
+          gridValue: row.user_grid_answer,
+          correct: row.is_correct,
+          revealed: row.user_answer !== null || row.user_grid_answer !== null,
+        }))
+      );
+
+      setLoading(false);
+    }
     loadSession();
-  }, [loadSession]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
 
   useEffect(() => {
     if (!planLinked || secondsLeft == null) return;
@@ -118,18 +124,42 @@ export default function ActiveSessionPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planLinked, secondsLeft == null]);
 
+  // Re-sync the grid-in draft whenever the current question changes, without an
+  // effect (see https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes).
+  const [gridSyncKey, setGridSyncKey] = useState<{ i: number; qs: QuestionState[] } | null>(null);
+  if (gridSyncKey === null || gridSyncKey.i !== currentIndex || gridSyncKey.qs !== questions) {
+    setGridSyncKey({ i: currentIndex, qs: questions });
+    setGridDraft(questions[currentIndex]?.gridValue ?? "");
+  }
+
   async function selectAnswer(choice: AnswerChoice) {
     const state = questions[currentIndex];
     if (state.revealed) return;
 
     const isCorrect = choice === state.question.answer;
     setQuestions((prev) =>
-      prev.map((q, i) => (i === currentIndex ? { ...q, selected: choice, revealed: true } : q))
+      prev.map((q, i) => (i === currentIndex ? { ...q, selected: choice, correct: isCorrect, revealed: true } : q))
     );
 
     await supabase
       .from("answers")
       .update({ user_answer: choice, is_correct: isCorrect })
+      .eq("session_id", sessionId)
+      .eq("question_id", state.question.id);
+  }
+
+  async function submitGridAnswer() {
+    const state = questions[currentIndex];
+    if (state.revealed || !gridDraft.trim()) return;
+
+    const isCorrect = gradeGridAnswer(gridDraft, state.question.grid_answer ?? "");
+    setQuestions((prev) =>
+      prev.map((q, i) => (i === currentIndex ? { ...q, gridValue: gridDraft, correct: isCorrect, revealed: true } : q))
+    );
+
+    await supabase
+      .from("answers")
+      .update({ user_grid_answer: gridDraft, is_correct: isCorrect })
       .eq("session_id", sessionId)
       .eq("question_id", state.question.id);
   }
@@ -151,7 +181,7 @@ export default function ActiveSessionPage() {
       router.push(`/plan/${planDayNumber}`);
       return;
     } else {
-      const correct = questions.filter((q) => q.selected === q.question.answer);
+      const correct = questions.filter((q) => q.correct);
       const score = Math.round((correct.length / questions.length) * 100);
       await supabase
         .from("sessions")
@@ -183,7 +213,7 @@ export default function ActiveSessionPage() {
         if (body.question && body.answer) {
           setQuestions((prev) => [
             ...prev,
-            { question: body.question, answer: body.answer, selected: null, revealed: false },
+            { question: body.question, answer: body.answer, selected: null, gridValue: null, correct: null, revealed: false },
           ]);
           setCurrentIndex((i) => i + 1);
         }
@@ -213,7 +243,7 @@ export default function ActiveSessionPage() {
 
   const current = questions[currentIndex];
   const sessionTarget = session?.question_count ?? questions.length;
-  const answeredCount = questions.filter((q) => q.selected !== null).length;
+  const answeredCount = questions.filter((q) => q.selected !== null || q.gridValue !== null).length;
   const allAnswered = answeredCount === sessionTarget && questions.length === sessionTarget;
   const atFrontier = currentIndex === questions.length - 1;
   const hasMoreToGenerate = questions.length < sessionTarget;
@@ -278,8 +308,8 @@ export default function ActiveSessionPage() {
         <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
           {questions.map((q, i) => {
             const isCur = i === currentIndex;
-            const answered = q.selected !== null;
-            const correct = answered && q.selected === q.question.answer;
+            const answered = q.selected !== null || q.gridValue !== null;
+            const correct = answered && !!q.correct;
             let bg = "var(--surface-sunken)", col = "var(--text-muted)";
             if (isCur) { bg = "var(--lilac-500)"; col = "#fff"; }
             else if (answered) { bg = correct ? "var(--mint-surface)" : "var(--rose-surface)"; col = correct ? "var(--mint-ink)" : "var(--rose-ink)"; }
@@ -332,32 +362,58 @@ export default function ActiveSessionPage() {
         </p>
 
         {/* Answer options */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-          {(["A", "B", "C", "D"] as AnswerChoice[]).map((c) => (
-            <AnswerOption
-              key={c}
-              letter={c}
-              state={stateFor(c)}
+        {current.question.question_type === "grid_in" ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24, maxWidth: 280 }}>
+            <Input
+              label="Your answer"
+              placeholder="e.g. 17/4 or 4.25"
+              value={current.revealed ? (current.gridValue ?? "") : gridDraft}
               disabled={current.revealed}
-              onClick={() => selectAnswer(c)}
-            >
-              {current.question.options[c]}
-            </AnswerOption>
-          ))}
-        </div>
+               
+              onChange={(e: any) => setGridDraft(e.target.value)}
+            />
+            {!current.revealed && (
+              <Button onClick={submitGridAnswer} disabled={!gridDraft.trim()}>
+                Check answer
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+            {(["A", "B", "C", "D"] as AnswerChoice[]).map((c) => (
+              <AnswerOption
+                key={c}
+                letter={c}
+                state={stateFor(c)}
+                disabled={current.revealed}
+                onClick={() => selectAnswer(c)}
+              >
+                {current.question.options?.[c]}
+              </AnswerOption>
+            ))}
+          </div>
+        )}
 
         {/* Explanation */}
         {current.revealed && (
           <Card
-            tone={current.selected === current.question.answer ? "mint" : "rose"}
+            tone={current.correct ? "mint" : "rose"}
             padding="lg"
             radius="lg"
             shadow="none"
             style={{ marginBottom: 24 }}
           >
             <span style={{ ...eyebrow, opacity: 0.8, color: "inherit" }}>
-              {current.selected === current.question.answer ? "Nice — correct!" : "Not quite"}
+              {current.correct ? "Nice — correct!" : "Not quite"}
             </span>
+            {!current.correct && current.question.question_type === "grid_in" && (
+              <p style={{
+                fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-sm)",
+                margin: "0 0 8px", color: "inherit",
+              }}>
+                Correct answer: {current.question.grid_answer}
+              </p>
+            )}
             <p style={{
               fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
               lineHeight: "var(--leading-relaxed)", margin: 0, color: "inherit",

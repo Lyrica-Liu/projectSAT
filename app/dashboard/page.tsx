@@ -8,9 +8,9 @@ import { AppNav, LoadingScreen } from "@/components/ui/nav";
 import { Card, Badge, Button } from "@/components/ui/ds";
 import {
   getPlanDay, getCurrentPlanDay, calcStreak, DIFFICULTY_LABELS, DIFFICULTY_TONES,
-  ENGLISH_SESSION_LENGTH, ENGLISH_CATEGORY_ORDER,
+  ENGLISH_SESSION_LENGTH, MATH_SESSION_LENGTH, ENGLISH_CATEGORY_ORDER,
 } from "@/lib/plan";
-import type { Session, SkillStat, QuestionSkill, PlanDayRow, CategoryProgressRow } from "@/lib/types";
+import type { Session, SkillStat, QuestionSkill, MathSkill, PlanDayRow, CategoryProgressRow } from "@/lib/types";
 
 const SKILL_LABELS: Record<QuestionSkill, string> = {
   central_idea: "Central Idea",
@@ -25,14 +25,25 @@ const SKILL_LABELS: Record<QuestionSkill, string> = {
   rhetorical_synthesis: "Rhetorical Synthesis",
 };
 
+const MATH_SKILL_LABELS: Record<MathSkill, string> = {
+  algebra: "Algebra",
+  data_analysis: "Data Analysis",
+  geometry: "Geometry",
+};
+
+function skillLabel(skill: QuestionSkill | MathSkill): string {
+  return (SKILL_LABELS as Record<string, string>)[skill] ?? (MATH_SKILL_LABELS as Record<string, string>)[skill] ?? skill;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
+  const [now] = useState(() => Date.now());
   const [displayName, setDisplayName] = useState("there");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [skillStats, setSkillStats] = useState<SkillStat[]>([]);
-  const [sessionSkillsMap, setSessionSkillsMap] = useState<Record<string, QuestionSkill[]>>({});
+  const [sessionSkillsMap, setSessionSkillsMap] = useState<Record<string, (QuestionSkill | MathSkill)[]>>({});
   const [planRows, setPlanRows] = useState<PlanDayRow[]>([]);
   const [categoryProgress, setCategoryProgress] = useState<CategoryProgressRow[]>([]);
 
@@ -80,11 +91,11 @@ export default function DashboardPage() {
           .in("session_id", sessionIds);
 
         const skillMap: Record<string, { total: number; correct: number }> = {};
-        const perSessionSkills: Record<string, Set<QuestionSkill>> = {};
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const perSessionSkills: Record<string, Set<QuestionSkill | MathSkill>> = {};
+         
         (answerRows ?? []).forEach((row: any) => {
           const q = Array.isArray(row.question) ? row.question[0] : row.question;
-          const skill: QuestionSkill | undefined = q?.skill;
+          const skill: QuestionSkill | MathSkill | undefined = q?.skill;
           if (!skill) return;
           if (!skillMap[skill]) skillMap[skill] = { total: 0, correct: 0 };
           skillMap[skill].total++;
@@ -97,14 +108,14 @@ export default function DashboardPage() {
 
         setSkillStats(
           Object.entries(skillMap).map(([skill, { total, correct }]) => ({
-            skill: skill as QuestionSkill,
+            skill: skill as QuestionSkill | MathSkill,
             total,
             correct,
             accuracy: total > 0 ? Math.round((correct / total) * 100) : 0,
           }))
         );
 
-        const mapped: Record<string, QuestionSkill[]> = {};
+        const mapped: Record<string, (QuestionSkill | MathSkill)[]> = {};
         Object.entries(perSessionSkills).forEach(([id, set]) => { mapped[id] = Array.from(set); });
         setSessionSkillsMap(mapped);
       }
@@ -133,7 +144,6 @@ export default function DashboardPage() {
       ? Math.round(sessions.reduce((acc, s) => acc + (s.score ?? 0), 0) / sessions.length)
       : null;
 
-  const now = Date.now();
   const daysAgo = (s: Session) => s.completed_at ? (now - new Date(s.completed_at).getTime()) / 86400000 : Infinity;
   const lastWeek = sessions.filter((s) => daysAgo(s) <= 7);
   const priorWeek = sessions.filter((s) => daysAgo(s) > 7 && daysAgo(s) <= 14);
@@ -145,7 +155,7 @@ export default function DashboardPage() {
   const bestRecentAccuracy = last3Days.length > 0 ? Math.max(...last3Days.map((s) => s.score ?? 0)) : null;
 
   const sortedSkills = [...skillStats].sort((a, b) => a.accuracy - b.accuracy);
-  const weakestSkill = sortedSkills.length > 0 ? SKILL_LABELS[sortedSkills[0].skill] : null;
+  const weakestSkill = sortedSkills.length > 0 ? skillLabel(sortedSkills[0].skill) : null;
 
   const progressByCategory = new Map(categoryProgress.map((r) => [r.subcategory, r.difficulty]));
   const categoryLevels = ENGLISH_CATEGORY_ORDER.map((cat) => ({
@@ -261,7 +271,7 @@ export default function DashboardPage() {
                 <p style={{ fontSize: "var(--text-sm)", color: "rgba(255,255,255,0.85)", margin: 0, lineHeight: "var(--leading-relaxed)" }}>
                   {todayPlanDay?.subject === "english"
                     ? `English · ${todayDifficulty ? DIFFICULTY_LABELS[todayDifficulty] : ""} · ${ENGLISH_SESSION_LENGTH} questions`
-                    : "Math · use your prep book today"}
+                    : `Math · ${todayDifficulty ? DIFFICULTY_LABELS[todayDifficulty] : ""} · ${MATH_SESSION_LENGTH} questions`}
                 </p>
               </div>
               <div style={{ marginTop: "auto" }}>
@@ -395,7 +405,7 @@ export default function DashboardPage() {
                       </p>
                       {visible.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                          {visible.map((sk) => <Badge key={sk} tone="sky">{SKILL_LABELS[sk]}</Badge>)}
+                          {visible.map((sk) => <Badge key={sk} tone="sky">{skillLabel(sk)}</Badge>)}
                           {extra > 0 && <Badge tone="sky">+{extra}</Badge>}
                         </div>
                       )}

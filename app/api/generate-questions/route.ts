@@ -84,7 +84,7 @@ function appDifficultyToSkill(d: Difficulty): string {
   return "HIGH";
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function buildPassage(q: any): string | null {
   if (q.type === "cross_text") {
     return `Passage 1:\n${q.passage_1}\n\nPassage 2:\n${q.passage_2}`;
@@ -221,7 +221,7 @@ correct_answer_explanation is required for every question in JSON output.`;
   }
 
   // Map generated questions to the app's Question shape (minus id/created_at — Supabase adds those)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const questions = (parsed.questions as any[]).map((q) => {
     const subcategory: string = q.subcategory ?? "Central Ideas and Details";
     return {

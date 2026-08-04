@@ -7,24 +7,24 @@ import { Icon } from "@/components/ui/icon";
 
 const WHY_ITEMS = [
   {
-    icon: "user-check", color: "var(--lilac-600)",
-    title: "A tutor's feedback, on your own time",
-    desc: "Every answer comes with a plain-language explanation of why — so you learn the reasoning, not just the right letter.",
+    icon: "trending-up", color: "var(--lilac-600)",
+    title: "Practice adapts to you",
+    desc: "Get two questions right in a row and the difficulty steps up. Miss a few and it steps back down — so you're always working at the edge of what you know.",
   },
   {
-    icon: "trending-up", color: "var(--rose-ink)",
-    title: "Know exactly what to fix next",
-    desc: "We track your accuracy by skill and surface your weakest areas first, so your limited study time goes where it counts.",
+    icon: "calendar-check", color: "var(--rose-ink)",
+    title: "A structured 30-day plan",
+    desc: "Not random questions — a day-by-day plan that works through every SAT Reading & Writing category, then circles back to whichever ones you're weakest in.",
   },
   {
-    icon: "calendar-check", color: "var(--lilac-600)",
-    title: "Built for staying consistent",
-    desc: "Bite-sized sessions are easy to start and easy to repeat — the habit that actually moves SAT scores, not the all-nighter.",
+    icon: "check-check", color: "var(--lilac-600)",
+    title: "Explanations that go beyond “wrong”",
+    desc: "Every question explains why the right answer is right, and why each wrong one specifically fails — not just a correct/incorrect stamp.",
   },
   {
     icon: "wallet", color: "var(--rose-ink)",
-    title: "Free, and on your side",
-    desc: "No paywalls between you and practice. Real SAT-style Reading & Writing questions, free to use whenever you're ready.",
+    title: "Completely free",
+    desc: "No paywall, no premium tier. Real SAT-style Reading & Writing questions, free to use.",
   },
 ];
 
@@ -72,7 +72,7 @@ export default function LandingPage() {
               <span style={{ background: "var(--gradient-radiant)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", fontStyle: "normal" }}>SAT</span>.
             </h1>
             <p style={{ fontSize: "var(--text-md)", color: "var(--text-on-dark-muted)", lineHeight: "var(--leading-relaxed)", maxWidth: 420, margin: "0 0 36px" }}>
-              Short, focused practice with feedback that actually sounds like a person. No cram marathons — just steady, deliberate progress.
+              Practice real SAT Reading &amp; Writing questions and get a clear explanation for every answer, right or wrong. A little most days beats cramming.
             </p>
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               <Button size="lg" variant="secondary" onClick={() => router.push("/auth?mode=signup")}>
@@ -116,9 +116,9 @@ export default function LandingPage() {
       {/* Benefits: editorial numbered columns */}
       <section style={{ maxWidth: 980, margin: "0 auto", padding: "80px 28px 80px", display: "grid", gridTemplateColumns: "1.1fr 1fr 1fr", gap: 0 }}>
         {[
-          { n: "01", title: "Short by design", desc: "Sessions fit in a coffee break. Come as you are, leave a little sharper." },
-          { n: "02", title: "Knows your gaps", desc: "We quietly track each skill and point you to what'll help most next." },
-          { n: "03", title: "Feedback with warmth", desc: "Notes that explain, encourage, and never make you feel behind." },
+          { n: "01", title: "Short sessions", desc: "Most sessions take under 15 minutes, so they're easy to fit into a normal day." },
+          { n: "02", title: "Tracks your weak spots", desc: "Each session is scored by skill, so you always know what to work on next." },
+          { n: "03", title: "Explains every answer", desc: "Every question comes with a clear explanation of why the right answer is right." },
         ].map((b, i) => (
           <div key={b.n} style={{
             padding: i === 0 ? "0 36px 0 0" : i === 2 ? "0 0 0 36px" : "0 36px",
@@ -139,13 +139,10 @@ export default function LandingPage() {
           </p>
           <h2 style={{
             fontFamily: "var(--font-serif)", fontWeight: 500, fontSize: "var(--text-3xl)", color: "var(--text-strong)",
-            margin: "0 0 18px", letterSpacing: "var(--tracking-snug)", textAlign: "center",
+            margin: "0 0 48px", letterSpacing: "var(--tracking-snug)", textAlign: "center",
           }}>
-            The structure of a tutor.<br />The price of nothing.
+            What you actually get
           </h2>
-          <p style={{ fontSize: "var(--text-md)", color: "var(--text-body)", lineHeight: "var(--leading-relaxed)", maxWidth: 560, margin: "0 auto 48px", textAlign: "center" }}>
-            Studying alone shouldn&apos;t mean studying blind. 800Path gives self-studiers the structure, feedback, and encouragement a good tutor would — without the schedule or the price tag.
-          </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, background: "var(--border)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
             {WHY_ITEMS.map((item) => (

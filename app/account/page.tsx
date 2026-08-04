@@ -45,6 +45,7 @@ export default function AccountPage() {
   const supabase = createClient();
 
   const [loading, setLoading] = useState(true);
+  const [now] = useState(() => Date.now());
   const [form, setForm] = useState<FormState | null>(null);
   const [saved, setSaved] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
@@ -94,7 +95,7 @@ export default function AccountPage() {
     if (!form) return;
     setSaving(true);
     setError(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const payload: any = {
       data: {
         display_name: form.displayName,
@@ -145,7 +146,7 @@ export default function AccountPage() {
 
   let daysLabel = "No test date set";
   if (form.testDate) {
-    const d = Math.ceil((new Date(form.testDate).getTime() - Date.now()) / 86400000);
+    const d = Math.ceil((new Date(form.testDate).getTime() - now) / 86400000);
     daysLabel = d > 0 ? `${d} days to test day` : "Test day has passed";
   }
 
@@ -190,7 +191,7 @@ export default function AccountPage() {
               label="Display name"
               placeholder="Maya"
               value={form.displayName}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+               
               onChange={(e: any) => set({ displayName: e.target.value })}
             />
             <Input
@@ -198,7 +199,7 @@ export default function AccountPage() {
               type="email"
               placeholder="you@email.com"
               value={form.email}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+               
               onChange={(e: any) => set({ email: e.target.value })}
             />
             <div style={{ gridColumn: "1 / -1" }}>
@@ -288,7 +289,7 @@ export default function AccountPage() {
                 label="When's test day?"
                 type="date"
                 value={form.testDate}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                 
                 onChange={(e: any) => set({ testDate: e.target.value })}
               />
               <div>

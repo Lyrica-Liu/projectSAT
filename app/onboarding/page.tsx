@@ -274,7 +274,7 @@ export default function OnboardingPage() {
               <h2 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500, fontSize: "var(--text-lg)", color: "var(--text-strong)", margin: "0 0 28px" }}>What&apos;s getting in the way?</h2>
               <div>
                 <p style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--text-body)", margin: "0 0 12px" }}>
-                  What's something that bothers you while studying? <span style={{ color: "var(--text-faint)", fontWeight: 500 }}>(pick any)</span>
+                  What&apos;s something that bothers you while studying? <span style={{ color: "var(--text-faint)", fontWeight: 500 }}>(pick any)</span>
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
                   {STRUGGLE_OPTIONS.map((s) => (

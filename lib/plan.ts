@@ -1,19 +1,29 @@
-import type { QuestionSkill, Difficulty } from "./types";
+import type { QuestionSkill, MathSkill, Difficulty } from "./types";
 
 export type PlanSubject = "english" | "math";
 
 /** Every English plan-day session runs this many adaptive questions. */
 export const ENGLISH_SESSION_LENGTH = 20;
 
+/** Every math plan-day session runs this many adaptive questions. */
+export const MATH_SESSION_LENGTH = 20;
+
 export interface PlanDay {
   day: number;
   subject: PlanSubject;
-  skill: QuestionSkill | null;
+  skill: QuestionSkill | MathSkill | null;
   subcategory: string | null; // name used by the question bank; null = not yet determined
   difficulty: Difficulty | null; // starting difficulty; null = not yet determined
   focus: string;
   durationMins: number;
 }
+
+/** The 3 DSAT math categories, cycled repeatedly across the 10 math plan-days. */
+export const MATH_CATEGORY_ORDER: { subcategory: string; skill: MathSkill; focus: string }[] = [
+  { subcategory: "Algebra",       skill: "algebra",       focus: "Algebra" },
+  { subcategory: "Data Analysis", skill: "data_analysis", focus: "Data Analysis" },
+  { subcategory: "Geometry",      skill: "geometry",       focus: "Geometry" },
+];
 
 /**
  * The 11 SAT categories, in the order the first 11 English slots introduce
@@ -35,43 +45,43 @@ export const ENGLISH_CATEGORY_ORDER: { subcategory: string; skill: QuestionSkill
 ];
 
 /**
- * Calendar pattern: E, E, M repeating across 30 days. Math day content is
- * untouched / out of scope — only what an English slot maps to has changed.
+ * Calendar pattern: E, E, M repeating across 30 days.
  */
-const CALENDAR: { day: number; subject: PlanSubject; mathFocus?: string; durationMins: number }[] = [
+const CALENDAR: { day: number; subject: PlanSubject; durationMins: number }[] = [
   { day:  1, subject: "english", durationMins: 14 },
   { day:  2, subject: "english", durationMins: 14 },
-  { day:  3, subject: "math",    mathFocus: "Algebra Foundations",        durationMins: 15 },
+  { day:  3, subject: "math",    durationMins: 15 },
   { day:  4, subject: "english", durationMins: 14 },
   { day:  5, subject: "english", durationMins: 14 },
-  { day:  6, subject: "math",    mathFocus: "Linear Equations",           durationMins: 15 },
+  { day:  6, subject: "math",    durationMins: 15 },
   { day:  7, subject: "english", durationMins: 14 },
   { day:  8, subject: "english", durationMins: 14 },
-  { day:  9, subject: "math",    mathFocus: "Systems of Equations",       durationMins: 15 },
+  { day:  9, subject: "math",    durationMins: 15 },
   { day: 10, subject: "english", durationMins: 16 },
   { day: 11, subject: "english", durationMins: 16 },
-  { day: 12, subject: "math",    mathFocus: "Quadratics",                 durationMins: 15 },
+  { day: 12, subject: "math",    durationMins: 15 },
   { day: 13, subject: "english", durationMins: 16 },
   { day: 14, subject: "english", durationMins: 16 },
-  { day: 15, subject: "math",    mathFocus: "Ratios & Proportions",       durationMins: 15 },
+  { day: 15, subject: "math",    durationMins: 15 },
   { day: 16, subject: "english", durationMins: 16 },
   { day: 17, subject: "english", durationMins: 18 },
-  { day: 18, subject: "math",    mathFocus: "Statistics & Data Analysis", durationMins: 15 },
+  { day: 18, subject: "math",    durationMins: 15 },
   { day: 19, subject: "english", durationMins: 18 },
   { day: 20, subject: "english", durationMins: 18 },
-  { day: 21, subject: "math",    mathFocus: "Geometry & Trigonometry",    durationMins: 15 },
+  { day: 21, subject: "math",    durationMins: 15 },
   { day: 22, subject: "english", durationMins: 18 },
   { day: 23, subject: "english", durationMins: 18 },
-  { day: 24, subject: "math",    mathFocus: "Advanced Algebra",           durationMins: 15 },
+  { day: 24, subject: "math",    durationMins: 15 },
   { day: 25, subject: "english", durationMins: 18 },
   { day: 26, subject: "english", durationMins: 18 },
-  { day: 27, subject: "math",    mathFocus: "Problem-Solving & Data",     durationMins: 15 },
+  { day: 27, subject: "math",    durationMins: 15 },
   { day: 28, subject: "english", durationMins: 18 },
   { day: 29, subject: "english", durationMins: 18 },
-  { day: 30, subject: "math",    mathFocus: "Full Math Review",           durationMins: 20 },
+  { day: 30, subject: "math",    durationMins: 20 },
 ];
 
 export const ENGLISH_DAYS = CALENDAR.filter((c) => c.subject === "english").map((c) => c.day);
+export const MATH_DAYS = CALENDAR.filter((c) => c.subject === "math").map((c) => c.day);
 
 /** 1-20 for English calendar days, null for math days / out-of-range days. */
 export function englishSlotNumber(day: number): number | null {
@@ -82,6 +92,17 @@ export function englishSlotNumber(day: number): number | null {
 /** Inverse of englishSlotNumber: the calendar day for English slot 1-20. */
 export function dayForEnglishSlot(slot: number): number | undefined {
   return ENGLISH_DAYS[slot - 1];
+}
+
+/** 1-10 for math calendar days, null for English days / out-of-range days. */
+export function mathSlotNumber(day: number): number | null {
+  const idx = MATH_DAYS.indexOf(day);
+  return idx === -1 ? null : idx + 1;
+}
+
+/** Inverse of mathSlotNumber: the calendar day for math slot 1-10. */
+export function dayForMathSlot(slot: number): number | undefined {
+  return MATH_DAYS[slot - 1];
 }
 
 /**
@@ -96,9 +117,11 @@ export function getPlanDay(day: number): PlanDay | undefined {
   if (!cal) return undefined;
 
   if (cal.subject === "math") {
+    const slot = mathSlotNumber(day)!;
+    const cat = MATH_CATEGORY_ORDER[(slot - 1) % MATH_CATEGORY_ORDER.length];
     return {
-      day: cal.day, subject: "math", skill: null, subcategory: null, difficulty: null,
-      focus: cal.mathFocus ?? "Math", durationMins: cal.durationMins,
+      day: cal.day, subject: "math", skill: cat.skill, subcategory: cat.subcategory,
+      difficulty: "medium-low", focus: cat.focus, durationMins: cal.durationMins,
     };
   }
 

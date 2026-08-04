@@ -11,13 +11,14 @@ import {
   getCurrentPlanDay,
   englishSlotNumber,
   ENGLISH_SESSION_LENGTH,
+  MATH_SESSION_LENGTH,
   DIFFICULTY_LABELS,
   DIFFICULTY_TONES,
   calcStreak,
 } from "@/lib/plan";
 import type { PlanDayRow, Difficulty } from "@/lib/types";
 
-type PageState = "loading" | "locked" | "done" | "intro" | "starting" | "math";
+type PageState = "loading" | "locked" | "done" | "intro" | "starting";
 
 interface WrapStats {
   streak: number;
@@ -108,7 +109,7 @@ export default function DailySessionPage() {
         return;
       }
 
-      setState(planDay!.subject === "math" ? "math" : "intro");
+      setState("intro");
     }
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,7 +126,6 @@ export default function DailySessionPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to start session");
-      if (data.math) { setState("math"); return; }
       router.push(`/practice/${data.sessionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -259,36 +259,11 @@ export default function DailySessionPage() {
     );
   }
 
-  if (state === "math") {
-    return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
-        {headerRow}
-        <main style={{ maxWidth: 520, margin: "80px auto", padding: "0 24px" }}>
-          <Card tone="surface" padding="xl" radius="2xl" shadow="lg" style={{ textAlign: "center" }}>
-            <div style={{
-              display: "inline-flex", width: 56, height: 56, borderRadius: "50%",
-              background: "var(--surface-sunken)", alignItems: "center", justifyContent: "center",
-              fontSize: 26, marginBottom: 18,
-            }}>🔢</div>
-            <span style={eyebrow}>Day {dayNum} of 30 · Math</span>
-            <h1 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500, fontSize: "var(--text-xl)", color: "var(--text-strong)", margin: "0 0 12px" }}>
-              {planDay?.focus}
-            </h1>
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", lineHeight: "var(--leading-relaxed)", margin: "0 auto 28px", maxWidth: 340 }}>
-              Math modules are coming soon. For now, use Khan Academy or a prep book for today's Math session, then mark it done below.
-            </p>
-            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-              <Button onClick={() => router.push("/plan")} variant="secondary">Back to plan</Button>
-              <MarkMathDoneButton dayNum={dayNum} onDone={() => router.push("/plan")} />
-            </div>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
   // Intro state
   if (!planDay) return null;
+
+  const isMath = planDay.subject === "math";
+  const sessionLength = isMath ? MATH_SESSION_LENGTH : ENGLISH_SESSION_LENGTH;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)" }}>
@@ -306,7 +281,7 @@ export default function DailySessionPage() {
             {dayNum}
           </div>
 
-          <span style={eyebrow}>Day {dayNum} of 30 · English</span>
+          <span style={eyebrow}>Day {dayNum} of 30 · {isMath ? "Math" : "English"}</span>
 
           <h1 style={{
             fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500,
@@ -317,7 +292,7 @@ export default function DailySessionPage() {
           </h1>
 
           <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 20 }}>
-            <Badge tone="lilac">English</Badge>
+            <Badge tone={isMath ? "peach" : "lilac"}>{isMath ? "Math" : "English"}</Badge>
             {displayDifficulty && (
               <Badge tone={DIFFICULTY_TONES[displayDifficulty] as "mint" | "sky" | "peach" | "rose"}>
                 {DIFFICULTY_LABELS[displayDifficulty]}
@@ -333,7 +308,7 @@ export default function DailySessionPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 360, margin: "0 auto 28px", textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface-sunken)", borderRadius: "var(--radius-md)", padding: "10px 14px" }}>
               <span style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>Questions</span>
-              <span style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-strong)" }}>{ENGLISH_SESSION_LENGTH}</span>
+              <span style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-strong)" }}>{sessionLength}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface-sunken)", borderRadius: "var(--radius-md)", padding: "10px 14px" }}>
               <span style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>Estimated time</span>
@@ -364,27 +339,5 @@ export default function DailySessionPage() {
         </Card>
       </main>
     </div>
-  );
-}
-
-function MarkMathDoneButton({ dayNum, onDone }: { dayNum: number; onDone: () => void }) {
-  const supabase = createClient();
-  const [loading, setLoading] = useState(false);
-
-  async function mark() {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from("plan_days").upsert(
-      { user_id: user.id, day_number: dayNum, completed_at: new Date().toISOString(), score: null },
-      { onConflict: "user_id,day_number" }
-    );
-    onDone();
-  }
-
-  return (
-    <Button onClick={mark} disabled={loading}>
-      {loading ? "Marking…" : "Mark as done ✓"}
-    </Button>
   );
 }

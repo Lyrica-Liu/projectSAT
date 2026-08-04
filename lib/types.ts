@@ -1,4 +1,4 @@
-export type QuestionDomain = "reading" | "writing";
+export type QuestionDomain = "reading" | "writing" | "math";
 
 export type QuestionSkill =
   | "central_idea"
@@ -12,19 +12,25 @@ export type QuestionSkill =
   | "transitions"
   | "rhetorical_synthesis";
 
+export type MathSkill = "algebra" | "data_analysis" | "geometry";
+
 export type Difficulty = "easy" | "medium-low" | "medium-high" | "hard";
+
+export type QuestionType = "multiple_choice" | "grid_in";
 
 export type QuestionStatus = "unanswered" | "answered" | "skipped";
 
 export interface Question {
   id: string;
   domain: QuestionDomain;
-  skill: QuestionSkill;
+  skill: QuestionSkill | MathSkill;
   difficulty: Difficulty;
   passage?: string;
   stem: string;
-  options: { A: string; B: string; C: string; D: string };
-  answer: "A" | "B" | "C" | "D";
+  question_type: QuestionType;
+  options: { A: string; B: string; C: string; D: string } | null;
+  answer: "A" | "B" | "C" | "D" | null;
+  grid_answer: string | null;
   explanation: string;
   created_at: string;
 }
@@ -53,6 +59,7 @@ export interface Answer {
   session_id: string;
   question_id: string;
   user_answer: "A" | "B" | "C" | "D" | null;
+  user_grid_answer: string | null;
   is_correct: boolean | null;
   time_spent_seconds: number | null;
   position: number;
@@ -64,7 +71,7 @@ export interface SessionWithAnswers extends Session {
 }
 
 export interface SkillStat {
-  skill: QuestionSkill;
+  skill: QuestionSkill | MathSkill;
   total: number;
   correct: number;
   accuracy: number;

@@ -34,7 +34,13 @@ const CATEGORIES: { label: string; subcategories: string[] }[] = [
     label: "Standard English Conventions",
     subcategories: ["Boundaries", "Form, Structure, and Sense"],
   },
+  {
+    label: "Math",
+    subcategories: ["Algebra", "Data Analysis", "Geometry"],
+  },
 ];
+
+const MATH_SUBCATEGORIES = new Set(["Algebra", "Data Analysis", "Geometry"]);
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
   { value: "easy",        label: "Easy" },
@@ -61,6 +67,7 @@ export default function PracticeSetupPage() {
   const [genProgress, setGenProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMathSelected = selected.size > 0 && MATH_SUBCATEGORIES.has(Array.from(selected)[0]);
 
   function toggleCategory(cat: string) {
     setExpanded((prev) => {
@@ -72,8 +79,16 @@ export default function PracticeSetupPage() {
 
   function toggleSubcategory(sub: string) {
     setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(sub) ? next.delete(sub) : next.add(sub);
+      if (prev.has(sub)) {
+        const next = new Set(prev);
+        next.delete(sub);
+        return next;
+      }
+      // English and math questions come from different pipelines (AI-generated
+      // vs. the static bank) — keep a session to one subject at a time.
+      const switchingSubject = Array.from(prev).some((s) => MATH_SUBCATEGORIES.has(s) !== MATH_SUBCATEGORIES.has(sub));
+      const next = switchingSubject ? new Set<string>() : new Set(prev);
+      next.add(sub);
       return next;
     });
   }
@@ -89,15 +104,17 @@ export default function PracticeSetupPage() {
     setError(null);
 
     // Animate progress from 0→88 over ~20s; never reaches 100 until done
+    // (math sessions pull from the static bank and finish almost instantly,
+    // so this just races ahead and completes right away).
     let p = 0;
     progressIntervalRef.current = setInterval(() => {
-      p = Math.min(88, p + (88 - p) * 0.06 + 0.4);
+      p = Math.min(88, p + (88 - p) * (isMathSelected ? 0.35 : 0.06) + 0.4);
       setGenProgress(Math.round(p));
     }, 400);
 
     let sessionId: string;
     try {
-      const res = await fetch("/api/generate-questions", {
+      const res = await fetch(isMathSelected ? "/api/start-math-practice" : "/api/generate-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subcategories: Array.from(selected), difficulty, count }),
@@ -307,7 +324,7 @@ export default function PracticeSetupPage() {
             iconRight={!loading ? <Icon name="arrow-right" size={18} /> : undefined}
           >
             {loading
-              ? "Generating questions with AI…"
+              ? isMathSelected ? "Building your session…" : "Generating questions with AI…"
               : selected.size > 0
               ? `Start session — ${selected.size} skill${selected.size > 1 ? "s" : ""}`
               : "Start session"}
@@ -327,7 +344,7 @@ export default function PracticeSetupPage() {
                 fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
                 color: "var(--text-faint)", textAlign: "center", marginTop: 8,
               }}>
-                Hang tight — usually takes ~15 seconds.
+                {isMathSelected ? "Hang tight — this only takes a moment." : "Hang tight — usually takes ~15 seconds."}
               </p>
             </div>
           )}

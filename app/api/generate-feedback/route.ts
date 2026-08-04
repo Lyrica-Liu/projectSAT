@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     .select("is_correct, user_answer, question:questions(skill, stem, answer, explanation)")
     .eq("session_id", sessionId);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const rows = (answerRows ?? []) as any[];
   const skillTally: Record<string, { correct: number; total: number }> = {};
   const misses: { stem: string; skill: string; explanation: string }[] = [];

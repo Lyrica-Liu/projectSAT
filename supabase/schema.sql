@@ -234,3 +234,20 @@ create policy "category_progress_insert_own" on public.category_progress
 
 create policy "category_progress_update_own" on public.category_progress
   for update using (auth.uid() = user_id);
+
+-- ───────────────────────────────────────────
+-- 8. Math questions (Grid-In support)
+-- ───────────────────────────────────────────
+-- Run this section independently if adding to an existing DB.
+
+alter table public.questions add column if not exists question_type text not null default 'multiple_choice';
+alter table public.questions add column if not exists grid_answer text;
+alter table public.questions alter column options drop not null;
+alter table public.questions alter column answer drop not null;
+
+-- Live domain check only allowed 'reading'/'writing' — widen for math.
+alter table public.questions drop constraint if exists questions_domain_check;
+alter table public.questions add constraint questions_domain_check
+  check (domain = any (array['reading', 'writing', 'math']));
+
+alter table public.answers add column if not exists user_grid_answer text;

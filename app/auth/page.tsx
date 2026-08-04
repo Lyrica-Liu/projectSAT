@@ -199,7 +199,7 @@ export default function AuthPage() {
                 label="Display name"
                 placeholder="Your name"
                 value={displayName}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                 
                 onChange={(e: any) => setDisplayName(e.target.value)}
               />
             )}
@@ -208,7 +208,7 @@ export default function AuthPage() {
               type="email"
               placeholder="you@example.com"
               value={email}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+               
               onChange={(e: any) => setEmail(e.target.value)}
             />
             <Input
@@ -216,7 +216,7 @@ export default function AuthPage() {
               type="password"
               placeholder="••••••••"
               value={password}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+               
               onChange={(e: any) => setPassword(e.target.value)}
             />
 

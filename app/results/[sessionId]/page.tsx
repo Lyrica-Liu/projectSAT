@@ -8,7 +8,7 @@ import { AppNav, LoadingScreen } from "@/components/ui/nav";
 import { Card, Badge, ScoreRing, SkillBar, Button } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
 import { getPlanDay, getCurrentPlanDay, calcStreak } from "@/lib/plan";
-import type { QuestionSkill, PlanDayRow } from "@/lib/types";
+import type { QuestionSkill, MathSkill, PlanDayRow } from "@/lib/types";
 
 const MILESTONE_LABELS: Record<number, string> = { 10: "Foundations", 20: "Momentum", 30: "Summit" };
 
@@ -24,6 +24,16 @@ const SKILL_LABELS: Record<QuestionSkill, string> = {
   transitions: "Transitions",
   rhetorical_synthesis: "Rhetorical Synthesis",
 };
+
+const MATH_SKILL_LABELS: Record<MathSkill, string> = {
+  algebra: "Algebra",
+  data_analysis: "Data Analysis",
+  geometry: "Geometry",
+};
+
+function skillLabel(skill: string): string {
+  return (SKILL_LABELS as Record<string, string>)[skill] ?? (MATH_SKILL_LABELS as Record<string, string>)[skill] ?? skill;
+}
 
 const eyebrow: React.CSSProperties = {
   fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 600,
@@ -288,7 +298,7 @@ export default function ResultsPage() {
                 return (
                   <SkillBar
                     key={skill}
-                    label={SKILL_LABELS[skill as QuestionSkill] ?? skill}
+                    label={skillLabel(skill)}
                     accuracy={pct}
                     detail={`${correct}/${total}`}
                   />
@@ -319,7 +329,7 @@ export default function ResultsPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                     <Badge tone={row.is_correct ? "mint" : "rose"}>{row.is_correct ? "Correct" : "Incorrect"}</Badge>
                     <Badge tone="lilac">Q{i + 1}</Badge>
-                    <Badge tone="sky">{q.skill?.replace(/_/g, " ")}</Badge>
+                    <Badge tone="sky">{q.skill ? skillLabel(q.skill) : ""}</Badge>
                   </div>
                   <p style={{
                     fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
