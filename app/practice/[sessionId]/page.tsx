@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Badge, Card, ProgressBar, AnswerOption, Button, Input } from "@/components/ui/ds";
 import { LoadingScreen } from "@/components/ui/nav";
 import { Icon } from "@/components/ui/icon";
-import { getPlanDay } from "@/lib/plan";
 import { gradeGridAnswer } from "@/lib/grading";
 import type { Question, Answer, Session } from "@/lib/types";
 
@@ -19,7 +18,11 @@ interface QuestionState {
   gridValue: string | null;
   correct: boolean | null;
   revealed: boolean;
+  eliminated: AnswerChoice[];
 }
+
+/** Text-size steps for the passage/question/answer content, matching the real DSAT's "Aa" tool. */
+const TEXT_SIZE_LEVELS = [1.15, 1.4, 1.7, 2.0];
 
 const eyebrow: React.CSSProperties = {
   fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 600,
@@ -45,6 +48,9 @@ export default function ActiveSessionPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [gridDraft, setGridDraft] = useState("");
+  const [eliminateMode, setEliminateMode] = useState(false);
+  const [textSizeIndex, setTextSizeIndex] = useState(0);
+  const textMult = TEXT_SIZE_LEVELS[textSizeIndex];
 
   useEffect(() => {
     async function loadSession() {
@@ -73,6 +79,8 @@ export default function ActiveSessionPage() {
       }
 
       setSession(sessionData);
+      // Total session time, not per-question: 1.5 minutes × the number of questions in the session.
+      setSecondsLeft(Math.round((sessionData.question_count ?? 20) * 1.5 * 60));
 
       const { data: planDayRow } = await supabase
         .from("plan_days")
@@ -82,8 +90,6 @@ export default function ActiveSessionPage() {
       setPlanLinked(!!planDayRow);
       if (planDayRow) {
         setPlanDayNumber(planDayRow.day_number);
-        const durationMins = getPlanDay(planDayRow.day_number)?.durationMins ?? 18;
-        setSecondsLeft(durationMins * 60);
       }
 
       const { data: answerRows } = await supabase
@@ -106,6 +112,7 @@ export default function ActiveSessionPage() {
           gridValue: row.user_grid_answer,
           correct: row.is_correct,
           revealed: row.user_answer !== null || row.user_grid_answer !== null,
+          eliminated: [],
         }))
       );
 
@@ -116,13 +123,13 @@ export default function ActiveSessionPage() {
   }, [sessionId]);
 
   useEffect(() => {
-    if (!planLinked || secondsLeft == null) return;
+    if (secondsLeft == null) return;
     const interval = setInterval(() => {
       setSecondsLeft((s) => (s != null && s > 0 ? s - 1 : s));
     }, 1000);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planLinked, secondsLeft == null]);
+  }, [secondsLeft == null]);
 
   // Re-sync the grid-in draft whenever the current question changes, without an
   // effect (see https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes).
@@ -162,6 +169,18 @@ export default function ActiveSessionPage() {
       .update({ user_grid_answer: gridDraft, is_correct: isCorrect })
       .eq("session_id", sessionId)
       .eq("question_id", state.question.id);
+  }
+
+  function toggleEliminate(letter: AnswerChoice) {
+    setQuestions((prev) =>
+      prev.map((q, i) => {
+        if (i !== currentIndex) return q;
+        const eliminated = q.eliminated.includes(letter)
+          ? q.eliminated.filter((l) => l !== letter)
+          : [...q.eliminated, letter];
+        return { ...q, eliminated };
+      })
+    );
   }
 
   async function finishSession() {
@@ -213,7 +232,7 @@ export default function ActiveSessionPage() {
         if (body.question && body.answer) {
           setQuestions((prev) => [
             ...prev,
-            { question: body.question, answer: body.answer, selected: null, gridValue: null, correct: null, revealed: false },
+            { question: body.question, answer: body.answer, selected: null, gridValue: null, correct: null, revealed: false, eliminated: [] },
           ]);
           setCurrentIndex((i) => i + 1);
         }
@@ -263,6 +282,9 @@ export default function ActiveSessionPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", zoom: 1.15 }}>
+      {/* Bumps the grid-in Input's label size along with the text-size tool (the shared Input component doesn't expose a size prop) */}
+      <style>{`.qa-grid-input label { font-size: ${14 * textMult}px !important; }`}</style>
+
       {/* Sticky header */}
       <header style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -274,7 +296,7 @@ export default function ActiveSessionPage() {
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>
               {answeredCount}/{sessionTarget} answered
             </span>
-            {planLinked && secondsLeft != null && (
+            {secondsLeft != null && (
               <span style={{
                 display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)",
                 fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-strong)",
@@ -302,6 +324,45 @@ export default function ActiveSessionPage() {
           <ProgressBar value={sessionTarget > 0 ? (answeredCount / sessionTarget) * 100 : 0} height={6} />
         </div>
       </header>
+
+      {/* Toolbar — text size + answer eliminator, like the real DSAT test */}
+      <div style={{ background: "var(--surface-sunken)", borderBottom: "1px solid var(--border)", padding: "8px 24px" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", gap: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--text-faint)", marginRight: 2 }}>Text size</span>
+            {TEXT_SIZE_LEVELS.map((lvl, i) => (
+              <button
+                key={lvl}
+                onClick={() => setTextSizeIndex(i)}
+                aria-label={`Text size ${i + 1}`}
+                style={{
+                  width: 28, height: 28, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  border: `1.5px solid ${textSizeIndex === i ? "var(--brand)" : "var(--border)"}`,
+                  background: textSizeIndex === i ? "var(--brand-soft)" : "var(--surface)",
+                  borderRadius: "var(--radius-sm)", cursor: "pointer",
+                  color: textSizeIndex === i ? "var(--brand-ink)" : "var(--text-muted)",
+                  fontFamily: "var(--font-sans)", fontWeight: 700,
+                  fontSize: 11 + i * 3,
+                }}
+              >A</button>
+            ))}
+          </div>
+          <button
+            onClick={() => setEliminateMode((v) => !v)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              border: `1.5px solid ${eliminateMode ? "var(--brand)" : "var(--border)"}`,
+              background: eliminateMode ? "var(--brand-soft)" : "var(--surface)",
+              color: eliminateMode ? "var(--brand-ink)" : "var(--text-muted)",
+              borderRadius: "var(--radius-pill)", fontFamily: "inherit", fontSize: "var(--text-xs)", fontWeight: 700,
+              padding: "5px 12px", cursor: "pointer",
+            }}
+          >
+            <Icon name="ban" size={13} />
+            Answer Eliminator
+          </button>
+        </div>
+      </div>
 
       {/* Question navigator */}
       <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "12px 24px" }}>
@@ -345,7 +406,7 @@ export default function ActiveSessionPage() {
           <Card tone="sunken" padding="lg" radius="lg" shadow="none" style={{ marginBottom: 22 }}>
             <span style={eyebrow}>Passage</span>
             <p style={{
-              fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-body)",
+              fontFamily: "var(--font-sans)", fontSize: 14 * textMult, color: "var(--text-body)",
               lineHeight: "var(--leading-relaxed)", margin: 0, whiteSpace: "pre-wrap",
             }}>
               {current.question.passage}
@@ -355,7 +416,7 @@ export default function ActiveSessionPage() {
 
         {/* Question stem */}
         <p style={{
-          fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-md)",
+          fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 18 * textMult,
           color: "var(--text-strong)", lineHeight: "var(--leading-snug)", margin: "0 0 18px",
         }}>
           {current.question.stem}
@@ -363,13 +424,13 @@ export default function ActiveSessionPage() {
 
         {/* Answer options */}
         {current.question.question_type === "grid_in" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24, maxWidth: 280 }}>
+          <div className="qa-grid-input" style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24, maxWidth: 280 }}>
             <Input
               label="Your answer"
               placeholder="e.g. 17/4 or 4.25"
               value={current.revealed ? (current.gridValue ?? "") : gridDraft}
               disabled={current.revealed}
-               
+              style={{ fontSize: 14 * textMult }}
               onChange={(e: any) => setGridDraft(e.target.value)}
             />
             {!current.revealed && (
@@ -380,17 +441,46 @@ export default function ActiveSessionPage() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-            {(["A", "B", "C", "D"] as AnswerChoice[]).map((c) => (
-              <AnswerOption
-                key={c}
-                letter={c}
-                state={stateFor(c)}
-                disabled={current.revealed}
-                onClick={() => selectAnswer(c)}
-              >
-                {current.question.options?.[c]}
-              </AnswerOption>
-            ))}
+            {(["A", "B", "C", "D"] as AnswerChoice[]).map((c) => {
+              const isEliminated = current.eliminated.includes(c);
+              return (
+                <div key={c} style={{ display: "flex", alignItems: "stretch", gap: 8 }}>
+                  {eliminateMode && (
+                    <button
+                      onClick={() => toggleEliminate(c)}
+                      disabled={current.revealed}
+                      aria-label={isEliminated ? `Restore option ${c}` : `Eliminate option ${c}`}
+                      style={{
+                        flexShrink: 0, width: 40, borderRadius: "var(--radius-md)",
+                        border: `1.5px solid ${isEliminated ? "var(--brand)" : "var(--border)"}`,
+                        background: isEliminated ? "var(--brand-soft)" : "var(--surface)",
+                        color: isEliminated ? "var(--brand-ink)" : "var(--text-faint)",
+                        cursor: current.revealed ? "default" : "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}
+                    >
+                      <Icon name="ban" size={15} />
+                    </button>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <AnswerOption
+                      letter={c}
+                      state={stateFor(c)}
+                      disabled={current.revealed}
+                      onClick={() => selectAnswer(c)}
+                    >
+                      <span style={{
+                        fontSize: 14 * textMult,
+                        textDecoration: isEliminated ? "line-through" : "none",
+                        opacity: isEliminated ? 0.55 : 1,
+                      }}>
+                        {current.question.options?.[c]}
+                      </span>
+                    </AnswerOption>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -408,14 +498,14 @@ export default function ActiveSessionPage() {
             </span>
             {!current.correct && current.question.question_type === "grid_in" && (
               <p style={{
-                fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-sm)",
+                fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 14 * textMult,
                 margin: "0 0 8px", color: "inherit",
               }}>
                 Correct answer: {current.question.grid_answer}
               </p>
             )}
             <p style={{
-              fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
+              fontFamily: "var(--font-sans)", fontSize: 14 * textMult,
               lineHeight: "var(--leading-relaxed)", margin: 0, color: "inherit",
             }}>
               {current.question.explanation}
