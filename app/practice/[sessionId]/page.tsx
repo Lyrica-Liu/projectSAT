@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Badge, Card, ProgressBar, AnswerOption, Button, Input } from "@/components/ui/ds";
-import { LoadingScreen } from "@/components/ui/nav";
+import { AnswerOption, Input } from "@/components/ui/ds";
+import { LoadingScreen, Wordmark } from "@/components/ui/nav";
 import { Icon } from "@/components/ui/icon";
 import { gradeGridAnswer } from "@/lib/grading";
 import type { Question, Answer, Session } from "@/lib/types";
@@ -24,10 +24,9 @@ interface QuestionState {
 /** Text-size steps for the passage/question/answer content, matching the real DSAT's "Aa" tool. */
 const TEXT_SIZE_LEVELS = [1.15, 1.4, 1.7, 2.0];
 
-const eyebrow: React.CSSProperties = {
-  fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 600,
-  letterSpacing: "var(--tracking-caps)", textTransform: "uppercase",
-  color: "var(--text-faint)", margin: "0 0 10px", display: "block",
+const microLabel: React.CSSProperties = {
+  fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.16em",
+  textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 22px",
 };
 
 export default function ActiveSessionPage() {
@@ -79,7 +78,6 @@ export default function ActiveSessionPage() {
       }
 
       setSession(sessionData);
-      // Total session time, not per-question: 1.5 minutes × the number of questions in the session.
       setSecondsLeft(Math.round((sessionData.question_count ?? 20) * 1.5 * 60));
 
       const { data: planDayRow } = await supabase
@@ -131,8 +129,6 @@ export default function ActiveSessionPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [secondsLeft == null]);
 
-  // Re-sync the grid-in draft whenever the current question changes, without an
-  // effect (see https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes).
   const [gridSyncKey, setGridSyncKey] = useState<{ i: number; qs: QuestionState[] } | null>(null);
   if (gridSyncKey === null || gridSyncKey.i !== currentIndex || gridSyncKey.qs !== questions) {
     setGridSyncKey({ i: currentIndex, qs: questions });
@@ -251,11 +247,11 @@ export default function ActiveSessionPage() {
 
   if (error) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 24px", zoom: 1.15 }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--danger)", background: "var(--danger-surface)", borderRadius: "var(--radius-md)", padding: "12px 18px", maxWidth: 400, textAlign: "center" }}>
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 24px" }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", background: "var(--danger-surface)", padding: "12px 18px", maxWidth: 400, textAlign: "center" }}>
           {error}
         </div>
-        <Button variant="ghost" onClick={() => router.push("/dashboard")}>← Back to dashboard</Button>
+        <button onClick={() => router.push("/dashboard")} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)", cursor: "pointer" }}>← Back to dashboard</button>
       </div>
     );
   }
@@ -266,11 +262,7 @@ export default function ActiveSessionPage() {
   const allAnswered = answeredCount === sessionTarget && questions.length === sessionTarget;
   const atFrontier = currentIndex === questions.length - 1;
   const hasMoreToGenerate = questions.length < sessionTarget;
-  const diffTone =
-    current.question.difficulty === "easy" ? "mint"
-    : current.question.difficulty === "medium-low" ? "sky"
-    : current.question.difficulty === "medium-high" ? "butter"
-    : "rose";
+  const hasPassage = !!current.question.passage;
 
   type AnswerState = "default" | "selected" | "correct" | "incorrect" | "muted";
   function stateFor(letter: AnswerChoice): AnswerState {
@@ -280,295 +272,234 @@ export default function ActiveSessionPage() {
     return "muted";
   }
 
+  const mm = secondsLeft != null ? Math.floor(secondsLeft / 60) : 0;
+  const ss = secondsLeft != null ? secondsLeft % 60 : 0;
+
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", zoom: 1.15 }}>
-      {/* Bumps the grid-in Input's label size along with the text-size tool (the shared Input component doesn't expose a size prop) */}
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", color: "var(--text-body)", fontFamily: "var(--font-serif)" }}>
       <style>{`.qa-grid-input label { font-size: ${14 * textMult}px !important; }`}</style>
 
-      {/* Sticky header */}
-      <header style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-sm)", color: "var(--text-strong)" }}>
-            Q{currentIndex + 1}{" "}
-            <span style={{ color: "var(--text-faint)", fontWeight: 500 }}>of {sessionTarget}</span>
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>
-              {answeredCount}/{sessionTarget} answered
+      <header style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--canvas)", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ maxWidth: 1360, margin: "0 auto", padding: "0 44px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 32, height: 64 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
+            <Wordmark href="/dashboard" />
+            <span style={{ width: 1, height: 16, background: "var(--line-strong)" }} />
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-faint)" }}>
+              {planLinked ? `Day ${planDayNumber}` : "Extra practice"}
             </span>
+          </span>
+
+          <span style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
+            {questions.map((q, i) => {
+              const isCur = i === currentIndex;
+              const answered = q.selected !== null || q.gridValue !== null;
+              return (
+                <button key={i} onClick={() => setCurrentIndex(i)} style={{
+                  width: 26, height: 26, border: `1px solid ${isCur ? "var(--text-strong)" : answered ? "var(--line-strong)" : "var(--border)"}`,
+                  background: answered && !isCur ? "var(--surface-2)" : "transparent", borderRadius: "var(--radius-sm)",
+                  fontFamily: "var(--font-sans)", fontSize: 11, fontVariantNumeric: "tabular-nums",
+                  color: isCur ? "var(--text-strong)" : answered ? "var(--text-muted)" : "var(--text-faint)",
+                  fontWeight: isCur ? 600 : 400, cursor: "pointer",
+                }}>
+                  {i + 1}
+                </button>
+              );
+            })}
+          </span>
+
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 24, flexShrink: 0 }}>
             {secondsLeft != null && (
-              <span style={{
-                display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-mono)",
-                fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-strong)",
-                background: "var(--surface-sunken)", borderRadius: "var(--radius-pill)", padding: "5px 12px",
-              }}>
-                <Icon name="target" size={13} />
-                {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:{String(secondsLeft % 60).padStart(2, "0")}
+              <span style={{ textAlign: "right" }}>
+                <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums", lineHeight: 1, letterSpacing: "-0.01em" }}>
+                  {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
+                </span>
+                <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", marginTop: 5 }}>remaining</span>
               </span>
             )}
             {planLinked && (
-              <button onClick={() => setShowExit(true)} style={{
-                border: "1.5px solid var(--border)", background: "var(--surface)", borderRadius: "var(--radius-pill)",
-                fontFamily: "inherit", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--text-muted)",
-                padding: "6px 14px", cursor: "pointer",
-              }}>Exit</button>
+              <button onClick={() => setShowExit(true)} style={{ border: "1px solid var(--border)", background: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", padding: "7px 13px", borderRadius: "var(--radius-md)" }}>Exit</button>
             )}
-            {allAnswered && (
-              <Button size="sm" onClick={finishSession} disabled={submitting}>
-                {submitting ? "Saving…" : "Finish →"}
-              </Button>
-            )}
-          </div>
+          </span>
         </div>
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 24px 12px" }}>
-          <ProgressBar value={sessionTarget > 0 ? (answeredCount / sessionTarget) * 100 : 0} height={6} />
+        <div style={{ height: 2, background: "var(--surface-2)" }}>
+          <div style={{ width: `${sessionTarget > 0 ? (answeredCount / sessionTarget) * 100 : 0}%`, height: "100%", background: "var(--brand)", transition: "width 0.4s var(--ease-out)" }} />
         </div>
       </header>
 
-      {/* Toolbar — text size + answer eliminator, like the real DSAT test */}
-      <div style={{ background: "var(--surface-sunken)", borderBottom: "1px solid var(--border)", padding: "8px 24px" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", gap: 18 }}>
+      {/* Toolbar */}
+      <div style={{ borderBottom: "1px solid var(--border)", padding: "8px 44px" }}>
+        <div style={{ maxWidth: 1360, margin: "0 auto", display: "flex", alignItems: "center", gap: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--text-faint)", marginRight: 2 }}>Text size</span>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", marginRight: 4 }}>Text size</span>
             {TEXT_SIZE_LEVELS.map((lvl, i) => (
-              <button
-                key={lvl}
-                onClick={() => setTextSizeIndex(i)}
-                aria-label={`Text size ${i + 1}`}
-                style={{
-                  width: 28, height: 28, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  border: `1.5px solid ${textSizeIndex === i ? "var(--brand)" : "var(--border)"}`,
-                  background: textSizeIndex === i ? "var(--brand-soft)" : "var(--surface)",
-                  borderRadius: "var(--radius-sm)", cursor: "pointer",
-                  color: textSizeIndex === i ? "var(--brand-ink)" : "var(--text-muted)",
-                  fontFamily: "var(--font-sans)", fontWeight: 700,
-                  fontSize: 11 + i * 3,
-                }}
-              >A</button>
+              <button key={lvl} onClick={() => setTextSizeIndex(i)} aria-label={`Text size ${i + 1}`} style={{
+                width: 26, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                border: `1px solid ${textSizeIndex === i ? "var(--text-strong)" : "var(--border)"}`,
+                background: textSizeIndex === i ? "var(--surface-sunken)" : "transparent", borderRadius: "var(--radius-sm)",
+                cursor: "pointer", color: textSizeIndex === i ? "var(--text-strong)" : "var(--text-faint)",
+                fontFamily: "var(--font-sans)", fontSize: 10 + i * 2,
+              }}>A</button>
             ))}
           </div>
-          <button
-            onClick={() => setEliminateMode((v) => !v)}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              border: `1.5px solid ${eliminateMode ? "var(--brand)" : "var(--border)"}`,
-              background: eliminateMode ? "var(--brand-soft)" : "var(--surface)",
-              color: eliminateMode ? "var(--brand-ink)" : "var(--text-muted)",
-              borderRadius: "var(--radius-pill)", fontFamily: "inherit", fontSize: "var(--text-xs)", fontWeight: 700,
-              padding: "5px 12px", cursor: "pointer",
-            }}
-          >
+          <button onClick={() => setEliminateMode((v) => !v)} style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            border: `1px solid ${eliminateMode ? "var(--text-strong)" : "var(--border)"}`,
+            background: eliminateMode ? "var(--surface-sunken)" : "transparent",
+            color: eliminateMode ? "var(--text-strong)" : "var(--text-faint)",
+            borderRadius: "var(--radius-md)", fontFamily: "var(--font-sans)", fontSize: 11,
+            padding: "5px 12px", cursor: "pointer",
+          }}>
             <Icon name="ban" size={13} />
             Answer Eliminator
           </button>
         </div>
       </div>
 
-      {/* Question navigator */}
-      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "12px 24px" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {questions.map((q, i) => {
-            const isCur = i === currentIndex;
-            const answered = q.selected !== null || q.gridValue !== null;
-            const correct = answered && !!q.correct;
-            let bg = "var(--surface-sunken)", col = "var(--text-muted)";
-            if (isCur) { bg = "var(--lilac-500)"; col = "#fff"; }
-            else if (answered) { bg = correct ? "var(--mint-surface)" : "var(--rose-surface)"; col = correct ? "var(--mint-ink)" : "var(--rose-ink)"; }
-            return (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                style={{
-                  width: 34, height: 34, borderRadius: 9, border: "none", cursor: "pointer",
-                  fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: "var(--text-xs)",
-                  background: bg, color: col,
-                  transition: "all var(--dur-base) var(--ease-out)",
-                }}
-              >
-                {i + 1}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Reading desk */}
+      <main style={{ maxWidth: 1360, margin: "0 auto", padding: "0 44px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: hasPassage ? "1fr 1fr" : "1fr" }}>
+          {hasPassage && (
+            <div style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: "52px 56px 72px 0", borderRight: "1px solid var(--border)" }}>
+              <p style={microLabel}>Passage</p>
+              <p style={{ fontSize: 18 * textMult / 14, lineHeight: 1.8, color: "var(--text-body)", margin: 0, maxWidth: "34rem", whiteSpace: "pre-wrap", textWrap: "pretty" }}>
+                {current.question.passage}
+              </p>
+            </div>
+          )}
+          <div style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: hasPassage ? "52px 0 72px 56px" : "52px 0 72px" }}>
+            <div style={{ maxWidth: "34rem", margin: hasPassage ? 0 : "0 auto" }}>
+              <p style={microLabel}>{current.question.skill.replace(/_/g, " ")} · {current.question.difficulty}</p>
+              <p style={{ fontSize: 18 * textMult, lineHeight: 1.48, letterSpacing: "-0.008em", color: "var(--text-strong)", margin: "0 0 32px", textWrap: "pretty" }}>
+                {current.question.stem}
+              </p>
 
-      {/* Main content */}
-      <main style={{ flex: 1, maxWidth: 720, width: "100%", margin: "0 auto", padding: "30px 24px 48px" }}>
-        {/* Skill badges */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-          <Badge tone="sky">{current.question.domain}</Badge>
-          <Badge tone="lilac">{current.question.skill.replace(/_/g, " ")}</Badge>
-          <Badge tone={diffTone} dot>{current.question.difficulty}</Badge>
-        </div>
-
-        {/* Passage */}
-        {current.question.passage && (
-          <Card tone="sunken" padding="lg" radius="lg" shadow="none" style={{ marginBottom: 22 }}>
-            <span style={eyebrow}>Passage</span>
-            <p style={{
-              fontFamily: "var(--font-sans)", fontSize: 14 * textMult, color: "var(--text-body)",
-              lineHeight: "var(--leading-relaxed)", margin: 0, whiteSpace: "pre-wrap",
-            }}>
-              {current.question.passage}
-            </p>
-          </Card>
-        )}
-
-        {/* Question stem */}
-        <p style={{
-          fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 18 * textMult,
-          color: "var(--text-strong)", lineHeight: "var(--leading-snug)", margin: "0 0 18px",
-        }}>
-          {current.question.stem}
-        </p>
-
-        {/* Answer options */}
-        {current.question.question_type === "grid_in" ? (
-          <div className="qa-grid-input" style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24, maxWidth: 280 }}>
-            <Input
-              label="Your answer"
-              placeholder="e.g. 17/4 or 4.25"
-              value={current.revealed ? (current.gridValue ?? "") : gridDraft}
-              disabled={current.revealed}
-              style={{ fontSize: 14 * textMult }}
-              onChange={(e: any) => setGridDraft(e.target.value)}
-            />
-            {!current.revealed && (
-              <Button onClick={submitGridAnswer} disabled={!gridDraft.trim()}>
-                Check answer
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-            {(["A", "B", "C", "D"] as AnswerChoice[]).map((c) => {
-              const isEliminated = current.eliminated.includes(c);
-              return (
-                <div key={c} style={{ display: "flex", alignItems: "stretch", gap: 8 }}>
-                  {eliminateMode && (
-                    <button
-                      onClick={() => toggleEliminate(c)}
-                      disabled={current.revealed}
-                      aria-label={isEliminated ? `Restore option ${c}` : `Eliminate option ${c}`}
-                      style={{
-                        flexShrink: 0, width: 40, borderRadius: "var(--radius-md)",
-                        border: `1.5px solid ${isEliminated ? "var(--brand)" : "var(--border)"}`,
-                        background: isEliminated ? "var(--brand-soft)" : "var(--surface)",
-                        color: isEliminated ? "var(--brand-ink)" : "var(--text-faint)",
-                        cursor: current.revealed ? "default" : "pointer",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}
-                    >
-                      <Icon name="ban" size={15} />
+              {current.question.question_type === "grid_in" ? (
+                <div className="qa-grid-input" style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 280 }}>
+                  <Input
+                    label="Your answer"
+                    placeholder="e.g. 17/4 or 4.25"
+                    value={current.revealed ? (current.gridValue ?? "") : gridDraft}
+                    disabled={current.revealed}
+                    style={{ fontSize: 14 * textMult }}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGridDraft(e.target.value)}
+                  />
+                  {!current.revealed && (
+                    <button onClick={submitGridAnswer} disabled={!gridDraft.trim()} style={{
+                      alignSelf: "flex-start", border: 0, background: "var(--brand)", color: "var(--text-on-brand)",
+                      fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500, padding: "11px 22px",
+                      borderRadius: "var(--radius-lg)", cursor: gridDraft.trim() ? "pointer" : "default",
+                      opacity: gridDraft.trim() ? 1 : 0.5,
+                    }}>
+                      Check answer
                     </button>
                   )}
-                  <div style={{ flex: 1 }}>
-                    <AnswerOption
-                      letter={c}
-                      state={stateFor(c)}
-                      disabled={current.revealed}
-                      onClick={() => selectAnswer(c)}
-                    >
-                      <span style={{
-                        fontSize: 14 * textMult,
-                        textDecoration: isEliminated ? "line-through" : "none",
-                        opacity: isEliminated ? 0.55 : 1,
-                      }}>
-                        {current.question.options?.[c]}
-                      </span>
-                    </AnswerOption>
-                  </div>
                 </div>
-              );
-            })}
+              ) : (
+                <div style={{ borderTop: "1px solid var(--border)" }}>
+                  {(["A", "B", "C", "D"] as AnswerChoice[]).map((c) => {
+                    const isEliminated = current.eliminated.includes(c);
+                    return (
+                      <div key={c} style={{ display: "flex", alignItems: "stretch", gap: 8 }}>
+                        {eliminateMode && (
+                          <button
+                            onClick={() => toggleEliminate(c)}
+                            disabled={current.revealed}
+                            aria-label={isEliminated ? `Restore option ${c}` : `Eliminate option ${c}`}
+                            style={{
+                              flexShrink: 0, width: 34, margin: "2px 0", borderRadius: "var(--radius-sm)",
+                              border: `1px solid ${isEliminated ? "var(--text-strong)" : "var(--border)"}`,
+                              background: isEliminated ? "var(--surface-sunken)" : "transparent",
+                              color: isEliminated ? "var(--text-strong)" : "var(--text-faint)",
+                              cursor: current.revealed ? "default" : "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >
+                            <Icon name="ban" size={13} />
+                          </button>
+                        )}
+                        <div style={{ flex: 1 }}>
+                          <AnswerOption letter={c} state={stateFor(c)} disabled={current.revealed} onClick={() => selectAnswer(c)}>
+                            <span style={{ fontSize: 17 * textMult / 14, textDecoration: isEliminated ? "line-through" : "none", opacity: isEliminated ? 0.55 : 1 }}>
+                              {current.question.options?.[c]}
+                            </span>
+                          </AnswerOption>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {current.revealed && (
+                <div style={{
+                  margin: "30px 0 0", background: current.correct ? "var(--moss-50)" : "var(--claret-50)",
+                  borderLeft: `2px solid ${current.correct ? "var(--success)" : "var(--danger)"}`,
+                  borderRadius: "0 var(--radius-md) var(--radius-md) 0", padding: "20px 22px",
+                }}>
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: current.correct ? "var(--success)" : "var(--danger)", margin: "0 0 10px" }}>
+                    {current.correct ? "Correct" : "Not quite"}
+                  </p>
+                  {!current.correct && current.question.question_type === "grid_in" && (
+                    <p style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 14 * textMult, margin: "0 0 8px", color: "var(--text-body)" }}>
+                      Correct answer: {current.question.grid_answer}
+                    </p>
+                  )}
+                  <p style={{ fontSize: 15 * textMult / 14, lineHeight: 1.68, margin: 0, color: "var(--text-body)" }}>
+                    {current.question.explanation}
+                  </p>
+                </div>
+              )}
+
+              {actionError && (
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "20px 0 0" }}>{actionError}</p>
+              )}
+
+              <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "32px 0 0" }}>
+                {currentIndex > 0 && (
+                  <button onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", padding: 0 }}>
+                    ← Previous
+                  </button>
+                )}
+                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 24 }}>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>Question {currentIndex + 1} of {sessionTarget}</span>
+                  {atFrontier && !hasMoreToGenerate ? (
+                    <button onClick={finishSession} disabled={submitting || !allAnswered} style={{
+                      border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                      fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
+                      cursor: submitting || !allAnswered ? "default" : "pointer", opacity: submitting || !allAnswered ? 0.5 : 1,
+                    }}>
+                      {submitting ? "Saving…" : "Finish session"}
+                    </button>
+                  ) : (
+                    <button onClick={goNext} disabled={generatingNext || (atFrontier && hasMoreToGenerate && !current.revealed)} style={{
+                      border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                      fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
+                      cursor: "pointer", opacity: generatingNext || (atFrontier && hasMoreToGenerate && !current.revealed) ? 0.5 : 1,
+                    }}>
+                      {generatingNext ? "Loading…" : atFrontier ? "Next question" : "Next"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-
-        {/* Explanation */}
-        {current.revealed && (
-          <Card
-            tone={current.correct ? "mint" : "rose"}
-            padding="lg"
-            radius="lg"
-            shadow="none"
-            style={{ marginBottom: 24 }}
-          >
-            <span style={{ ...eyebrow, opacity: 0.8, color: "inherit" }}>
-              {current.correct ? "Nice — correct!" : "Not quite"}
-            </span>
-            {!current.correct && current.question.question_type === "grid_in" && (
-              <p style={{
-                fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 14 * textMult,
-                margin: "0 0 8px", color: "inherit",
-              }}>
-                Correct answer: {current.question.grid_answer}
-              </p>
-            )}
-            <p style={{
-              fontFamily: "var(--font-sans)", fontSize: 14 * textMult,
-              lineHeight: "var(--leading-relaxed)", margin: 0, color: "inherit",
-            }}>
-              {current.question.explanation}
-            </p>
-          </Card>
-        )}
-
-        {/* Navigation */}
-        {actionError && (
-          <p style={{
-            fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--danger)",
-            background: "var(--danger-surface)", borderRadius: "var(--radius-md)",
-            padding: "10px 14px", margin: "0 0 14px",
-          }}>
-            {actionError}
-          </p>
-        )}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Button
-            variant="ghost"
-            disabled={currentIndex === 0}
-            onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-            iconLeft={<Icon name="arrow-left" size={17} />}
-          >
-            Previous
-          </Button>
-          {atFrontier && !hasMoreToGenerate ? (
-            <Button
-              onClick={finishSession}
-              disabled={submitting || !allAnswered}
-              iconRight={<Icon name="arrow-right" size={17} />}
-            >
-              {submitting ? "Saving…" : "Finish session"}
-            </Button>
-          ) : (
-            <Button
-              variant="secondary"
-              onClick={goNext}
-              disabled={generatingNext || (atFrontier && hasMoreToGenerate && !current.revealed)}
-              iconRight={<Icon name="arrow-right" size={17} />}
-            >
-              {generatingNext ? "Loading…" : "Next"}
-            </Button>
-          )}
         </div>
       </main>
 
-      {/* Exit confirmation */}
       {showExit && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)",
-          display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
-        }}>
-          <div style={{ background: "var(--surface)", borderRadius: "var(--radius-2xl)", boxShadow: "var(--shadow-lg)", padding: "var(--space-8)", maxWidth: 400, textAlign: "center" }}>
-            <h2 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500, fontSize: "var(--text-lg)", color: "var(--text-strong)", margin: "0 0 10px" }}>
-              Pause here?
-            </h2>
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", lineHeight: "var(--leading-relaxed)", margin: "0 0 22px" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "40px 40px 34px", maxWidth: 420 }}>
+            <h2 style={{ fontWeight: 400, fontSize: 27, lineHeight: 1.15, color: "var(--text-strong)", margin: "0 0 12px" }}>Leave the module?</h2>
+            <p style={{ fontSize: 16, lineHeight: 1.62, color: "var(--text-muted)", margin: "0 0 28px" }}>
               Your answers so far are already saved, so you can pick up right where you left off — today&apos;s day just won&apos;t be marked complete yet.
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <Button size="lg" full onClick={() => setShowExit(false)}>Keep going</Button>
-              <Button variant="ghost" full onClick={leaveSession}>Leave anyway</Button>
+            <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+              <button onClick={() => setShowExit(false)} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+                Keep going
+              </button>
+              <button onClick={leaveSession} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-faint)", cursor: "pointer", padding: 0 }}>
+                Leave anyway
+              </button>
             </div>
           </div>
         </div>

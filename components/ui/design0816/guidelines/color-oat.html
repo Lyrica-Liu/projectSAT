@@ -1,0 +1,27 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Neutral — Oat" subtitle="Warm light neutral: the app sidebar, quiet panels, rails" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+body{margin:0;padding:20px;background:var(--surface)}
+.row{display:flex;gap:10px}
+.sw{flex:1;display:flex;flex-direction:column;gap:7px}
+.chip{height:64px;border-radius:var(--radius-md);border:1px solid rgba(0,0,0,.04)}
+.name{font-family:var(--font-sans);font-size:11px;font-weight:600;color:var(--text-strong)}
+.hex{font-family:var(--font-mono);font-size:10px;color:var(--text-faint)}
+.note{font-family:var(--font-sans);font-size:11px;color:var(--text-muted);margin:14px 0 0;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="row">
+<div class="sw"><div class="chip" style="background:var(--oat-50)"></div><span class="name">50</span><span class="hex">#f1ede2</span></div>
+<div class="sw"><div class="chip" style="background:var(--oat-100)"></div><span class="name">100 ◆ sidebar</span><span class="hex">#e8e4d8</span></div>
+<div class="sw"><div class="chip" style="background:var(--oat-200)"></div><span class="name">200 hover</span><span class="hex">#ddd8c8</span></div>
+<div class="sw"><div class="chip" style="background:var(--oat-300)"></div><span class="name">300 rail</span><span class="hex">#cfc8b4</span></div>
+<div class="sw"><div class="chip" style="background:var(--oat-line)"></div><span class="name">line</span><span class="hex">#d4cebd</span></div>
+</div>
+<p class="note">Oat is the chrome ground — <code>--sidebar-bg</code>, hover fills and rails — so the app spine reads as paper rather than a second ink slab. Type on oat stays ink.</p>
+</body>
+</html>

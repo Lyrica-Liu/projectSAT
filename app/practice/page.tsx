@@ -1,60 +1,40 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AppNav } from "@/components/ui/nav";
-import { Button, ChoiceCard, ProgressBar } from "@/components/ui/ds";
-import { Icon } from "@/components/ui/icon";
+import { Sidebar, SIDEBAR_WIDTH } from "@/components/ui/nav";
 import type { Difficulty } from "@/lib/types";
 
 const CATEGORIES: { label: string; subcategories: string[] }[] = [
   {
     label: "Information and Ideas",
-    subcategories: [
-      "Central Ideas and Details",
-      "Command of Evidence (Textual)",
-      "Command of Evidence (Quantitative)",
-      "Inferences",
-    ],
+    subcategories: ["Central Ideas and Details", "Command of Evidence (Textual)", "Command of Evidence (Quantitative)", "Inferences"],
   },
   {
     label: "Craft and Structure",
-    subcategories: [
-      "Words in Context",
-      "Text Structure and Purpose",
-      "Cross-Text Connections",
-    ],
+    subcategories: ["Words in Context", "Text Structure and Purpose", "Cross-Text Connections"],
   },
-  {
-    label: "Expression of Ideas",
-    subcategories: ["Transitions", "Rhetorical Synthesis"],
-  },
-  {
-    label: "Standard English Conventions",
-    subcategories: ["Boundaries", "Form, Structure, and Sense"],
-  },
-  {
-    label: "Math",
-    subcategories: ["Algebra", "Data Analysis", "Geometry"],
-  },
+  { label: "Expression of Ideas", subcategories: ["Transitions", "Rhetorical Synthesis"] },
+  { label: "Standard English Conventions", subcategories: ["Boundaries", "Form, Structure, and Sense"] },
+  { label: "Math", subcategories: ["Algebra", "Data Analysis", "Geometry"] },
 ];
 
 const MATH_SUBCATEGORIES = new Set(["Algebra", "Data Analysis", "Geometry"]);
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
-  { value: "easy",        label: "Easy" },
-  { value: "medium-low",  label: "Medium Low" },
-  { value: "medium-high", label: "Medium High" },
-  { value: "hard",        label: "Hard" },
+  { value: "easy", label: "Easy" },
+  { value: "medium-low", label: "Medium low" },
+  { value: "medium-high", label: "Medium high" },
+  { value: "hard", label: "Hard" },
 ];
 
 const COUNT_OPTIONS = [5, 10, 15, 20];
 
-const eyebrow: React.CSSProperties = {
-  fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 600,
-  letterSpacing: "var(--tracking-caps)", textTransform: "uppercase",
-  color: "var(--text-faint)", margin: "0 0 10px", display: "block",
+const microLabel: React.CSSProperties = {
+  fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500,
+  letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)",
+  margin: "40px 0 0", paddingBottom: 12, borderBottom: "1px solid var(--line-strong)", display: "block",
 };
 
 export default function PracticeSetupPage() {
@@ -64,9 +44,7 @@ export default function PracticeSetupPage() {
   const [difficulty, setDifficulty] = useState<Difficulty>("medium-high");
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
-  const [genProgress, setGenProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isMathSelected = selected.size > 0 && MATH_SUBCATEGORIES.has(Array.from(selected)[0]);
 
   function toggleCategory(cat: string) {
@@ -84,8 +62,6 @@ export default function PracticeSetupPage() {
         next.delete(sub);
         return next;
       }
-      // English and math questions come from different pipelines (AI-generated
-      // vs. the static bank) — keep a session to one subject at a time.
       const switchingSubject = Array.from(prev).some((s) => MATH_SUBCATEGORIES.has(s) !== MATH_SUBCATEGORIES.has(sub));
       const next = switchingSubject ? new Set<string>() : new Set(prev);
       next.add(sub);
@@ -93,24 +69,10 @@ export default function PracticeSetupPage() {
     });
   }
 
-  useEffect(() => {
-    return () => { if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); };
-  }, []);
-
   async function startSession() {
     if (selected.size === 0) return;
     setLoading(true);
-    setGenProgress(0);
     setError(null);
-
-    // Animate progress from 0→88 over ~20s; never reaches 100 until done
-    // (math sessions pull from the static bank and finish almost instantly,
-    // so this just races ahead and completes right away).
-    let p = 0;
-    progressIntervalRef.current = setInterval(() => {
-      p = Math.min(88, p + (88 - p) * (isMathSelected ? 0.35 : 0.06) + 0.4);
-      setGenProgress(Math.round(p));
-    }, 400);
 
     let sessionId: string;
     try {
@@ -123,140 +85,68 @@ export default function PracticeSetupPage() {
       if (!res.ok) throw new Error(body.error ?? "Failed to generate questions");
       sessionId = body.sessionId;
     } catch (err: unknown) {
-      if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
       setError(err instanceof Error ? err.message : "Could not generate questions. Please try again.");
       setLoading(false);
-      setGenProgress(0);
       return;
     }
 
-    if (progressIntervalRef.current) { clearInterval(progressIntervalRef.current); progressIntervalRef.current = null; }
-    setGenProgress(100);
     router.push(`/practice/${sessionId}`);
   }
 
+  const selectedLabel = selected.size === 0 ? "Nothing chosen" : Array.from(selected).slice(0, 2).join(", ") + (selected.size > 2 ? `, +${selected.size - 2}` : "");
+  const estimate = `~${Math.round(count * 0.85)} min estimated · untimed`;
+
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", zoom: 1.15 }}>
-      <AppNav maxWidth={900} />
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
+      <Sidebar />
 
-      <main style={{ flex: 1, maxWidth: 900, width: "100%", margin: "0 auto", padding: "48px 24px" }}>
-        <h1 style={{
-          fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: "var(--text-xl)",
-          letterSpacing: "var(--tracking-snug)", color: "var(--text-strong)", margin: "0 0 8px",
-        }}>Set up your session</h1>
-        <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: "0 0 32px" }}>
-          Pick anything you like — extra sessions sharpen skills but don&apos;t advance your 30-day plan.{" "}
-          <Link href="/for-you" style={{ color: "var(--brand-ink)", fontWeight: 600 }}>See what&apos;s picked for you →</Link>
-        </p>
+      <main style={{ maxWidth: 960 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
+          <span>Extra practice</span>
+          <span>Outside the thirty-day plan</span>
+        </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
-
-          {/* Left — category accordion + subcategory multi-select */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 244px", gap: 64, alignItems: "start", padding: "52px 0 0" }}>
           <div>
-            <span style={eyebrow}>
-              Skills
-              {selected.size > 0 && (
-                <span style={{
-                  marginLeft: 8, fontFamily: "var(--font-mono)", fontWeight: 500,
-                  color: "var(--brand)", fontSize: "var(--text-xs)", letterSpacing: 0,
-                  textTransform: "none",
-                }}>
-                  {selected.size} selected
-                </span>
-              )}
-            </span>
+            <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0 }}>Practice as you like</h1>
+            <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "20px 0 0", maxWidth: "50ch", textWrap: "pretty" }}>
+              Extra sessions sharpen skills but do not advance the plan or the streak.{" "}
+              <Link href="/for-you" style={{ color: "var(--accent)" }}>See what&apos;s picked for you →</Link>
+            </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <p style={microLabel}>Skills {selected.size > 0 && `· ${selected.size} selected`}</p>
+            <div>
               {CATEGORIES.map((cat) => {
                 const isOpen = expanded.has(cat.label);
                 const selectedCount = cat.subcategories.filter((s) => selected.has(s)).length;
-
                 return (
                   <div key={cat.label}>
-                    {/* Category header */}
-                    <button
-                      onClick={() => toggleCategory(cat.label)}
-                      style={{
-                        width: "100%", display: "flex", alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "13px 16px",
-                        fontFamily: "var(--font-sans)", fontWeight: 600,
-                        fontSize: "var(--text-sm)", cursor: "pointer",
-                        background: isOpen ? "var(--lilac-50)" : "var(--surface)",
-                        border: `1.5px solid ${isOpen ? "var(--lilac-300)" : "var(--border-strong)"}`,
-                        borderBottom: isOpen ? "none" : `1.5px solid ${isOpen ? "var(--lilac-300)" : "var(--border-strong)"}`,
-                        borderRadius: isOpen
-                          ? "var(--radius-md) var(--radius-md) 0 0"
-                          : "var(--radius-md)",
-                        color: isOpen ? "var(--brand-ink)" : "var(--text-strong)",
-                        transition: "all var(--dur-base) var(--ease-out)",
-                        textAlign: "left",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button onClick={() => toggleCategory(cat.label)} style={{
+                      width: "100%", display: "flex", alignItems: "baseline", justifyContent: "space-between",
+                      padding: "17px 4px", border: 0, borderBottom: "1px solid var(--border)", background: "transparent",
+                      fontFamily: "var(--font-serif)", fontSize: 17, color: "var(--text-body)", cursor: "pointer", textAlign: "left",
+                    }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         {cat.label}
-                        {selectedCount > 0 && (
-                          <span style={{
-                            display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            width: 20, height: 20, borderRadius: "var(--radius-pill)",
-                            background: "var(--lilac-500)", color: "#fff",
-                            fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700,
-                          }}>
-                            {selectedCount}
-                          </span>
-                        )}
+                        {selectedCount > 0 && <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--accent)" }}>({selectedCount})</span>}
                       </span>
-                      <span style={{
-                        fontSize: 12, color: "var(--text-faint)",
-                        transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
-                        transition: "transform var(--dur-base) var(--ease-out)",
-                        display: "inline-block",
-                      }}>▶</span>
+                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", transform: isOpen ? "rotate(90deg)" : "none", transition: "transform 0.16s" }}>›</span>
                     </button>
-
-                    {/* Subcategory panel */}
                     {isOpen && (
-                      <div style={{
-                        border: "1.5px solid var(--lilac-300)",
-                        borderTop: "none",
-                        borderRadius: "0 0 var(--radius-md) var(--radius-md)",
-                        background: "var(--surface)",
-                        padding: "6px 8px 10px",
-                      }}>
+                      <div style={{ padding: "4px 0 12px" }}>
                         {cat.subcategories.map((sub) => {
                           const isSelected = selected.has(sub);
                           return (
-                            <button
-                              key={sub}
-                              onClick={() => toggleSubcategory(sub)}
-                              style={{
-                                width: "100%", display: "flex", alignItems: "center", gap: 10,
-                                padding: "9px 10px", border: "none", cursor: "pointer",
-                                borderRadius: "var(--radius-sm)",
-                                background: isSelected ? "var(--lilac-50)" : "transparent",
-                                transition: "background var(--dur-fast) var(--ease-out)",
-                                textAlign: "left",
-                              }}
-                            >
-                              {/* Check indicator */}
+                            <button key={sub} onClick={() => toggleSubcategory(sub)} style={{
+                              width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "9px 4px",
+                              border: 0, background: "transparent", cursor: "pointer", textAlign: "left",
+                            }}>
                               <span style={{
-                                flexShrink: 0,
-                                width: 18, height: 18, borderRadius: 5,
-                                border: isSelected ? "none" : "1.5px solid var(--border-strong)",
-                                background: isSelected ? "var(--lilac-500)" : "transparent",
-                                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                color: "#fff", fontSize: 11, fontWeight: 700,
-                                transition: "all var(--dur-fast) var(--ease-out)",
-                              }}>
-                                {isSelected && "✓"}
-                              </span>
-                              <span style={{
-                                fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)",
-                                fontWeight: isSelected ? 600 : 400,
-                                color: isSelected ? "var(--brand-ink)" : "var(--text-body)",
-                              }}>
-                                {sub}
-                              </span>
+                                flexShrink: 0, width: 13, height: 13, borderRadius: 1,
+                                border: `1px solid ${isSelected ? "var(--text-strong)" : "var(--border-strong)"}`,
+                                background: isSelected ? "var(--text-strong)" : "transparent",
+                              }} />
+                              <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: isSelected ? "var(--text-strong)" : "var(--text-muted)" }}>{sub}</span>
                             </button>
                           );
                         })}
@@ -266,88 +156,75 @@ export default function PracticeSetupPage() {
                 );
               })}
             </div>
-          </div>
 
-          {/* Right — difficulty + count */}
-          <div>
-            <span style={eyebrow}>Difficulty</span>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
-              {DIFFICULTY_OPTIONS.map((opt) => (
-                <ChoiceCard
-                  key={opt.value}
-                  label={opt.label}
-                  selected={difficulty === opt.value}
-                  onClick={() => setDifficulty(opt.value)}
-                />
-              ))}
-            </div>
+            <p style={microLabel}>Difficulty</p>
+            {DIFFICULTY_OPTIONS.map((opt) => {
+              const on = difficulty === opt.value;
+              return (
+                <button key={opt.value} onClick={() => setDifficulty(opt.value)} style={{
+                  width: "100%", display: "flex", alignItems: "baseline", justifyContent: "space-between",
+                  padding: "15px 14px", border: 0, borderBottom: "1px solid var(--border)",
+                  borderLeft: `2px solid ${on ? "var(--accent)" : "transparent"}`,
+                  background: on ? "var(--surface)" : "transparent",
+                  fontFamily: "var(--font-serif)", fontSize: 16, color: on ? "var(--text-strong)" : "var(--text-body)",
+                  cursor: "pointer", textAlign: "left",
+                }}>
+                  {opt.label}
+                </button>
+              );
+            })}
 
-            <span style={eyebrow}>Number of questions</span>
-            <div style={{ display: "flex", gap: 10 }}>
+            <p style={microLabel}>Number of questions</p>
+            <div style={{ display: "flex", borderBottom: "1px solid var(--border)" }}>
               {COUNT_OPTIONS.map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setCount(n)}
-                  style={{
-                    flex: 1, padding: "13px 0", borderRadius: "var(--radius-md)",
-                    fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: "var(--text-sm)",
-                    cursor: "pointer", transition: "all var(--dur-base) var(--ease-out)",
-                    background: count === n ? "var(--lilac-50)" : "var(--surface)",
-                    border: `1.5px solid ${count === n ? "var(--lilac-300)" : "var(--border-strong)"}`,
-                    color: count === n ? "var(--brand-ink)" : "var(--text-body)",
-                    boxShadow: count === n ? `0 0 0 4px var(--focus-ring)` : "none",
-                  }}
-                >
+                <button key={n} onClick={() => setCount(n)} style={{
+                  flex: 1, padding: "18px 0", border: 0, borderLeft: "1px solid var(--border)",
+                  background: count === n ? "var(--brand)" : "transparent",
+                  fontFamily: "var(--font-sans)", fontSize: 15, fontVariantNumeric: "tabular-nums",
+                  color: count === n ? "var(--text-on-brand)" : "var(--text-muted)", cursor: "pointer",
+                }}>
                   {n}
                 </button>
               ))}
             </div>
-          </div>
-        </div>
 
-        {/* Start button */}
-        <div style={{ marginTop: 36 }}>
-          {error && (
-            <div style={{
-              fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
-              color: "var(--danger)", background: "var(--danger-surface)",
-              borderRadius: "var(--radius-md)", padding: "10px 14px",
-              lineHeight: "var(--leading-normal)", marginBottom: 14,
-            }}>
-              {error}
-            </div>
-          )}
-          <Button
-            full size="lg"
-            onClick={startSession}
-            disabled={selected.size === 0 || loading}
-            iconRight={!loading ? <Icon name="arrow-right" size={18} /> : undefined}
-          >
-            {loading
-              ? isMathSelected ? "Building your session…" : "Generating questions with AI…"
-              : selected.size > 0
-              ? `Start session — ${selected.size} skill${selected.size > 1 ? "s" : ""}`
-              : "Start session"}
-          </Button>
-          {selected.size === 0 && !loading && (
-            <p style={{
-              fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
-              color: "var(--text-faint)", textAlign: "center", marginTop: 10,
-            }}>
-              Open a category and select at least one skill to continue
-            </p>
-          )}
-          {loading && (
-            <div style={{ marginTop: 16 }}>
-              <ProgressBar value={genProgress} height={6} />
-              <p style={{
-                fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)",
-                color: "var(--text-faint)", textAlign: "center", marginTop: 8,
+            {error && (
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "24px 0 0" }}>{error}</p>
+            )}
+
+            <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "40px 0 0" }}>
+              <button onClick={startSession} disabled={selected.size === 0 || loading} style={{
+                border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)",
+                cursor: selected.size === 0 || loading ? "default" : "pointer",
+                opacity: selected.size === 0 || loading ? 0.5 : 1,
               }}>
-                {isMathSelected ? "Hang tight — this only takes a moment." : "Hang tight — usually takes ~15 seconds."}
-              </p>
+                {loading ? (isMathSelected ? "Building your session…" : "Generating questions with AI…") : "Start session"}
+              </button>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>
+                {selected.size === 0 ? "Choose at least one skill" : estimate}
+              </span>
             </div>
-          )}
+          </div>
+
+          <div style={{ borderLeft: "1px solid var(--border)", padding: "4px 0 4px 24px" }}>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 16px" }}>This session</p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 12 }}>
+              <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Skills</span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)", textAlign: "right" }}>{selectedLabel}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 12 }}>
+              <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Questions</span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{count}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 18 }}>
+              <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Counts toward</span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>Nothing</span>
+            </div>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, lineHeight: 1.66, color: "var(--text-faint)", margin: 0 }}>
+              Untimed and unrecorded by design. If you want the clock and the record, open today&apos;s plan day instead.
+            </p>
+          </div>
         </div>
       </main>
     </div>

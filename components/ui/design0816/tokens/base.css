@@ -1,0 +1,67 @@
+/* ─────────────────────────────────────────────────────────────
+   800Path — base element styles & helpers
+   ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+  color: var(--text-body);
+  background: var(--bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1;
+}
+
+a { color: inherit; text-decoration: none; }
+a:hover { color: var(--text-strong); }
+
+/* Brand wordmark — set in the serif, no box, no gradient chip.
+   The mark is a hairline-ruled monogram, not a colored tile. */
+.pw-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: var(--font-serif);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-lg);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-strong);
+}
+.pw-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--text-strong);
+  background: transparent;
+  color: var(--text-strong);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-semibold);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+/* Eyebrow / micro-label — sans, tracked, quiet */
+.pw-eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Tabular numerals for timers, scores, indices */
+.pw-num {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-snug);
+}
+
+/* Hairline rule */
+.pw-rule { border: 0; border-top: 1px solid var(--border); margin: 0; }

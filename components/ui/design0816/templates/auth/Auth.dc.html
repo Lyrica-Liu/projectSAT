@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Sign In / Sign Up" description="800Path auth — charcoal editorial panel with a plate-numbered epigraph beside a quiet ruled form; sign in and sign up toggle in place" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+<style>
+html{-webkit-font-smoothing:antialiased}
+a.q:hover{color:var(--text-strong)}
+.cta:hover{background:var(--brand-hover)}
+.fld:focus{outline:0;border-color:var(--text-strong)}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;background:var(--canvas);font-family:var(--font-serif);color:var(--text-body)">
+
+<aside style="position:relative;flex:0 0 44%;min-width:320px;max-width:540px;background:var(--dark-900);display:flex;flex-direction:column;justify-content:space-between;padding:44px 48px">
+<span style="display:inline-flex;align-items:center;gap:11px">
+<svg viewBox="0 0 230 140" width="30" height="18" style="flex:none"><g transform="translate(22,0) skewX(-10)" fill="var(--text-on-dark)"><path d="M40,44 A20,22 0 1 1 80,44 A20,22 0 1 1 40,44 ZM47,41 A11,12 0 1 0 69,41 A11,12 0 1 0 47,41 ZM31,90 A27,28 0 1 1 85,90 A27,28 0 1 1 31,90 ZM40,86 A16,16 0 1 0 72,86 A16,16 0 1 0 40,86 ZM96,92 A22,26 0 1 1 140,92 A22,26 0 1 1 96,92 ZM105,88 A13,16 0 1 0 131,88 A13,16 0 1 0 105,88 ZM150,92 A22,26 0 1 1 194,92 A22,26 0 1 1 150,92 ZM159,88 A13,16 0 1 0 185,88 A13,16 0 1 0 159,88 ZM70,100 C80,112 96,108 106,100 C98,104 84,105 74,94 ZM132,101 C140,111 152,111 160,101 C152,106 141,106 135,96 ZM186,98 C198,94 204,84 203,73 C199,83 196,90 184,94 ZM40,29 C45,22 54,19 61,21 C54,23 48,26 44,32 Z"></path></g></svg>
+<span style="font-weight:600;font-size:19px;letter-spacing:-.018em;color:var(--text-on-dark)">800Path</span>
+</span>
+
+<div>
+<p style="font-family:var(--font-sans);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-on-dark-faint);margin:0 0 26px;display:flex;align-items:center;gap:14px"><span style="width:26px;height:1px;background:var(--dark-700)"></span>Thirty days, in order</p>
+<p style="font-weight:400;font-size:38px;line-height:1.12;letter-spacing:-.024em;color:var(--text-on-dark);margin:0 0 18px;max-width:24ch;text-wrap:pretty">Steady, deliberate progress — one sitting at a time.</p>
+<p style="font-size:16px;line-height:1.62;color:var(--text-on-dark-muted);margin:0;max-width:36ch">Twelve questions a day, timed like the test, explained the way a good tutor would.</p>
+</div>
+
+<p style="font-family:var(--font-sans);font-size:11px;color:var(--text-on-dark-faint);margin:0">© 2026 800Path</p>
+</aside>
+
+<main style="flex:1;display:flex;align-items:center;justify-content:center;padding:72px 56px">
+<div style="width:100%;max-width:380px">
+
+<div style="display:flex;gap:0;border-bottom:1px solid var(--line-strong);margin:0 0 36px;font-family:var(--font-sans)">
+<button onClick="{{ showIn }}" ref="{{ tabInRef }}" style="flex:1;padding:0 0 12px;border:0;border-bottom:2px solid transparent;background:none;font-size:13px;color:var(--text-faint);cursor:pointer;margin-bottom:-1px;transition:color .16s,border-color .16s">Sign in</button>
+<button onClick="{{ showUp }}" ref="{{ tabUpRef }}" style="flex:1;padding:0 0 12px;border:0;border-bottom:2px solid transparent;background:none;font-size:13px;color:var(--text-faint);cursor:pointer;margin-bottom:-1px;transition:color .16s,border-color .16s">Sign up</button>
+</div>
+
+<h1 style="font-weight:400;font-size:34px;line-height:1.08;letter-spacing:-.024em;color:var(--text-strong);margin:0 0 10px">{{ heading }}</h1>
+<p style="font-size:16px;line-height:1.6;color:var(--text-muted);margin:0 0 32px">{{ sub }}</p>
+
+<div style="display:flex;flex-direction:column;gap:22px">
+<sc-if value="{{ isUp }}" hint-placeholder-val="{{ false }}">
+<label style="display:block">
+<span style="display:block;font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 9px">First name</span>
+<input class="fld" type="text" placeholder="Maya" style="width:100%;border:0;border-bottom:1px solid var(--line-strong);background:transparent;font-family:var(--font-serif);font-size:17px;color:var(--text-strong);padding:0 0 9px;transition:border-color .16s" />
+</label>
+</sc-if>
+<label style="display:block">
+<span style="display:block;font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 9px">Email</span>
+<input class="fld" type="email" placeholder="you@example.com" style="width:100%;border:0;border-bottom:1px solid var(--line-strong);background:transparent;font-family:var(--font-serif);font-size:17px;color:var(--text-strong);padding:0 0 9px;transition:border-color .16s" />
+</label>
+<label style="display:block">
+<span style="display:block;font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 9px">Password</span>
+<input class="fld" type="password" placeholder="••••••••" style="width:100%;border:0;border-bottom:1px solid var(--line-strong);background:transparent;font-family:var(--font-serif);font-size:17px;color:var(--text-strong);padding:0 0 9px;transition:border-color .16s" />
+</label>
+<a class="cta" href="../onboarding/Onboarding.dc.html" style="display:flex;align-items:center;justify-content:center;background:var(--brand);color:var(--text-on-brand);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:15px 0;border-radius:var(--radius-lg);margin-top:6px;transition:background .16s">{{ actionLabel }}</a>
+</div>
+
+<p style="margin:26px 0 0;font-family:var(--font-sans);font-size:11px;color:var(--text-faint);line-height:1.7">By continuing you agree to the <span style="text-decoration:underline">Terms</span> and <span style="text-decoration:underline">Privacy Policy</span>. No paywall, no card.</p>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1000,&quot;height&quot;:680}}">
+class Component extends DCLogic {
+  state = { mode: 'in' };
+
+  renderVals() {
+    const isUp = this.state.mode === 'up';
+    const mark = (on) => (el) => {
+      if (!el) return;
+      el.style.color = on ? 'var(--text-strong)' : 'var(--text-faint)';
+      el.style.borderBottomColor = on ? 'var(--text-strong)' : 'transparent';
+      el.style.fontWeight = on ? '500' : '400';
+    };
+    return {
+      isUp,
+      heading: isUp ? 'Start the thirty days' : 'Welcome back',
+      sub: isUp ? 'One minute of setup, then Day 1 opens.' : 'Sign in to pick up where the plan left off.',
+      actionLabel: isUp ? 'Create account' : 'Sign in',
+      tabInRef: mark(!isUp),
+      tabUpRef: mark(isUp),
+      showIn: () => this.setState({ mode: 'in' }),
+      showUp: () => this.setState({ mode: 'up' })
+    };
+  }
+}
+</script>
+</body>
+</html>

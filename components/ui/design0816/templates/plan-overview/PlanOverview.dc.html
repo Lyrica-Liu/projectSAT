@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Plan Overview" description="800Path 30-day plan as a ruled ledger — 20 English / 10 Math in E,E,M sequence, today held in a charcoal panel, completed weeks collapsed, streak and projection kept in the margin" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+<style>
+html{-webkit-font-smoothing:antialiased}
+a.q:hover,button.q:hover{color:var(--text-strong)}
+.drow:hover{background:var(--surface)}
+.sb{width:66px!important;transition:width .24s cubic-bezier(.2,.7,.3,1)}
+.sb:hover{width:218px!important}
+.sb .lbl{opacity:0;transition:opacity .16s;white-space:nowrap}
+.sb:hover .lbl{opacity:1}
+.sb a,.sb button{transition:background .16s,color .16s}
+.sb a:hover,.sb button:hover{background:var(--sidebar-hover);color:var(--sidebar-ink)}
+.cta:hover{background:var(--surface-2)}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);color:var(--text-body);font-family:var(--font-serif)">
+
+<aside class="sb" style="position:fixed;left:0;top:0;bottom:0;width:66px;background:var(--sidebar-bg);border-right:1px solid var(--sidebar-line);z-index:40;display:flex;flex-direction:column;overflow:hidden">
+<div style="height:60px;display:flex;align-items:center;gap:12px;padding:0 21px;flex:none;border-bottom:1px solid var(--sidebar-line)">
+<svg viewBox="0 0 230 140" width="30" height="18" style="flex:none"><g transform="translate(22,0) skewX(-10)" fill="var(--sidebar-ink)"><path d="M40,44 A20,22 0 1 1 80,44 A20,22 0 1 1 40,44 ZM47,41 A11,12 0 1 0 69,41 A11,12 0 1 0 47,41 ZM31,90 A27,28 0 1 1 85,90 A27,28 0 1 1 31,90 ZM40,86 A16,16 0 1 0 72,86 A16,16 0 1 0 40,86 ZM96,92 A22,26 0 1 1 140,92 A22,26 0 1 1 96,92 ZM105,88 A13,16 0 1 0 131,88 A13,16 0 1 0 105,88 ZM150,92 A22,26 0 1 1 194,92 A22,26 0 1 1 150,92 ZM159,88 A13,16 0 1 0 185,88 A13,16 0 1 0 159,88 ZM70,100 C80,112 96,108 106,100 C98,104 84,105 74,94 ZM132,101 C140,111 152,111 160,101 C152,106 141,106 135,96 ZM186,98 C198,94 204,84 203,73 C199,83 196,90 184,94 ZM40,29 C45,22 54,19 61,21 C54,23 48,26 44,32 Z"></path></g></svg>
+<span class="lbl" style="font-size:16px;font-weight:600;color:var(--sidebar-ink);letter-spacing:-.018em">800Path</span>
+</div>
+<nav style="display:flex;flex-direction:column;gap:2px;padding:14px 9px;flex:1;font-family:var(--font-sans);font-size:13px">
+<span style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);background:var(--sidebar-active);color:var(--text-on-brand)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><rect x="2" y="3" width="12" height="11" rx="1"></rect><path d="M2 6.5h12M6 3v-1.5M10 3v-1.5"></path></svg><span class="lbl">My plan</span></span>
+<a href="../dashboard/Dashboard.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><path d="M2 13V8M6 13V4M10 13V9.5M14 13V6"></path></svg><span class="lbl">Dashboard</span></a>
+<a href="../practice-setup/PracticeSetup.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><path d="M3 2.5h10v11H3zM5.5 6h5M5.5 9h3"></path></svg><span class="lbl">Extra practice</span></a>
+<a href="../history/History.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><circle cx="8" cy="8" r="5.7"></circle><path d="M8 5v3.2l2.2 1.4"></path></svg><span class="lbl">History</span></a>
+</nav>
+<div style="padding:16px 9px;border-top:1px solid var(--sidebar-line);flex:none">
+<div style="padding:0 12px 14px">
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:2px;width:34px">
+<sc-for list="{{ railCells }}" as="r" hint-placeholder-count="30">
+<span style="aspect-ratio:1;background:var(--sidebar-rail);border-radius:1px" ref="{{ r.ref }}"></span>
+</sc-for>
+</div>
+<p class="lbl" style="font-family:var(--font-sans);font-size:11px;color:var(--sidebar-ink-faint);margin:10px 0 0">Day {{ cur }} of thirty</p>
+</div>
+<a href="../account-center/AccountCenter.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted);font-family:var(--font-sans);font-size:13px"><span style="width:16px;height:16px;border-radius:999px;border:1px solid var(--sidebar-ink-faint);display:flex;align-items:center;justify-content:center;font-size:9px;flex:none">M</span><span class="lbl">Maya Ruiz</span></a>
+</div>
+</aside>
+
+<main style="margin-left:66px;padding:0 0 96px">
+<div style="max-width:1080px;margin:0 auto;padding:0 56px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:24px;height:60px;border-bottom:1px solid var(--border);font-family:var(--font-sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint)">
+<span>Your study plan</span>
+<span style="font-variant-numeric:tabular-nums">{{ done }} of 30 complete</span>
+</div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:48px;flex-wrap:wrap;padding:52px 0 0">
+<h1 style="font-weight:400;font-size:46px;line-height:1.04;letter-spacing:-.026em;color:var(--text-strong);margin:0">The Thirty-Day Path</h1>
+<p style="font-size:15px;line-height:1.62;color:var(--text-muted);margin:0;max-width:38ch;text-wrap:pretty">Twenty days of English, ten of Math — two English, one Math, repeating. The next day opens only when today's work is done.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 252px;gap:64px;align-items:start;margin:52px 0 0">
+
+<div>
+<sc-for list="{{ items }}" as="it" hint-placeholder-count="9">
+<div>
+
+<sc-if value="{{ it.isWeek }}" hint-placeholder-val="{{ false }}">
+<p style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:44px 0 14px;padding-bottom:12px;border-bottom:1px solid var(--line-strong)">{{ it.label }}</p>
+</sc-if>
+
+<sc-if value="{{ it.isWeekSum }}" hint-placeholder-val="{{ false }}">
+<div class="drow" onClick="{{ it.expand }}" style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;padding:20px 4px;border-bottom:1px solid var(--border);cursor:pointer">
+<span style="font-size:16px;color:var(--text-muted)"><span style="color:var(--text-strong)">{{ it.label }}</span> — {{ it.range }}{{ it.badge }}</span>
+<span style="display:inline-flex;align-items:baseline;gap:22px;white-space:nowrap"><span style="font-family:var(--font-sans);font-size:13px;color:var(--text-strong);font-variant-numeric:tabular-nums">avg {{ it.avg }}%</span><span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint)">Show days</span></span>
+</div>
+</sc-if>
+
+<sc-if value="{{ it.isMilestone }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:baseline;gap:14px;padding:16px 4px;border-bottom:1px solid var(--border)">
+<span style="font-family:var(--font-sans);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)">{{ it.label }}</span>
+<span style="font-size:15px;color:var(--text-muted)">{{ it.sub }}</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ it.isDone }}" hint-placeholder-val="{{ false }}">
+<div class="drow" style="display:grid;grid-template-columns:56px 1fr auto;align-items:baseline;gap:20px;padding:17px 4px;border-bottom:1px solid var(--border)">
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint);font-variant-numeric:tabular-nums">Day {{ it.num }}</span>
+<span style="font-size:16px;color:var(--text-strong)">{{ it.focus }} <span style="color:var(--text-faint);font-size:14px">· {{ it.subj }}</span></span>
+<span style="font-family:var(--font-sans);font-size:13px;font-variant-numeric:tabular-nums">
+<sc-if value="{{ it.accStrong }}" hint-placeholder-val="{{ true }}"><span style="color:var(--text-strong)">{{ it.accLabel }}</span></sc-if>
+<sc-if value="{{ it.accMid }}" hint-placeholder-val="{{ false }}"><span style="color:var(--text-muted)">{{ it.accLabel }}</span></sc-if>
+<sc-if value="{{ it.accLow }}" hint-placeholder-val="{{ false }}"><span style="color:var(--accent)">{{ it.accLabel }}</span></sc-if>
+</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ it.isToday }}" hint-placeholder-val="{{ false }}">
+<div id="plan-today" style="margin:18px 0 22px;background:var(--dark-900);color:var(--text-on-dark);border-radius:var(--radius-2xl);padding:40px 44px 38px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin:0 0 26px">
+<span style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-on-dark-faint)">Today · Day {{ it.num }} of 30 · {{ it.subj }}</span>
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--text-on-dark-faint);font-variant-numeric:tabular-nums">{{ it.meta }}</span>
+</div>
+<h2 style="font-weight:400;font-size:36px;line-height:1.08;letter-spacing:-.024em;color:var(--text-on-dark);margin:0 0 16px;max-width:22ch;text-wrap:pretty">{{ it.focus }}</h2>
+<p style="font-size:16px;line-height:1.66;color:var(--text-on-dark-muted);margin:0 0 32px;max-width:46ch">Steady work compounds. Settle in, take the questions one at a time, and let today's module do its job.</p>
+<button class="cta" onClick="{{ beginToday }}" style="border:0;background:var(--text-on-dark);color:var(--dark-900);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:14px 28px;border-radius:var(--radius-lg);cursor:pointer;transition:background .16s">{{ it.beginLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ it.isLocked }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:56px 1fr auto;align-items:baseline;gap:20px;padding:17px 4px;border-bottom:1px solid var(--border)">
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--ink-300);font-variant-numeric:tabular-nums">Day {{ it.num }}</span>
+<span style="font-size:16px;color:var(--ink-400)">{{ it.focus }} <span style="font-size:14px;color:var(--ink-300)">· {{ it.subj }}</span></span>
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--ink-300)">{{ it.lockNote }}</span>
+</div>
+</sc-if>
+
+</div>
+</sc-for>
+</div>
+
+<aside style="position:sticky;top:88px">
+<div style="border-top:1px solid var(--line-strong);padding:20px 0 0">
+<p style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 16px">Progress</p>
+<p style="font-family:var(--font-sans);font-size:38px;font-weight:500;color:var(--text-strong);margin:0;line-height:1;font-variant-numeric:tabular-nums">{{ cur }}<span style="font-size:18px;color:var(--text-faint)"> / 30</span></p>
+<div style="height:2px;background:var(--surface-2);margin:20px 0 0">{{ barEl }}</div>
+<div style="display:flex;gap:32px;margin:22px 0 0">
+<span><span style="font-family:var(--font-sans);font-size:20px;font-weight:500;color:var(--text-strong);font-variant-numeric:tabular-nums">{{ streak }}</span><span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint);display:block;margin-top:4px">day streak</span></span>
+<span><span style="font-family:var(--font-sans);font-size:20px;font-weight:500;color:var(--text-strong);font-variant-numeric:tabular-nums">{{ done }}</span><span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint);display:block;margin-top:4px">days done</span></span>
+</div>
+</div>
+
+<div style="border-top:1px solid var(--border);margin:32px 0 0;padding:20px 0 0">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<p style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0">Projection</p>
+<p style="font-family:var(--font-sans);font-size:16px;font-weight:500;color:var(--text-strong);margin:0;font-variant-numeric:tabular-nums">{{ projScore }}</p>
+</div>
+<svg viewBox="0 0 240 78" style="display:block;width:100%;height:auto;margin:14px 0 0">
+<polyline points="{{ sparkFuture }}" fill="none" stroke="var(--line-strong)" stroke-width="1" stroke-dasharray="2 4"></polyline>
+<polyline points="{{ sparkPast }}" fill="none" stroke="var(--text-strong)" stroke-width="1.5" stroke-linejoin="round"></polyline>
+<circle cx="{{ sparkCx }}" cy="{{ sparkCy }}" r="2.5" fill="var(--accent)"></circle>
+</svg>
+<p style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint);margin:12px 0 0;line-height:1.5">Revised after every completed day. Target 1450 by Day 30.</p>
+</div>
+
+<div style="border-top:1px solid var(--border);margin:32px 0 0;padding:20px 0 0">
+<p style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 6px">Milestones</p>
+<sc-for list="{{ medals }}" as="m" hint-placeholder-count="3">
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)">
+<span style="font-size:15px">
+<sc-if value="{{ m.earned }}" hint-placeholder-val="{{ true }}"><span style="color:var(--text-strong)">{{ m.name }}</span></sc-if>
+<sc-if value="{{ m.pending }}" hint-placeholder-val="{{ false }}"><span style="color:var(--ink-400)">{{ m.name }}</span></sc-if>
+</span>
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint);font-variant-numeric:tabular-nums">Day {{ m.day }}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="border-top:1px solid var(--border);margin:32px 0 0;padding:20px 0 0">
+<p style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 10px">Grace day</p>
+<p style="font-size:15px;line-height:1.6;color:var(--text-muted);margin:0">{{ graceLine }}</p>
+</div>
+</aside>
+
+</div>
+</div>
+</main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;currentDay&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:12,&quot;min&quot;:1,&quot;max&quot;:30,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Plan state&quot;},&quot;graceUsed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Plan state&quot;}}">
+class Component extends DCLogic {
+  state = { storedDay: null, expanded: [] };
+
+  componentDidMount() {
+    try { const d = parseInt(localStorage.getItem('800path_plan_day'), 10); if (d) this.setState({ storedDay: d }); } catch (e) {}
+    setTimeout(() => {
+      const el = document.getElementById('plan-today');
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 230, behavior: 'smooth' });
+    }, 600);
+  }
+
+  beginToday() { window.location.href = '../daily-session/DailySession.dc.html'; }
+
+  renderVals() {
+    const cur = Math.min(30, Math.max(1, parseInt(this.props.currentDay ?? this.state.storedDay ?? 12, 10) || 12));
+    const weeks = [[1, 7, 'Week 1 · Laying foundations'], [8, 14, 'Week 2 · Building momentum'], [15, 21, 'Week 3 · Sharpening skills'], [22, 28, 'Week 4 · Approaching mastery'], [29, 30, 'Final stretch']];
+    const acc = d => Math.round((7 + (d * 13) % 5) / 12 * 100);
+
+    const items = [];
+    let ei = 0, mi = 0;
+    for (const w of weeks) {
+      const [a, b, label] = w;
+      if (b < cur && this.state.expanded.indexOf(a) === -1) {
+        let sum = 0;
+        for (let d = a; d <= b; d++) { sum += acc(d); if (d % 3 === 0) mi++; else ei++; }
+        items.push({ isWeekSum: true, label, range: 'Days ' + a + '–' + b + ' complete', avg: Math.round(sum / (b - a + 1)), badge: (a <= 10 && 10 <= b) ? ' · Foundations milestone' : (a <= 20 && 20 <= b) ? ' · Momentum milestone' : '', expand: () => this.setState(s => ({ expanded: s.expanded.concat(a) })) });
+        continue;
+      }
+      items.push({ isWeek: true, label });
+      for (let d = a; d <= b; d++) { this.pushDay(items, d, cur, acc, ei, mi); if (d % 3 === 0) mi++; else ei++; }
+    }
+    return this.finishVals(cur, items);
+  }
+
+  pushDay(items, d, cur, acc, ei, mi) {
+    const isMath = d % 3 === 0;
+    let subj = isMath ? 'Math' : 'English';
+    let focus = isMath ? this.mathUnits()[mi % 4] : this.engSkills()[ei % 10];
+    let meta = isMath ? '12 questions · 22 min' : '12 questions · 18 min';
+    if (d === 30) { subj = 'Finale'; focus = 'Score Report & Retrospective'; meta = 'Full review · skill growth · goal check-in'; }
+    const it = { num: d, subj, focus, meta };
+    if (d < cur) {
+      const a = acc(d);
+      it.isDone = true;
+      it.accLabel = a + '%';
+      it.accStrong = a >= 75;
+      it.accMid = a < 75 && a >= 58;
+      it.accLow = a < 58;
+    } else if (d === cur) {
+      it.isToday = true;
+      it.beginLabel = 'Begin Day ' + d;
+    } else {
+      it.isLocked = true;
+      it.lockNote = d === cur + 1 ? 'Opens tomorrow' : 'After Day ' + (d - 1);
+    }
+    items.push(it);
+    if (d === 10 && d < cur) items.push({ isMilestone: true, label: 'Milestone · Day 10', sub: 'Foundations — ten days unbroken' });
+    if (d === 20 && d < cur) items.push({ isMilestone: true, label: 'Milestone · Day 20', sub: 'Momentum — two thirds of the path' });
+  }
+
+  engSkills() { return ['Words in Context', 'Central Ideas & Details', 'Command of Evidence', 'Inferences', 'Text Structure & Purpose', 'Transitions', 'Rhetorical Synthesis', 'Boundaries', 'Cross-Text Connections', 'Form, Structure, & Sense']; }
+  mathUnits() { return ['Algebra — Linear Equations', 'Advanced Math — Nonlinear Functions', 'Problem-Solving & Data Analysis', 'Geometry & Trigonometry']; }
+
+  finishVals(cur, items) {
+    const done = cur - 1;
+    const graceUsed = this.props.graceUsed ?? false;
+    const score = d => 1050 + (400 * d) / 30;
+    const pt = (d, wiggle) => {
+      const x = 6 + (d / 30) * 228;
+      const y = 68 - ((score(d) + (wiggle ? Math.sin(d * 1.7) * 14 : 0) - 1020) / 470) * 58;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    };
+    const past = [], future = [];
+    for (let d = 0; d <= done; d++) past.push(pt(d, d > 0 && d < done));
+    for (let d = done; d <= 30; d++) future.push(pt(d, false));
+    const lastPt = past[past.length - 1].split(',');
+
+    const medals = [
+      { day: 10, name: 'Foundations', earned: done >= 10, pending: done < 10 },
+      { day: 20, name: 'Momentum', earned: done >= 20, pending: done < 20 },
+      { day: 30, name: 'Summit', earned: done >= 30, pending: done < 30 }
+    ];
+
+    const railCells = [];
+    for (let d = 1; d <= 30; d++) {
+      const bg = d < cur ? 'var(--sidebar-ink-muted)' : d === cur ? 'var(--mark)' : 'var(--sidebar-rail)';
+      railCells.push({ ref: (el) => { if (el) el.style.background = bg; } });
+    }
+
+    return {
+      cur, done, streak: done, railCells,
+      barEl: React.createElement('div', { style: { width: Math.round((done / 30) * 100) + '%', height: '100%', background: 'var(--brand)' } }),
+      projScore: Math.round(score(done) / 10) * 10,
+      sparkPast: past.join(' '), sparkFuture: future.join(' '),
+      sparkCx: lastPt[0], sparkCy: lastPt[1],
+      medals,
+      graceLine: graceUsed ? 'Used this week — the path pauses if you miss another day. Back on track tomorrow.' : 'One missed day a week won\u2019t break the streak. Unused this week.',
+      items,
+      beginToday: () => this.beginToday()
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+/* ─────────────────────────────────────────────────────────────
+   800Path — Spacing, radii, shadows
+   Generous air, small radii, no shadows. Separation comes from
+   hairline rules and empty space. A shadow is a failure state here.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Spacing scale (4px base) */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+  --space-40: 10rem;  /* section breathing on landing */
+
+  /* Radii — crisp */
+  --radius-sm:   2px;
+  --radius-md:   4px;
+  --radius-lg:   6px;   /* default card / button */
+  --radius-xl:   8px;
+  --radius-2xl:  10px;  /* largest panel */
+  --radius-pill: 999px;
+
+  /* Shadows — effectively off */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 1px 2px rgba(32, 31, 28, 0.04);
+  --shadow-lg: 0 8px 30px rgba(32, 31, 28, 0.07);
+  --shadow-brand: none;
+
+  /* Motion — subtle fades only */
+  --ease-out: cubic-bezier(0.25, 0.6, 0.3, 1); /* @kind other */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --dur-fast: 130ms; /* @kind other */
+  --dur-base: 260ms; /* @kind other */
+  --dur-slow: 520ms; /* @kind other */
+
+  /* Layout */
+  --container-sm: 26rem;
+  --container-md: 44rem;
+  --container-lg: 68rem;
+  --measure: 33rem;   /* passage reading measure */
+}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Practice Session" description="800Path extra-practice question screen — the reading desk at a single-question scale: passage held left, question and reasoning right, untimed and unrecorded" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+<style>
+html{-webkit-font-smoothing:antialiased}
+a.q:hover,button.q:hover{color:var(--text-strong)}
+.row:hover .rowtext{color:var(--text-strong)}
+.cta:hover{background:var(--brand-hover)}
+.scroll::-webkit-scrollbar{width:9px}
+.scroll::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:99px;border:3px solid var(--canvas)}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);font-family:var(--font-serif);color:var(--text-body)">
+
+<header style="position:sticky;top:0;z-index:20;background:var(--canvas);border-bottom:1px solid var(--border)">
+<div style="max-width:1240px;margin:0 auto;padding:0 44px;display:flex;align-items:center;justify-content:space-between;gap:32px;height:64px">
+<span style="display:inline-flex;align-items:center;gap:16px">
+<span style="font-size:16px;font-weight:600;color:var(--text-strong);letter-spacing:-.018em">800Path</span>
+<span style="width:1px;height:16px;background:var(--line-strong)"></span>
+<span style="font-family:var(--font-sans);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint)">Extra practice · Reading</span>
+</span>
+<span style="display:flex;gap:4px;align-items:center">
+<sc-for list="{{ navCells }}" as="n" hint-placeholder-count="10">
+<span style="width:20px;height:2px;background:var(--line-strong)" ref="{{ n.ref }}"></span>
+</sc-for>
+</span>
+<span style="display:inline-flex;align-items:center;gap:22px">
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint);font-variant-numeric:tabular-nums">{{ counter }}</span>
+<a class="q" href="../practice-setup/PracticeSetup.dc.html" style="border:1px solid var(--border);font-family:var(--font-sans);font-size:12px;color:var(--text-muted);padding:7px 13px;border-radius:var(--radius-md)">End</a>
+</span>
+</div>
+</header>
+
+<main style="max-width:1240px;margin:0 auto;padding:0 44px">
+<div style="display:grid;grid-template-columns:1fr 1fr">
+<div class="scroll" style="height:calc(100vh - 65px);overflow-y:auto;padding:52px 56px 72px 0;border-right:1px solid var(--border)">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 24px">Passage</p>
+<p style="font-size:18px;line-height:1.8;color:var(--text-body);margin:0;max-width:34rem;text-wrap:pretty">Marine biologist Dr. Lena Okafor noted that the reef's recovery, though encouraging, remained fragile. Coral that had bleached two summers earlier was regaining colour, yet the surrounding fish populations had not rebounded at the same pace. She cautioned that visible signs of health could mask slower, structural changes still underway beneath the surface.</p>
+</div>
+<div class="scroll" style="height:calc(100vh - 65px);overflow-y:auto;padding:52px 0 72px 56px">
+<div style="max-width:34rem">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 22px">Inferences · Medium · untimed</p>
+<p style="font-size:20px;line-height:1.48;letter-spacing:-.008em;color:var(--text-strong);margin:0 0 32px;text-wrap:pretty">Which choice best states the main idea of the passage?</p>
+<div style="border-top:1px solid var(--border)">
+<sc-for list="{{ opts }}" as="o" hint-placeholder-count="4">
+<div class="row" onClick="{{ o.pick }}" ref="{{ o.ref }}" style="display:flex;gap:18px;align-items:flex-start;padding:17px 18px;border-bottom:1px solid var(--border);border-left:2px solid transparent;background:transparent;cursor:pointer;transition:background .13s">
+<span style="font-family:var(--font-sans);font-size:11px;letter-spacing:.04em;color:var(--text-faint);padding-top:5px;width:11px;flex:none" ref="{{ o.letterRef }}">{{ o.letter }}</span>
+<span class="rowtext" style="font-size:17px;line-height:1.5;color:var(--text-body)" ref="{{ o.textRef }}">{{ o.text }}</span>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ answered }}" hint-placeholder-val="{{ false }}">
+<div style="margin:30px 0 0;background:var(--surface);border-left:2px solid var(--accent);border-radius:0 var(--radius-md) var(--radius-md) 0;padding:20px 22px">
+<p style="font-family:var(--font-sans);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 10px">{{ verdictLabel }}</p>
+<p style="font-size:16px;line-height:1.68;color:var(--text-body);margin:0">Dr. Okafor warns that visible health could mask slower, structural changes — so apparent recovery may not reflect the deeper state of the reef.</p>
+</div>
+<div style="display:flex;align-items:center;gap:24px;margin:32px 0 0">
+<button class="cta" onClick="{{ next }}" style="border:0;background:var(--brand);color:var(--text-on-brand);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:13px 26px;border-radius:var(--radius-lg);cursor:pointer;transition:background .16s">Next question</button>
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint)">Nothing here counts toward the plan</span>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:820}}">
+class Component extends DCLogic {
+  state = { sel: null, qi: 0 };
+
+  renderVals() {
+    const st = this.state;
+    const texts = [
+      'The reef has fully recovered from the earlier bleaching event.',
+      "Surface signs of recovery may not reflect the reef's deeper condition.",
+      'Fish populations recover faster than coral after bleaching.',
+      'Dr. Okafor believes the reef will never recover.'
+    ];
+    const key = 1;
+    const answered = st.sel !== null;
+
+    const opts = texts.map((text, i) => {
+      let edge = 'transparent', bg = 'transparent', tc = 'var(--text-body)', lc = 'var(--text-faint)';
+      if (answered) {
+        if (i === key) { edge = 'var(--success)'; bg = 'var(--success-surface)'; tc = 'var(--text-strong)'; lc = 'var(--success)'; }
+        else if (i === st.sel) { edge = 'var(--danger)'; bg = 'var(--danger-surface)'; tc = 'var(--text-muted)'; lc = 'var(--danger)'; }
+        else { tc = 'var(--ink-400)'; lc = 'var(--ink-300)'; }
+      }
+      return {
+        letter: 'ABCD'[i], text,
+        ref: (el) => { if (!el) return; el.style.borderLeftColor = edge; el.style.background = bg; el.style.cursor = answered ? 'default' : 'pointer'; },
+        letterRef: (el) => { if (el) el.style.color = lc; },
+        textRef: (el) => { if (el) el.style.color = tc; },
+        pick: answered ? undefined : () => this.setState({ sel: i })
+      };
+    });
+
+    const navCells = [];
+    for (let i = 0; i < 10; i++) {
+      const bg = i < st.qi ? 'var(--text-strong)' : i === st.qi ? 'var(--accent)' : 'var(--line-strong)';
+      navCells.push({ ref: (el) => { if (el) el.style.background = bg; } });
+    }
+
+    return {
+      opts, navCells, answered,
+      verdictLabel: st.sel === key ? 'Correct' : 'Not quite',
+      counter: (st.qi + 1) + ' of 10',
+      next: () => this.setState(s => ({ qi: Math.min(9, s.qi + 1), sel: null }))
+    };
+  }
+}
+</script>
+</body>
+</html>

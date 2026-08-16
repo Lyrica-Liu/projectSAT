@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { AppNav, LoadingScreen } from "@/components/ui/nav";
+import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
 import { Badge, Button, ScoreRing, SkillBar } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
 import { nextTier } from "@/lib/adaptive";
@@ -21,11 +21,11 @@ const DOMAIN_SKILLS: Record<Domain, QuestionSkill[]> = {
   "Standard English Conventions": ["boundaries", "form_structure_sense"],
 };
 
-const DOMAIN_ICON: Record<Domain, { icon: string; bg: string; fg: string }> = {
-  "Information and Ideas": { icon: "lightbulb", bg: "var(--indigo-surface)", fg: "var(--indigo-ink)" },
-  "Craft and Structure": { icon: "pen-tool", bg: "var(--violet-surface)", fg: "var(--violet-ink)" },
-  "Expression of Ideas": { icon: "message-square", bg: "var(--magenta-surface)", fg: "var(--magenta-ink)" },
-  "Standard English Conventions": { icon: "check-check", bg: "var(--rose-surface)", fg: "var(--rose-ink)" },
+const DOMAIN_ICON: Record<Domain, string> = {
+  "Information and Ideas": "lightbulb",
+  "Craft and Structure": "pen-tool",
+  "Expression of Ideas": "message-square",
+  "Standard English Conventions": "check-check",
 };
 
 const SKILL_LABELS: Record<QuestionSkill, string> = {
@@ -54,10 +54,10 @@ const SKILL_NOTES: Record<QuestionSkill, string> = {
   form_structure_sense: "Agreement, verb tense",
 };
 
-const MATH_CATEGORY_ICON: Record<string, { icon: string; bg: string; fg: string }> = {
-  "Algebra": { icon: "calculator", bg: "var(--indigo-surface)", fg: "var(--indigo-ink)" },
-  "Data Analysis": { icon: "bar-chart-3", bg: "var(--violet-surface)", fg: "var(--violet-ink)" },
-  "Geometry": { icon: "triangle", bg: "var(--magenta-surface)", fg: "var(--magenta-ink)" },
+const MATH_CATEGORY_ICON: Record<string, string> = {
+  "Algebra": "calculator",
+  "Data Analysis": "bar-chart-3",
+  "Geometry": "triangle",
 };
 
 const MATH_SKILL_LABELS: Record<MathSkill, string> = {
@@ -153,12 +153,11 @@ function buildSkillInsight(
 
 const byWeakness = (a: SkillInsight, b: SkillInsight) => a.graspN - b.graspN || a.accuracy - b.accuracy;
 
-function Pips({ n, size = "md" }: { n: number; size?: "sm" | "md" }) {
-  const w = size === "sm" ? 18 : 20;
+function Pips({ n }: { n: number }) {
   return (
-    <span style={{ display: "inline-flex", gap: 4 }}>
+    <span style={{ display: "inline-flex", gap: 5 }}>
       {[0, 1, 2, 3].map((i) => (
-        <span key={i} style={{ width: w, height: 7, borderRadius: 99, background: i < n ? "var(--brand)" : "var(--surface-sunken)" }} />
+        <span key={i} style={{ width: 26, height: 3, background: i < n ? "var(--brand)" : "var(--surface-sunken)" }} />
       ))}
     </span>
   );
@@ -166,16 +165,14 @@ function Pips({ n, size = "md" }: { n: number; size?: "sm" | "md" }) {
 
 function ViewToggle({ view, setView }: { view: View; setView: (v: View) => void }) {
   return (
-    <div style={{ display: "inline-flex", background: "var(--surface-sunken)", border: "1px solid var(--border)", borderRadius: "var(--radius-pill)", padding: 3, gap: 2, marginBottom: 22 }}>
+    <div style={{ display: "flex", borderBottom: "1px solid var(--line-strong)", marginBottom: 32, fontFamily: "var(--font-sans)" }}>
       {(["english", "math"] as View[]).map((v) => {
         const active = view === v;
         return (
           <button key={v} onClick={() => setView(v)} style={{
-            position: "relative", border: "none", background: active ? "var(--surface)" : "none",
-            fontFamily: "inherit", fontSize: "var(--text-sm)", fontWeight: 700,
-            color: active ? "var(--brand-ink)" : "var(--text-muted)",
-            padding: "9px 22px", borderRadius: "var(--radius-pill)", cursor: "pointer",
-            boxShadow: active ? "var(--shadow-sm)" : "none",
+            padding: "0 24px 12px 0", marginRight: 24, border: 0, borderBottom: `2px solid ${active ? "var(--text-strong)" : "transparent"}`,
+            background: "none", fontSize: 14, color: active ? "var(--text-strong)" : "var(--text-faint)",
+            fontWeight: active ? 500 : 400, cursor: "pointer", marginBottom: -1,
           }}>{v === "english" ? "English" : "Math"}</button>
         );
       })}
@@ -186,10 +183,8 @@ function ViewToggle({ view, setView }: { view: View; setView: (v: View) => void 
 function AccuracyChart({ points }: { points: ChartPoint[] }) {
   const [range, setRange] = useState(90);
   const [hover, setHover] = useState<number | null>(null);
-
   const [now] = useState(() => Date.now());
   const rangeDefs: { v: number; l: string }[] = [{ v: 7, l: "7D" }, { v: 30, l: "30D" }, { v: 90, l: "3M" }, { v: 100000, l: "All" }];
-  const rangeLabels: Record<number, string> = { 7: "Last 7 days", 30: "Last 30 days", 90: "Last 3 months", 100000: "All time" };
 
   let pts = points
     .filter((r) => (now - r.date.getTime()) / 86400000 <= range)
@@ -197,32 +192,19 @@ function AccuracyChart({ points }: { points: ChartPoint[] }) {
     .sort((a, b) => a.x - b.x);
   if (pts.length < 2) pts = points.slice().sort((a, b) => a.date.getTime() - b.date.getTime()).map((r) => ({ x: r.date.getTime(), y: r.score, date: r.date }));
 
-  const W = 780, H = 220, padL = 34, padR = 12, padT = 14, padB = 40;
+  const W = 900, H = 220, padL = 34, padR = 12, padT = 14, padB = 32;
   const xs = pts.map((p) => p.x);
   const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const yMin = 0, yMax = 100;
   const px = (x: number) => padL + (maxX === minX ? 0 : (x - minX) / (maxX - minX)) * (W - padL - padR);
-  const py = (v: number) => padT + (1 - (v - yMin) / (yMax - yMin)) * (H - padT - padB);
+  const py = (v: number) => padT + (1 - v / 100) * (H - padT - padB);
 
   const linePts = pts.map((p) => `${px(p.x)},${py(p.y)}`).join(" ");
-  const areaPts = `${padL},${H - padB} ${linePts} ${W - padR},${H - padB}`;
   const short = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-  const nLabels = Math.min(5, pts.length);
-  const xLabels = [];
-  for (let i = 0; i < nLabels; i++) {
-    const idx = nLabels === 1 ? 0 : Math.round((i * (pts.length - 1)) / (nLabels - 1));
-    const p = pts[idx];
-    const anchor = i === 0 ? "start" : i === nLabels - 1 ? "end" : "middle";
-    xLabels.push(
-      <text key={`xl${i}`} x={px(p.x)} y={H - padB + 18} textAnchor={anchor} fontSize={10.5} fill="var(--text-faint)" fontWeight={600}>{short(p.date)}</text>
-    );
-  }
 
   const gridY = [0, 25, 50, 75, 100].map((v, i) => (
     <g key={`g${i}`}>
-      <line x1={padL} x2={W - padR} y1={py(v)} y2={py(v)} stroke="var(--border)" strokeWidth={1} strokeDasharray={v === 0 ? "0" : "3 4"} />
-      <text x={padL - 8} y={py(v) + 4} textAnchor="end" fontSize={10} fill="var(--text-faint)" fontFamily="var(--font-mono)">{v}%</text>
+      <line x1={padL} x2={W - padR} y1={py(v)} y2={py(v)} stroke="var(--border)" strokeWidth={1} strokeDasharray={v === 0 ? "0" : "2 4"} />
+      <text x={padL - 8} y={py(v) + 4} textAnchor="end" fontSize={10} fill="var(--text-faint)" fontFamily="var(--font-sans)">{v}%</text>
     </g>
   ));
 
@@ -230,63 +212,51 @@ function AccuracyChart({ points }: { points: ChartPoint[] }) {
   if (hover != null && pts[hover]) {
     const p = pts[hover];
     const tx = px(p.x);
-    const boxW = 92;
-    const left = Math.min(Math.max(tx - boxW / 2, 2), W - boxW - 2);
     tip = (
       <g style={{ pointerEvents: "none" }}>
-        <line x1={tx} x2={tx} y1={padT} y2={H - padB} stroke="var(--brand)" strokeWidth={1} strokeDasharray="3 3" opacity={0.5} />
-        <rect x={left} y={4} width={boxW} height={40} rx={8} fill="var(--text-strong)" />
-        <text x={left + boxW / 2} y={20} textAnchor="middle" fontSize={12} fontWeight={700} fill="#fff" fontFamily="var(--font-mono)">{p.y}%</text>
-        <text x={left + boxW / 2} y={35} textAnchor="middle" fontSize={9.5} fill="rgba(255,255,255,0.75)">{short(p.date)}</text>
+        <line x1={tx} x2={tx} y1={padT} y2={H - padB} stroke="var(--text-strong)" strokeWidth={1} strokeDasharray="2 3" opacity={0.4} />
+        <text x={tx} y={padT - 2} textAnchor="middle" fontSize={11} fontWeight={500} fill="var(--text-strong)" fontFamily="var(--font-sans)">{p.y}% · {short(p.date)}</text>
       </g>
     );
   }
 
   return (
-    <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", boxShadow: "var(--shadow-sm)", padding: "24px 26px", marginBottom: 22 }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 18, flexWrap: "wrap" }}>
-        <div>
-          <h2 style={{ fontWeight: 700, fontSize: "var(--text-md)", color: "var(--text-strong)", margin: 0 }}>Accuracy over time</h2>
-          <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "4px 0 0" }}>Hover any point for detail · pick a range to zoom · {rangeLabels[range]}</p>
-        </div>
-        <div style={{ display: "inline-flex", background: "var(--surface-sunken)", borderRadius: "var(--radius-pill)", padding: 3, gap: 2 }}>
+    <section style={{ margin: "56px 0 0" }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 20, flexWrap: "wrap", paddingBottom: 12, borderBottom: "1px solid var(--line-strong)" }}>
+        <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: 0 }}>Accuracy over time</p>
+        <div style={{ display: "flex", gap: 4, fontFamily: "var(--font-sans)" }}>
           {rangeDefs.map((r) => {
             const active = range === r.v;
             return (
               <button key={r.l} onClick={() => { setRange(r.v); setHover(null); }} style={{
-                position: "relative", border: "none", background: active ? "var(--surface)" : "none",
-                fontFamily: "inherit", fontSize: "var(--text-xs)", fontWeight: 700,
-                color: active ? "var(--brand-ink)" : "var(--text-muted)",
-                padding: "7px 13px", borderRadius: "var(--radius-pill)", cursor: "pointer",
-                boxShadow: active ? "var(--shadow-sm)" : "none",
+                border: 0, background: "none", fontSize: 11, fontWeight: active ? 600 : 400,
+                color: active ? "var(--text-strong)" : "var(--text-faint)", cursor: "pointer", padding: "2px 8px",
+                borderBottom: active ? "1px solid var(--text-strong)" : "1px solid transparent",
               }}>{r.l}</button>
             );
           })}
         </div>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", overflow: "visible" }} preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="accFill" x1={0} y1={0} x2={0} y2={1}>
-            <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.22} />
-            <stop offset="100%" stopColor="var(--brand)" stopOpacity={0} />
-          </linearGradient>
-        </defs>
         {gridY}
-        <polygon points={areaPts} fill="url(#accFill)" />
-        <polyline points={linePts} fill="none" stroke="var(--brand)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+        <polyline points={linePts} fill="none" stroke="var(--text-strong)" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
         <line x1={padL} x2={W - padR} y1={H - padB} y2={H - padB} stroke="var(--border)" strokeWidth={1} />
-        {xLabels}
         {tip}
         {pts.map((p, i) => (
-          <circle key={`d${i}`} cx={px(p.x)} cy={py(p.y)} r={hover === i ? 5.5 : 3.5}
-            fill="#fff" stroke="var(--brand)" strokeWidth={2}
-            style={{ cursor: "pointer", transition: "r .12s" }}
+          <circle key={`d${i}`} cx={px(p.x)} cy={py(p.y)} r={hover === i ? 3.5 : 2.5}
+            fill="var(--canvas)" stroke="var(--text-strong)" strokeWidth={1.5}
+            style={{ cursor: "pointer" }}
             onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} />
         ))}
       </svg>
     </section>
   );
 }
+
+const microLabel: React.CSSProperties = {
+  fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500,
+  letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)",
+};
 
 export default function ForYouPage() {
   const router = useRouter();
@@ -349,7 +319,6 @@ export default function ForYouPage() {
       });
       setMathInsights(builtMath as Record<MathSkill, SkillInsight>);
 
-      // ── chart + recap banner ──
       const sessions = sessionsRes.data ?? [];
       setChartPoints(sessions.map((s) => ({ date: new Date(s.completed_at as string), score: s.score ?? 0 })));
 
@@ -429,19 +398,14 @@ export default function ForYouPage() {
 
   if (withDataEnglish.length === 0 && withDataMath.length === 0) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
-        <AppNav />
-        <main style={{ maxWidth: 1040, margin: "0 auto", padding: "40px 24px" }}>
-          <h1 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500, fontSize: "var(--text-2xl)", color: "var(--text-strong)", margin: "0 0 20px" }}>
-            Picked for you
-          </h1>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-sm)", padding: 40, textAlign: "center" }}>
-            <p style={{ fontWeight: 600, fontSize: "var(--text-base)", color: "var(--text-strong)", margin: "0 0 8px" }}>No insights yet</p>
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", marginBottom: 24, lineHeight: "var(--leading-relaxed)" }}>
-              Complete a plan day or a practice session and we&apos;ll show you exactly where to focus next.
-            </p>
-            <Button onClick={() => router.push("/plan")}>Go to my plan →</Button>
-          </div>
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
+        <Sidebar />
+        <main style={{ maxWidth: 1060 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "88px 56px", textAlign: "center" }}>
+          <h1 style={{ fontWeight: 400, fontSize: 40, letterSpacing: "-0.024em", color: "var(--text-strong)", margin: "0 0 12px" }}>No insights yet</h1>
+          <p style={{ fontSize: 16, color: "var(--text-muted)", margin: "0 0 28px" }}>Complete a plan day or a practice session and we&apos;ll show you exactly where to focus next.</p>
+          <button onClick={() => router.push("/plan")} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+            Go to my plan
+          </button>
         </main>
       </div>
     );
@@ -474,7 +438,7 @@ export default function ForYouPage() {
   const selectedName = view === "english" ? selected : selectedMath;
   const setSelectedName = view === "english" ? (n: string) => setSelected(n as Domain) : setSelectedMath;
   const sel = domainData.find((d) => d.name === selectedName) ?? domainData[0];
-  const selMeta = view === "english" ? DOMAIN_ICON[sel.name as Domain] : MATH_CATEGORY_ICON[sel.name];
+  const selIcon = view === "english" ? DOMAIN_ICON[sel.name as Domain] : MATH_CATEGORY_ICON[sel.name];
   const improve = sel.skills.slice().sort(byWeakness);
 
   const overallCorrectPct = activeWithData.length > 0
@@ -484,205 +448,174 @@ export default function ForYouPage() {
   const weakest = activeWithData.slice().sort(byWeakness).slice(0, 3);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
-      <AppNav />
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
+      <Sidebar />
 
-      <main style={{ maxWidth: 1040, margin: "0 auto", padding: "40px 24px 64px" }}>
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500, fontSize: "var(--text-2xl)", color: "var(--text-strong)", margin: 0, letterSpacing: "var(--tracking-snug)" }}>
-            Picked for you
-          </h1>
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: "8px 0 0" }}>
-            Extra practice tuned to your results — great for sharpening, though only plan days advance your 30-day path.
+      <main style={{ maxWidth: 1060 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
+          <span>Picked for you</span>
+          <span>Extra practice · not part of the plan</span>
+        </div>
+
+        <div style={{ padding: "52px 0 0", marginBottom: 36 }}>
+          <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, color: "var(--text-strong)", margin: 0, letterSpacing: "-0.026em" }}>Picked for you</h1>
+          <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "18px 0 0", maxWidth: "52ch" }}>
+            Extra practice tuned to your results — good for sharpening, though only plan days advance the thirty.
           </p>
         </div>
 
-        {/* Recap banner */}
         {recap && (
-          <div style={{ position: "relative", overflow: "hidden", borderRadius: "var(--radius-2xl)", padding: "24px 26px", marginBottom: 22, color: "#fff", boxShadow: "var(--shadow-brand)" }}>
-            <span style={{ position: "absolute", inset: 0, background: "var(--gradient-radiant)" }} />
-            <span style={{ position: "absolute", top: -50, right: -30, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.12)" }} />
-            <div style={{ position: "relative" }}>
-              <p style={{ fontSize: 22, fontWeight: 800, margin: "0 0 6px", lineHeight: 1.3, letterSpacing: "var(--tracking-snug)" }}>{recap.headline}</p>
-              <p style={{ fontSize: "var(--text-sm)", opacity: 0.92, margin: 0, lineHeight: "var(--leading-relaxed)", maxWidth: 560 }}>{recap.body}</p>
-            </div>
+          <div style={{ margin: "0 0 40px", borderTop: "1px solid var(--line-strong)", paddingTop: 24 }}>
+            <p style={{ ...microLabel, margin: "0 0 14px" }}>Where things stand</p>
+            <p style={{
+              fontSize: 20, lineHeight: 1.5, letterSpacing: "-0.01em", color: "var(--text-strong)", margin: 0,
+              maxWidth: "62ch", padding: "2px 0 2px 22px", borderLeft: "2px solid var(--accent)", textWrap: "pretty",
+            }}>
+              {recap.headline} {recap.body}
+            </p>
           </div>
         )}
 
         <ViewToggle view={view} setView={setView} />
 
         {activeWithData.length === 0 ? (
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-sm)", padding: 40, textAlign: "center", marginBottom: 22 }}>
-            <p style={{ fontWeight: 600, fontSize: "var(--text-base)", color: "var(--text-strong)", margin: "0 0 8px" }}>
-              No {view === "english" ? "English" : "Math"} insights yet
-            </p>
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", marginBottom: 24, lineHeight: "var(--leading-relaxed)" }}>
-              Complete a {view === "english" ? "English" : "Math"} plan day or practice session and we&apos;ll show you exactly where to focus next.
-            </p>
-            <Button onClick={() => router.push("/plan")}>Go to my plan →</Button>
+          <div style={{ textAlign: "center", padding: "40px 0" }}>
+            <p style={{ fontSize: 19, color: "var(--text-strong)", margin: "0 0 8px" }}>No {view === "english" ? "English" : "Math"} insights yet</p>
+            <p style={{ fontSize: 15, color: "var(--text-muted)", margin: "0 0 24px" }}>Complete a {view === "english" ? "English" : "Math"} plan day or practice session and we&apos;ll show you exactly where to focus next.</p>
+            <button onClick={() => router.push("/plan")} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+              Go to my plan
+            </button>
           </div>
         ) : (
           <>
-            {/* Summary row */}
-            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 16, marginBottom: 22, alignItems: "stretch" }}>
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "var(--space-6)", boxShadow: "var(--shadow-sm)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr 1.3fr", gap: 0, marginBottom: 40, alignItems: "stretch", borderTop: "1px solid var(--line-strong)", borderBottom: "1px solid var(--border)" }}>
+              <div style={{ padding: "24px 32px 24px 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <ScoreRing score={overallCorrectPct} caption="overall accuracy" />
               </div>
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "var(--space-6)", boxShadow: "var(--shadow-sm)", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12 }}>
-                <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-muted)", margin: 0 }}>Overall grasp</p>
-                <p style={{ fontWeight: 800, fontSize: "var(--text-lg)", color: "var(--text-strong)", margin: 0, lineHeight: 1.1 }}>{GRASP_LABEL_BY_N[overallGraspN] || "Emerging"}</p>
+              <div style={{ padding: "24px 32px", borderLeft: "1px solid var(--border)", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12 }}>
+                <p style={{ ...microLabel, margin: 0 }}>Overall grasp</p>
+                <p style={{ fontSize: 24, color: "var(--text-strong)", margin: 0, lineHeight: 1.1, letterSpacing: "-0.018em" }}>{GRASP_LABEL_BY_N[overallGraspN] || "Emerging"}</p>
                 <Pips n={overallGraspN} />
-                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", margin: 0 }}>Difficulty-adjusted skill level.</p>
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: 0 }}>Difficulty-adjusted skill level.</p>
               </div>
-            </div>
-
-            {/* Suggested extra practice */}
-            <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", boxShadow: "var(--shadow-sm)", padding: "22px 26px", marginBottom: 32 }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
-                <h2 style={{ fontWeight: 700, fontSize: "var(--text-md)", color: "var(--text-strong)", margin: 0 }}>Suggested extra practice</h2>
-                <span style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>lowest grasp first</span>
-              </div>
-              <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "4px 0 16px" }}>
-                Automatically picked from where you&apos;re weakest — one tap starts a short session at the right difficulty.
-              </p>
-              {startError && (
-                <p style={{ fontSize: "var(--text-sm)", color: "var(--danger)", margin: "0 0 12px" }}>{startError}</p>
-              )}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ padding: "24px 0 24px 32px", borderLeft: "1px solid var(--border)", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10 }}>
+                <p style={{ ...microLabel, margin: 0 }}>Suggested for you</p>
+                {startError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: 0 }}>{startError}</p>}
                 {weakest.map((s) => (
-                  <div key={s.skill} style={{ display: "flex", alignItems: "center", gap: 14, background: "var(--surface-sunken)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "14px 16px" }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                        <p style={{ fontWeight: 700, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: 0 }}>{s.label}</p>
-                        <Badge tone={s.suggestedTone as "mint" | "sky" | "peach" | "rose"} size="sm">{s.suggestedLabel}</Badge>
-                      </div>
-                      <p style={{ fontSize: "var(--text-xs)", color: "var(--text-body)", margin: 0, lineHeight: "var(--leading-relaxed)" }}>{s.advice}</p>
-                    </div>
-                    <Button size="sm" onClick={() => startSuggestedPractice(s)} disabled={startingSkill !== null}>
-                      {startingSkill === s.skill ? "Generating…" : "Start →"}
-                    </Button>
+                  <div key={s.skill} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                    <span style={{ fontSize: 16, color: "var(--text-strong)" }}>{s.label}</span>
+                    <button onClick={() => startSuggestedPractice(s)} disabled={startingSkill !== null} style={{
+                      border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500,
+                      color: "var(--accent)", cursor: startingSkill ? "default" : "pointer", padding: 0, whiteSpace: "nowrap",
+                    }}>
+                      {startingSkill === s.skill ? "Starting…" : "Start →"}
+                    </button>
                   </div>
                 ))}
               </div>
-            </section>
+            </div>
 
-            {/* Domain / category cards */}
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${domainData.length},1fr)`, gap: 14, marginBottom: 30 }}>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${domainData.length},1fr)`, gap: 12, marginBottom: 28 }}>
               {domainData.map((d) => {
-                const meta = view === "english" ? DOMAIN_ICON[d.name as Domain] : MATH_CATEGORY_ICON[d.name];
+                const icon = view === "english" ? DOMAIN_ICON[d.name as Domain] : MATH_CATEGORY_ICON[d.name];
                 const isSel = d.name === selectedName;
                 return (
                   <button key={d.name} onClick={() => setSelectedName(d.name)} style={{
-                    position: "relative", display: "flex", flexDirection: "column", gap: 13, cursor: "pointer", textAlign: "left",
-                    background: "var(--surface)", borderRadius: "var(--radius-xl)", padding: 18,
-                    fontFamily: "inherit", border: `1.5px solid ${isSel ? "var(--brand)" : "var(--border)"}`,
-                    boxShadow: isSel ? "0 0 0 3px var(--brand-soft), var(--shadow-sm)" : "var(--shadow-sm)",
+                    position: "relative", display: "flex", flexDirection: "column", gap: 14, cursor: "pointer", textAlign: "left",
+                    background: "var(--surface)", borderRadius: "var(--radius-lg)", padding: 20,
+                    fontFamily: "var(--font-serif)", border: `1px solid ${isSel ? "var(--text-strong)" : "var(--border)"}`,
                   }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ display: "inline-flex", width: 38, height: 38, borderRadius: 11, background: meta.bg, color: meta.fg, alignItems: "center", justifyContent: "center" }}>
-                        <Icon name={meta.icon} size={19} />
-                      </span>
-                      <Icon name="chevron-right" size={16} color="var(--text-faint)" />
+                      <Icon name={icon} size={18} color="var(--text-muted)" />
+                      <Icon name="chevron-right" size={14} color="var(--text-faint)" />
                     </div>
-                    <p style={{ fontWeight: 700, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: 0, lineHeight: 1.25 }}>{d.name}</p>
+                    <p style={{ fontSize: 16, color: "var(--text-strong)", margin: 0, lineHeight: 1.25 }}>{d.name}</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                      <Pips n={d.graspN} size="sm" />
-                      <span style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-muted)" }}>{d.grasp} grasp</span>
+                      <Pips n={d.graspN} />
+                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>{d.grasp} grasp</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
-                      <span style={{ fontWeight: 800, fontSize: "var(--text-md)", color: "var(--text-strong)" }}>{d.accuracy}%</span>
-                      <span style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>accuracy</span>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 5, fontFamily: "var(--font-sans)" }}>
+                      <span style={{ fontWeight: 500, fontSize: 19, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{d.accuracy}%</span>
+                      <span style={{ fontSize: 11, color: "var(--text-faint)" }}>accuracy</span>
                     </div>
                   </button>
                 );
               })}
             </div>
 
-            {/* Detail panel */}
-            <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", boxShadow: "var(--shadow-md)", overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "22px 26px", background: "var(--surface-sunken)", borderBottom: "1px solid var(--border)" }}>
-                <span style={{ display: "inline-flex", width: 44, height: 44, borderRadius: 13, background: "var(--surface)", color: selMeta.fg, alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-sm)", flexShrink: 0 }}>
-                  <Icon name={selMeta.icon} size={22} />
-                </span>
-                <h3 style={{ flex: 1, fontWeight: 800, fontSize: "var(--text-lg)", color: "var(--text-strong)", margin: 0, letterSpacing: "var(--tracking-snug)" }}>{sel.name}</h3>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: 0, whiteSpace: "nowrap" }}>{sel.grasp} grasp · {sel.accuracy}% accuracy</p>
-                  <p style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", margin: "3px 0 0", whiteSpace: "nowrap" }}>{sel.questions} questions</p>
+            <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "22px 28px", background: "var(--surface-sunken)", borderBottom: "1px solid var(--border)" }}>
+                <Icon name={selIcon} size={19} color="var(--text-muted)" />
+                <h3 style={{ flex: 1, fontWeight: 400, fontSize: 23, color: "var(--text-strong)", margin: 0, letterSpacing: "-0.018em" }}>{sel.name}</h3>
+                <div style={{ textAlign: "right", flexShrink: 0, fontFamily: "var(--font-sans)" }}>
+                  <p style={{ fontSize: 11, color: "var(--text-muted)", margin: 0, whiteSpace: "nowrap" }}>{sel.grasp} grasp · {sel.accuracy}% accuracy</p>
+                  <p style={{ fontSize: 11, color: "var(--text-faint)", margin: "4px 0 0", whiteSpace: "nowrap" }}>{sel.questions} questions</p>
                 </div>
               </div>
 
-              {/* Sub-category table */}
-              <div style={{ padding: "8px 26px 8px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 0.9fr 1.3fr 1fr", gap: 18, padding: "12px 0", borderBottom: "1px solid var(--border)" }}>
-                  <span style={{ fontSize: "var(--text-xs)", fontWeight: 700, letterSpacing: "var(--tracking-wide)", textTransform: "uppercase", color: "var(--text-faint)" }}>Sub-category</span>
-                  <span style={{ fontSize: "var(--text-xs)", fontWeight: 700, letterSpacing: "var(--tracking-wide)", textTransform: "uppercase", color: "var(--text-faint)" }}>Grasp</span>
-                  <span style={{ fontSize: "var(--text-xs)", fontWeight: 700, letterSpacing: "var(--tracking-wide)", textTransform: "uppercase", color: "var(--text-faint)" }}>Accuracy</span>
-                  <span style={{ fontSize: "var(--text-xs)", fontWeight: 700, letterSpacing: "var(--tracking-wide)", textTransform: "uppercase", color: "var(--text-faint)", textAlign: "right" }}>Next level</span>
+              <div style={{ padding: "8px 28px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 0.9fr 1.3fr 1fr", gap: 18, padding: "14px 0", borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)" }}>
+                  <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>Sub-category</span>
+                  <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>Grasp</span>
+                  <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>Accuracy</span>
+                  <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", textAlign: "right" }}>Next level</span>
                 </div>
                 {sel.skills.map((row) => (
-                  <div key={row.skill} style={{ display: "grid", gridTemplateColumns: "1.5fr 0.9fr 1.3fr 1fr", gap: 18, alignItems: "center", padding: "15px 0", borderBottom: "1px solid var(--border)" }}>
+                  <div key={row.skill} style={{ display: "grid", gridTemplateColumns: "1.5fr 0.9fr 1.3fr 1fr", gap: 18, alignItems: "center", padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
                     <div>
-                      <p style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: 0 }}>{row.label}</p>
-                      <p style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", margin: "2px 0 0" }}>{row.note}</p>
+                      <p style={{ fontSize: 16, color: "var(--text-strong)", margin: 0 }}>{row.label}</p>
+                      <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "4px 0 0" }}>{row.note}</p>
                     </div>
                     {row.hasData ? (
                       <>
                         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                           <Pips n={row.graspN} />
-                          <span style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-muted)" }}>{row.grasp}</span>
+                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>{row.grasp}</span>
                         </div>
-                        <div>
-                          <SkillBar label="" accuracy={row.accuracy} detail={`${row.accuracy}% · at ${DIFFICULTY_LABELS[row.currentTier]}`} />
-                        </div>
+                        <SkillBar label="" accuracy={row.accuracy} detail={`${row.accuracy}% · at ${DIFFICULTY_LABELS[row.currentTier]}`} />
                         <div style={{ display: "flex", justifyContent: "flex-end" }}>
                           <Badge tone={row.suggestedTone as "mint" | "sky" | "peach" | "rose"} size="sm">{row.suggestedLabel}</Badge>
                         </div>
                       </>
                     ) : (
-                      <span style={{ gridColumn: "2 / -1", fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>Not started yet</span>
+                      <span style={{ gridColumn: "2 / -1", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>Not started yet</span>
                     )}
                   </div>
                 ))}
               </div>
 
-              {/* Improvement areas */}
-              <div style={{ padding: "18px 26px 26px" }}>
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "0 0 12px" }}>
-                  <p style={{ fontWeight: 700, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: 0, whiteSpace: "nowrap" }}>Improvement areas</p>
-                  <span style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>weakest first</span>
+              <div style={{ padding: "20px 28px 28px" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "0 0 14px" }}>
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: 0 }}>Improvement areas</p>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>weakest first</span>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 236, overflowY: "auto", paddingRight: 6 }}>
+                <div style={{ display: "flex", flexDirection: "column", maxHeight: 250, overflowY: "auto", borderTop: "1px solid var(--border)" }}>
                   {improve.map((row) => (
-                    <div key={row.skill} style={{ display: "flex", gap: 14, alignItems: "flex-start", background: "var(--surface-sunken)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "14px 16px" }}>
+                    <div key={row.skill} style={{ display: "flex", gap: 16, alignItems: "flex-start", padding: "15px 2px", borderBottom: "1px solid var(--border)" }}>
                       <div style={{ flexShrink: 0, paddingTop: 1 }}>
                         <Badge tone={row.hasData ? (row.accuracy >= 75 ? "mint" : row.accuracy >= 50 ? "butter" : "rose") : "sky"} size="sm">
                           {row.hasData ? `${row.accuracy}%` : "—"}
                         </Badge>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 3 }}>
-                          <p style={{ fontWeight: 700, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: 0 }}>{row.label}</p>
-                          <span style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", whiteSpace: "nowrap", flexShrink: 0 }}>{row.hasData ? `${row.grasp} grasp` : ""}</span>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 5 }}>
+                          <p style={{ fontSize: 16, color: "var(--text-strong)", margin: 0 }}>{row.label}</p>
+                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", whiteSpace: "nowrap", flexShrink: 0 }}>{row.hasData ? `${row.grasp} grasp` : ""}</span>
                         </div>
-                        <p style={{ fontSize: "var(--text-xs)", color: "var(--text-body)", margin: 0, lineHeight: "var(--leading-relaxed)" }}>{row.advice}</p>
+                        <p style={{ fontSize: 15, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>{row.advice}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
-                  <Button onClick={() => router.push("/practice")}>Practice {sel.name} →</Button>
+                <div style={{ marginTop: 24 }}>
+                  <Button onClick={() => router.push("/practice")}>Practice {sel.name}</Button>
                 </div>
               </div>
             </section>
           </>
         )}
 
-        {/* Accuracy chart */}
-        {chartPoints.length > 0 && (
-          <div style={{ marginTop: 22 }}>
-            <AccuracyChart points={chartPoints} />
-          </div>
-        )}
+        {chartPoints.length > 0 && <AccuracyChart points={chartPoints} />}
       </main>
     </div>
   );

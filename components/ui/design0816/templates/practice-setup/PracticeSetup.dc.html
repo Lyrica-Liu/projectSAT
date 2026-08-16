@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Practice Setup" description="800Path extra practice setup — a ruled order form: domain as selectable rows, question count as a segmented rule, estimate in the margin. Clearly outside the thirty-day plan." -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+<style>
+html{-webkit-font-smoothing:antialiased}
+a.q:hover{color:var(--text-strong)}
+.sb{width:66px!important;transition:width .24s cubic-bezier(.2,.7,.3,1)}
+.sb:hover{width:218px!important}
+.sb .lbl{opacity:0;transition:opacity .16s;white-space:nowrap}
+.sb:hover .lbl{opacity:1}
+.sb a{transition:background .16s,color .16s}
+.sb a:hover{background:var(--sidebar-hover);color:var(--sidebar-ink)}
+.orow:hover{background:var(--surface)}
+.cta:hover{background:var(--brand-hover)}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);color:var(--text-body);font-family:var(--font-serif)">
+
+<aside class="sb" style="position:fixed;left:0;top:0;bottom:0;width:66px;background:var(--sidebar-bg);border-right:1px solid var(--sidebar-line);z-index:40;display:flex;flex-direction:column;overflow:hidden">
+<div style="height:60px;display:flex;align-items:center;gap:12px;padding:0 21px;flex:none;border-bottom:1px solid var(--sidebar-line)">
+<svg viewBox="0 0 230 140" width="30" height="18" style="flex:none"><g transform="translate(22,0) skewX(-10)" fill="var(--sidebar-ink)"><path d="M40,44 A20,22 0 1 1 80,44 A20,22 0 1 1 40,44 ZM47,41 A11,12 0 1 0 69,41 A11,12 0 1 0 47,41 ZM31,90 A27,28 0 1 1 85,90 A27,28 0 1 1 31,90 ZM40,86 A16,16 0 1 0 72,86 A16,16 0 1 0 40,86 ZM96,92 A22,26 0 1 1 140,92 A22,26 0 1 1 96,92 ZM105,88 A13,16 0 1 0 131,88 A13,16 0 1 0 105,88 ZM150,92 A22,26 0 1 1 194,92 A22,26 0 1 1 150,92 ZM159,88 A13,16 0 1 0 185,88 A13,16 0 1 0 159,88 ZM70,100 C80,112 96,108 106,100 C98,104 84,105 74,94 ZM132,101 C140,111 152,111 160,101 C152,106 141,106 135,96 ZM186,98 C198,94 204,84 203,73 C199,83 196,90 184,94 ZM40,29 C45,22 54,19 61,21 C54,23 48,26 44,32 Z"></path></g></svg>
+<span class="lbl" style="font-size:16px;font-weight:600;color:var(--sidebar-ink);letter-spacing:-.018em">800Path</span>
+</div>
+<nav style="display:flex;flex-direction:column;gap:2px;padding:14px 9px;flex:1;font-family:var(--font-sans);font-size:13px">
+<a href="../plan-overview/PlanOverview.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><rect x="2" y="3" width="12" height="11" rx="1"></rect><path d="M2 6.5h12M6 3v-1.5M10 3v-1.5"></path></svg><span class="lbl">My plan</span></a>
+<a href="../dashboard/Dashboard.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><path d="M2 13V8M6 13V4M10 13V9.5M14 13V6"></path></svg><span class="lbl">Dashboard</span></a>
+<span style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);background:var(--sidebar-active);color:var(--text-on-brand)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><path d="M3 2.5h10v11H3zM5.5 6h5M5.5 9h3"></path></svg><span class="lbl">Extra practice</span></span>
+<a href="../history/History.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><circle cx="8" cy="8" r="5.7"></circle><path d="M8 5v3.2l2.2 1.4"></path></svg><span class="lbl">History</span></a>
+</nav>
+<div style="padding:16px 9px;border-top:1px solid var(--sidebar-line);flex:none">
+<a href="../account-center/AccountCenter.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted);font-family:var(--font-sans);font-size:13px"><span style="width:16px;height:16px;border-radius:999px;border:1px solid var(--sidebar-ink-faint);display:flex;align-items:center;justify-content:center;font-size:9px;flex:none">M</span><span class="lbl">Maya Ruiz</span></a>
+</div>
+</aside>
+
+<main style="margin-left:66px;padding:0 0 96px">
+<div style="max-width:960px;margin:0 auto;padding:0 56px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:24px;height:60px;border-bottom:1px solid var(--border);font-family:var(--font-sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint)">
+<span>Extra practice</span>
+<span>Outside the thirty-day plan</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 244px;gap:64px;align-items:start;padding:52px 0 0">
+<div>
+<h1 style="font-weight:400;font-size:44px;line-height:1.04;letter-spacing:-.026em;color:var(--text-strong);margin:0">Practice as you like</h1>
+<p style="font-size:17px;line-height:1.62;color:var(--text-muted);margin:20px 0 0;max-width:50ch;text-wrap:pretty">Extra sessions sharpen skills but do not advance the plan or the streak — today's module is still today's module. <a class="q" href="../for-you/ForYou.dc.html" style="color:var(--accent)">See what's picked for you →</a></p>
+
+<p style="font-family:var(--font-sans);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:44px 0 0;padding-bottom:12px;border-bottom:1px solid var(--line-strong)">Domain</p>
+<sc-for list="{{ domains }}" as="d" hint-placeholder-count="3">
+<div class="orow" onClick="{{ d.pick }}" ref="{{ d.ref }}" style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;padding:17px 14px;border-bottom:1px solid var(--border);border-left:2px solid transparent;cursor:pointer;transition:background .14s">
+<span style="font-size:17px;color:var(--text-body)" ref="{{ d.nameRef }}">{{ d.label }}</span>
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint)">{{ d.desc }}</span>
+</div>
+</sc-for>
+
+<p style="font-family:var(--font-sans);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:40px 0 0;padding-bottom:12px;border-bottom:1px solid var(--line-strong)">Number of questions</p>
+<div style="display:flex;gap:0;border-bottom:1px solid var(--border)">
+<sc-for list="{{ counts }}" as="c" hint-placeholder-count="4">
+<button onClick="{{ c.pick }}" ref="{{ c.ref }}" style="flex:1;padding:18px 0;border:0;border-left:1px solid var(--border);background:transparent;font-family:var(--font-sans);font-size:15px;font-variant-numeric:tabular-nums;color:var(--text-muted);cursor:pointer;transition:background .14s,color .14s">{{ c.n }}</button>
+</sc-for>
+</div>
+
+<div style="display:flex;align-items:center;gap:24px;margin:40px 0 0">
+<button class="cta" onClick="{{ start }}" style="border:0;background:var(--brand);color:var(--text-on-brand);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:15px 30px;border-radius:var(--radius-lg);cursor:pointer;transition:background .16s">Start session</button>
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint)">{{ estimate }}</span>
+</div>
+</div>
+
+<div style="border-left:1px solid var(--border);padding:4px 0 4px 24px">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 16px">This session</p>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 0 12px;border-bottom:1px solid var(--border);margin-bottom:12px"><span style="font-size:15px;color:var(--text-muted)">Domain</span><span style="font-family:var(--font-sans);font-size:12px;color:var(--text-strong);text-align:right">{{ selLabel }}</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 0 12px;border-bottom:1px solid var(--border);margin-bottom:12px"><span style="font-size:15px;color:var(--text-muted)">Questions</span><span style="font-family:var(--font-sans);font-size:12px;color:var(--text-strong);font-variant-numeric:tabular-nums">{{ selCount }}</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 0 12px;border-bottom:1px solid var(--border);margin-bottom:18px"><span style="font-size:15px;color:var(--text-muted)">Counts toward</span><span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint)">Nothing</span></div>
+<p style="font-family:var(--font-sans);font-size:12px;line-height:1.66;color:var(--text-faint);margin:0">Untimed and unrecorded by design. If you want the clock and the record, open today's plan day instead.</p>
+</div>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1160,&quot;height&quot;:760}}">
+class Component extends DCLogic {
+  state = { domain: 0, count: 1 };
+
+  renderVals() {
+    const st = this.state;
+    const domainData = [
+      { label: 'Reading & Writing', desc: 'Mix of both domains' },
+      { label: 'Reading', desc: 'Passages & comprehension' },
+      { label: 'Writing', desc: 'Grammar & expression' }
+    ];
+    const countData = [5, 10, 15, 20];
+
+    const domains = domainData.map((d, i) => {
+      const on = i === st.domain;
+      return {
+        label: d.label, desc: d.desc,
+        ref: (el) => { if (!el) return; el.style.borderLeftColor = on ? 'var(--accent)' : 'transparent'; el.style.background = on ? 'var(--surface)' : 'transparent'; },
+        nameRef: (el) => { if (el) el.style.color = on ? 'var(--text-strong)' : 'var(--text-body)'; },
+        pick: () => this.setState({ domain: i })
+      };
+    });
+
+    const counts = countData.map((n, i) => {
+      const on = i === st.count;
+      return {
+        n,
+        ref: (el) => { if (!el) return; el.style.background = on ? 'var(--brand)' : 'transparent'; el.style.color = on ? 'var(--text-on-brand)' : 'var(--text-muted)'; },
+        pick: () => this.setState({ count: i })
+      };
+    });
+
+    const n = countData[st.count];
+    return {
+      domains, counts,
+      selLabel: domainData[st.domain].label,
+      selCount: n,
+      estimate: '~' + Math.round(n * 0.85) + ' min estimated · untimed',
+      start: () => { window.location.href = '../practice-session/PracticeSession.dc.html'; }
+    };
+  }
+}
+</script>
+</body>
+</html>

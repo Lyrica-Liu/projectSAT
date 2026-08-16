@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { AppNav, LoadingScreen } from "@/components/ui/nav";
-import { Card, Badge, Button } from "@/components/ui/ds";
+import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
 import {
-  getPlanDay, getCurrentPlanDay, calcStreak, DIFFICULTY_LABELS, DIFFICULTY_TONES,
-  ENGLISH_SESSION_LENGTH, MATH_SESSION_LENGTH, ENGLISH_CATEGORY_ORDER,
+  getPlanDay, getCurrentPlanDay, calcStreak,
+  ENGLISH_SESSION_LENGTH, MATH_SESSION_LENGTH,
 } from "@/lib/plan";
 import type { Session, SkillStat, QuestionSkill, MathSkill, PlanDayRow, CategoryProgressRow } from "@/lib/types";
 
@@ -35,6 +34,11 @@ function skillLabel(skill: QuestionSkill | MathSkill): string {
   return (SKILL_LABELS as Record<string, string>)[skill] ?? (MATH_SKILL_LABELS as Record<string, string>)[skill] ?? skill;
 }
 
+const microLabel: React.CSSProperties = {
+  fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em",
+  textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 10px",
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -45,7 +49,7 @@ export default function DashboardPage() {
   const [skillStats, setSkillStats] = useState<SkillStat[]>([]);
   const [sessionSkillsMap, setSessionSkillsMap] = useState<Record<string, (QuestionSkill | MathSkill)[]>>({});
   const [planRows, setPlanRows] = useState<PlanDayRow[]>([]);
-  const [categoryProgress, setCategoryProgress] = useState<CategoryProgressRow[]>([]);
+  const [, setCategoryProgress] = useState<CategoryProgressRow[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -58,24 +62,10 @@ export default function DashboardPage() {
         user.email?.split("@")[0] ?? "there"
       );
 
-      // Fetch sessions + plan_days + category_progress in parallel
       const [sessionRes, planRes, progressRes] = await Promise.all([
-        supabase
-          .from("sessions")
-          .select("*")
-          .eq("user_id", user.id)
-          .not("completed_at", "is", null)
-          .order("completed_at", { ascending: false })
-          .limit(10),
-        supabase
-          .from("plan_days")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("day_number"),
-        supabase
-          .from("category_progress")
-          .select("*")
-          .eq("user_id", user.id),
+        supabase.from("sessions").select("*").eq("user_id", user.id).not("completed_at", "is", null).order("completed_at", { ascending: false }).limit(10),
+        supabase.from("plan_days").select("*").eq("user_id", user.id).order("day_number"),
+        supabase.from("category_progress").select("*").eq("user_id", user.id),
       ]);
 
       const allSessions: Session[] = sessionRes.data ?? [];
@@ -109,8 +99,7 @@ export default function DashboardPage() {
         setSkillStats(
           Object.entries(skillMap).map(([skill, { total, correct }]) => ({
             skill: skill as QuestionSkill | MathSkill,
-            total,
-            correct,
+            total, correct,
             accuracy: total > 0 ? Math.round((correct / total) * 100) : 0,
           }))
         );
@@ -130,19 +119,16 @@ export default function DashboardPage() {
 
   const completedPlanRows = planRows.filter((r) => r.completed_at);
   const completedNums = completedPlanRows.map((r) => r.day_number);
-  const completedSet = new Set(completedNums);
   const currentDay = getCurrentPlanDay(completedNums);
   const streak = calcStreak(planRows);
   const doneCt = completedNums.length;
   const todayPlanDay = currentDay <= 30 ? getPlanDay(currentDay) : null;
   const todayRow = planRows.find((r) => r.day_number === currentDay) ?? null;
   const todayFocus = todayRow?.subcategory ?? todayPlanDay?.focus ?? "Today's session";
-  const todayDifficulty = todayRow?.difficulty ?? todayPlanDay?.difficulty ?? null;
+  const isMathToday = todayPlanDay?.subject === "math";
+  const allDone = currentDay > 30;
 
-  const avgScore =
-    sessions.length > 0
-      ? Math.round(sessions.reduce((acc, s) => acc + (s.score ?? 0), 0) / sessions.length)
-      : null;
+  const avgScore = sessions.length > 0 ? Math.round(sessions.reduce((acc, s) => acc + (s.score ?? 0), 0) / sessions.length) : null;
 
   const daysAgo = (s: Session) => s.completed_at ? (now - new Date(s.completed_at).getTime()) / 86400000 : Infinity;
   const lastWeek = sessions.filter((s) => daysAgo(s) <= 7);
@@ -151,290 +137,161 @@ export default function DashboardPage() {
   const priorWeekAvg = priorWeek.length > 0 ? Math.round(priorWeek.reduce((a, s) => a + (s.score ?? 0), 0) / priorWeek.length) : null;
   const vsLastWeek = lastWeekAvg != null && priorWeekAvg != null ? lastWeekAvg - priorWeekAvg : null;
 
-  const last3Days = sessions.filter((s) => daysAgo(s) <= 3);
-  const bestRecentAccuracy = last3Days.length > 0 ? Math.max(...last3Days.map((s) => s.score ?? 0)) : null;
-
   const sortedSkills = [...skillStats].sort((a, b) => a.accuracy - b.accuracy);
   const weakestSkill = sortedSkills.length > 0 ? skillLabel(sortedSkills[0].skill) : null;
 
-  const progressByCategory = new Map(categoryProgress.map((r) => [r.subcategory, r.difficulty]));
-  const categoryLevels = ENGLISH_CATEGORY_ORDER.map((cat) => ({
-    focus: cat.focus,
-    difficulty: progressByCategory.get(cat.subcategory) ?? null,
-  }));
+  const dateLine = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
-  const allDone = currentDay > 30;
-
-  const eyebrow: React.CSSProperties = {
-    fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 700,
-    letterSpacing: "var(--tracking-caps)", textTransform: "uppercase",
-    color: "var(--text-faint)", display: "block",
-  };
+  let briefBody: string;
+  if (doneCt === 0) briefBody = "Nothing is behind you yet and nothing is lost — the sequence starts wherever you open it. Twelve questions is a smaller commitment than it sounds, and it is the whole ask for today.";
+  else if (streak < 3) briefBody = "A sitting or two in, the plan is still deciding what you are good at. Answer honestly rather than carefully; the sequence adjusts to what it sees.";
+  else if (streak < 7) briefBody = "The habit is taking hold, which is the part most people never reach. From here the questions begin to lean harder on the skills you have been avoiding.";
+  else briefBody = `${streak} days unbroken. The plan now has enough of your work to aim properly, so expect today to be pointed rather than broad — it is chosen from your misses, not at random.`;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
-      <AppNav />
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
+      <Sidebar />
 
-      <main style={{ maxWidth: 960, margin: "0 auto", padding: "40px 24px 64px" }}>
+      <main style={{ maxWidth: 1080 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
 
-        {/* Greeting */}
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{
-            fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500,
-            fontSize: "var(--text-2xl)", color: "var(--text-strong)",
-            margin: "0 0 4px", letterSpacing: "var(--tracking-snug)",
-          }}>
-            Hey, {displayName} 👋
-          </h1>
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: 0 }}>
-            {allDone
-              ? "You finished the 30-Day Path. Keep the momentum going with extra practice."
-              : doneCt === 0
-              ? "Day 1 is ready. Let's start the journey."
-              : `Day ${currentDay} of 30 is open. ${streak >= 3 ? "You're on a streak 🔥" : "Let's keep going."}`}
-          </p>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
+          <span style={{ alignSelf: "center" }}>{dateLine}</span>
+          <span style={{ alignSelf: "center", fontVariantNumeric: "tabular-nums" }}>Day {Math.min(currentDay, 30)} / 30 · {isMathToday ? "Math" : "English"}</span>
         </div>
 
-        {/* Stats row */}
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "1px",
-          background: "var(--border)", border: "1px solid var(--border)",
-          borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: 24,
-        }}>
+        {/* Briefing */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 236px", gap: 56, alignItems: "start", padding: "56px 0 0" }}>
+          <div>
+            <h1 style={{ ...microLabel, margin: "0 0 22px" }}>The briefing</h1>
+            <p style={{ fontSize: 23, lineHeight: 1.52, letterSpacing: "-0.012em", color: "var(--text-strong)", margin: 0, maxWidth: "54ch", textWrap: "pretty" }}>
+              <span style={{ float: "left", fontSize: 62, lineHeight: 0.82, fontWeight: 600, margin: "5px 12px 0 0", color: "var(--text-strong)" }}>
+                {(displayName[0] || "H").toUpperCase()}
+              </span>
+              {`ey ${displayName} — ${allDone ? "the thirty days are behind you." : `today is a ${isMathToday ? "Math" : "Reading and Writing"} sitting: ${isMathToday ? MATH_SESSION_LENGTH : ENGLISH_SESSION_LENGTH} questions, focused on ${todayFocus.toLowerCase()}.`}`}
+            </p>
+            <p style={{ fontSize: 17, lineHeight: 1.68, color: "var(--text-muted)", margin: "20px 0 0", maxWidth: "58ch", textWrap: "pretty" }}>{briefBody}</p>
+          </div>
+          <div style={{ borderLeft: "1px solid var(--border)", padding: "2px 0 2px 24px" }}>
+            <p style={microLabel}>In the margin</p>
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: "0 0 16px" }}>Weakest skill so far</p>
+            <p style={{ fontSize: 19, lineHeight: 1.3, color: "var(--text-strong)", margin: "0 0 20px" }}>{weakestSkill ?? "Not enough data yet"}</p>
+            <div style={{ height: 1, background: "var(--border)", margin: "0 0 18px" }} />
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, lineHeight: 1.66, color: "var(--text-faint)", margin: 0 }}>
+              {weakestSkill ? "Extra practice on this skill sharpens fastest — find it from For You." : "Complete a few sessions and this will point at what to fix first."}
+            </p>
+          </div>
+        </div>
+
+        {/* Stats strip */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", margin: "48px 0 0", borderTop: "1px solid var(--line-strong)", borderBottom: "1px solid var(--border)" }}>
           {[
-            { label: "Plan progress", value: `Day ${Math.min(currentDay, 30)}`, sub: "/ 30", color: undefined },
-            { label: "Avg. accuracy",  value: avgScore != null ? `${avgScore}%` : "—", sub: null, color: undefined },
-            {
-              label: "Vs. last week",
-              value: vsLastWeek != null ? `${vsLastWeek >= 0 ? "+" : ""}${vsLastWeek}%` : "—",
-              sub: null,
-              color: vsLastWeek == null ? undefined : vsLastWeek >= 0 ? "var(--indigo-ink)" : "var(--rose-ink)",
-            },
-            { label: "Weakest skill",  value: weakestSkill ?? "—",               sub: null, small: true, color: undefined },
-          ].map((s) => (
-            <div key={s.label} style={{ background: "var(--surface)", padding: "var(--space-5)" }}>
-              <p style={{ fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--text-muted)", margin: "0 0 8px" }}>{s.label}</p>
-              <p style={{
-                fontFamily: (s as { small?: boolean }).small ? "var(--font-sans)" : "var(--font-mono)",
-                fontWeight: 800,
-                fontSize: (s as { small?: boolean }).small ? "var(--text-base)" : "var(--text-xl)",
-                color: s.color ?? "var(--text-strong)", margin: 0, lineHeight: 1.1,
-              }}>
-                {s.value}
-                {s.sub && <span style={{ fontSize: "var(--text-sm)", fontWeight: 500, color: "var(--text-faint)", marginLeft: 4 }}>{s.sub}</span>}
+            { label: "Plan progress", value: `${Math.min(currentDay, 30)}`, sub: "/ 30" },
+            { label: "Average accuracy", value: avgScore != null ? `${avgScore}%` : "—", sub: null },
+            { label: "Against last week", value: vsLastWeek != null ? `${vsLastWeek >= 0 ? "+" : ""}${vsLastWeek}` : "—", sub: null },
+            { label: "Days remaining", value: `${Math.max(0, 30 - currentDay + 1)}`, sub: null },
+          ].map((s, i) => (
+            <div key={s.label} style={{ padding: i === 0 ? "20px 28px 20px 0" : i === 3 ? "20px 0 20px 28px" : "20px 28px", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
+              <p style={microLabel}>{s.label}</p>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 26, fontWeight: 500, color: "var(--text-strong)", margin: 0, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                {s.value}{s.sub && <span style={{ fontSize: 14, color: "var(--text-faint)" }}> {s.sub}</span>}
               </p>
             </div>
           ))}
         </div>
 
-        {/* Main grid: Today's session + Plan map */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 20, marginBottom: 20 }}>
-
-          {/* Today's session CTA */}
-          {allDone ? (
-            <div style={{
-              background: "var(--dark-900)", borderRadius: "var(--radius-xl)",
-              padding: 24, display: "flex", flexDirection: "column", gap: 16,
-            }}>
-              <div>
-                <p style={{ ...eyebrow, color: "rgba(255,255,255,0.5)", marginBottom: 8 }}>Path complete</p>
-                <h2 style={{ fontWeight: 800, fontSize: "var(--text-md)", color: "#fff", margin: "0 0 8px" }}>
-                  All 30 days done 🎉
-                </h2>
-                <p style={{ fontSize: "var(--text-sm)", color: "var(--text-on-dark-muted)", margin: 0, lineHeight: "var(--leading-relaxed)" }}>
-                  Keep your skills sharp with extra practice sessions.
-                </p>
-              </div>
-              <Link href="/practice" style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                padding: "10px 18px", background: "var(--surface)", color: "var(--brand-ink)",
-                fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)",
-                borderRadius: "var(--radius-pill)", textDecoration: "none", boxShadow: "var(--shadow-sm)",
-                width: "fit-content",
-              }}>
-                Extra practice →
-              </Link>
-            </div>
-          ) : (
-            <div style={{
-              background: "var(--gradient-radiant)", borderRadius: "var(--radius-xl)",
-              padding: 24, boxShadow: "0 8px 28px rgba(168,85,247,0.28)",
-              display: "flex", flexDirection: "column", gap: 16,
-            }}>
-              <div>
-                <p style={{ ...eyebrow, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>
-                  Today · Day {currentDay} of 30
-                </p>
-                <h2 style={{ fontWeight: 800, fontSize: "var(--text-md)", color: "#fff", margin: "0 0 6px" }}>
-                  {todayFocus}
-                </h2>
-                <p style={{ fontSize: "var(--text-sm)", color: "rgba(255,255,255,0.85)", margin: 0, lineHeight: "var(--leading-relaxed)" }}>
-                  {todayPlanDay?.subject === "english"
-                    ? `English · ${todayDifficulty ? DIFFICULTY_LABELS[todayDifficulty] : ""} · ${ENGLISH_SESSION_LENGTH} questions`
-                    : `Math · ${todayDifficulty ? DIFFICULTY_LABELS[todayDifficulty] : ""} · ${MATH_SESSION_LENGTH} questions`}
-                </p>
-              </div>
-              <div style={{ marginTop: "auto" }}>
-                <Link href={`/plan/${currentDay}`} style={{
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  padding: "10px 18px", background: "rgba(255,255,255,0.15)",
-                  backdropFilter: "blur(8px)", border: "1.5px solid rgba(255,255,255,0.3)",
-                  color: "#fff", fontFamily: "var(--font-sans)", fontWeight: 600,
-                  fontSize: "var(--text-sm)", borderRadius: "var(--radius-pill)",
-                  textDecoration: "none",
-                }}>
-                  Begin Day {currentDay} →
-                </Link>
-                <p style={{ fontSize: "var(--text-xs)", color: "rgba(255,255,255,0.6)", margin: "10px 0 0" }}>
-                  Day {Math.min(currentDay + 1, 30)} opens after this is done ·{" "}
-                  <Link href="/plan" style={{ color: "rgba(255,255,255,0.8)", textDecoration: "underline" }}>
-                    view full plan
+        {/* Today's module + 30-day map */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.12fr 1fr", gap: 48, margin: "48px 0 0", alignItems: "stretch" }}>
+          <div style={{ background: "var(--dark-900)", color: "var(--text-on-dark)", borderRadius: "var(--radius-2xl)", padding: "40px 44px 38px", display: "flex", flexDirection: "column" }}>
+            {allDone ? (
+              <>
+                <div>
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-on-dark-faint)", margin: "0 0 24px" }}>Path complete</p>
+                  <h2 style={{ fontWeight: 400, fontSize: 34, lineHeight: 1.1, letterSpacing: "-0.022em", color: "var(--text-on-dark)", margin: "0 0 14px" }}>All thirty days, done.</h2>
+                  <p style={{ fontSize: 16, lineHeight: 1.66, color: "var(--text-on-dark-muted)", margin: 0, maxWidth: "40ch" }}>Keep the skills sharp — extra practice doesn&apos;t advance the plan, but it keeps the edge.</p>
+                </div>
+                <div style={{ marginTop: "auto" }}>
+                  <Link href="/practice" style={{ display: "inline-flex", border: "0", background: "var(--text-on-dark)", color: "var(--dark-900)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)" }}>
+                    Extra practice
                   </Link>
-                </p>
-              </div>
-            </div>
-          )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 20, margin: "0 0 24px", fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-on-dark-faint)" }}>
+                  <span style={{ letterSpacing: "0.16em", textTransform: "uppercase" }}>Today · Day {currentDay}</span>
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>{isMathToday ? MATH_SESSION_LENGTH : ENGLISH_SESSION_LENGTH} questions</span>
+                </div>
+                <h2 style={{ fontWeight: 400, fontSize: 34, lineHeight: 1.1, letterSpacing: "-0.022em", color: "var(--text-on-dark)", margin: "0 0 14px", maxWidth: "20ch", textWrap: "pretty" }}>{todayFocus}</h2>
+                <p style={{ fontSize: 16, lineHeight: 1.66, color: "var(--text-on-dark-muted)", margin: "0 0 32px", maxWidth: "40ch" }}>A warm-up question, then the timed module. Nothing to choose — today is already decided.</p>
+                <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
+                  <button onClick={() => router.push(`/plan/${currentDay}`)} style={{ border: "0", background: "var(--text-on-dark)", color: "var(--dark-900)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+                    Begin Day {currentDay}
+                  </button>
+                  <Link href="/plan" style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-on-dark-faint)" }}>View the full plan</Link>
+                </div>
+              </>
+            )}
+          </div>
 
-          {/* 30-day mini-map + streak */}
-          <Card tone="surface" padding="lg" radius="xl" shadow="sm">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h2 style={{ fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: 0 }}>
-                30-day map
-              </h2>
-              <span style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>{doneCt}/30 done</span>
-            </div>
-
-            {/* 10×3 grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(10,1fr)", gap: 5, marginBottom: 20 }}>
+          <div>
+            <p style={microLabel}>The thirty days</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(10,1fr)", gap: 1, background: "var(--border)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
               {Array.from({ length: 30 }, (_, i) => {
                 const d = i + 1;
-                const isDone = completedSet.has(d);
+                const isDone = completedNums.includes(d);
                 const isToday = d === currentDay;
                 return (
-                  <Link key={d} href={`/plan/${d}`} style={{ textDecoration: "none" }}>
-                    <div style={{
-                      aspectRatio: "1", borderRadius: 6, display: "flex",
-                      alignItems: "center", justifyContent: "center",
-                      background: isDone
-                        ? "var(--brand)"
-                        : isToday
-                        ? "var(--gradient-radiant)"
-                        : "var(--surface-sunken)",
-                      color: isDone || isToday ? "#fff" : "var(--ink-300)",
-                      fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 10,
-                    }}>
-                      {isDone
-                        ? <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                        : d}
-                    </div>
+                  <Link key={d} href={`/plan/${d}`} style={{
+                    aspectRatio: 1.15, display: "flex", alignItems: "center", justifyContent: "center",
+                    background: isDone ? "var(--surface-2)" : "var(--surface)",
+                  }}>
+                    <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontVariantNumeric: "tabular-nums", color: isToday ? "var(--accent)" : isDone ? "var(--text-strong)" : "var(--ink-300)" }}>{d}</span>
                   </Link>
                 );
               })}
             </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <div style={{ flex: 1, background: "var(--surface-sunken)", borderRadius: "var(--radius-md)", padding: "10px 14px", textAlign: "center" }}>
-                <p style={{ fontWeight: 800, fontSize: "var(--text-lg)", color: "var(--text-strong)", margin: 0, lineHeight: 1.1 }}>
-                  {streak > 0 ? streak : "—"}
-                </p>
-                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "3px 0 0" }}>day streak 🔥</p>
-              </div>
-              <div style={{ flex: 1, background: "var(--surface-sunken)", borderRadius: "var(--radius-md)", padding: "10px 14px", textAlign: "center" }}>
-                <p style={{ fontWeight: 800, fontSize: "var(--text-lg)", color: "var(--text-strong)", margin: 0, lineHeight: 1.1 }}>
-                  {bestRecentAccuracy != null ? `${bestRecentAccuracy}%` : "—"}
-                </p>
-                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "3px 0 0" }}>best in last 3 days ⭐</p>
-              </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, margin: "24px 0 0", borderTop: "1px solid var(--border)", padding: "18px 0 0" }}>
+              <span><span style={{ fontFamily: "var(--font-sans)", fontSize: 24, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{streak}</span><span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", display: "block", marginTop: 5 }}>day streak</span></span>
+              <span><span style={{ fontFamily: "var(--font-sans)", fontSize: 24, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{avgScore != null ? `${avgScore}%` : "—"}</span><span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", display: "block", marginTop: 5 }}>average accuracy</span></span>
             </div>
-          </Card>
+          </div>
         </div>
 
-        {/* Skill breakdown + Recent sessions */}
-        {sessions.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-            <Card tone="surface" padding="lg" radius="xl" shadow="sm">
-              <h2 style={{ fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: "0 0 20px" }}>
-                Skill level
-              </h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 320, overflowY: "auto", paddingRight: 4 }}>
-                {categoryLevels.map((c) => (
-                  <div key={c.focus} style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "10px 4px", borderBottom: "1px solid var(--border)",
-                  }}>
-                    <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-body)" }}>
-                      {c.focus}
-                    </span>
-                    {c.difficulty ? (
-                      <Badge tone={DIFFICULTY_TONES[c.difficulty] as "mint" | "sky" | "peach" | "rose"}>
-                        {DIFFICULTY_LABELS[c.difficulty]}
-                      </Badge>
-                    ) : (
-                      <span style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)" }}>Not started</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card tone="surface" padding="lg" radius="xl" shadow="sm">
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <h2 style={{ fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: 0 }}>
-                  Recent sessions
-                </h2>
-                <Link href="/for-you" style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 500, color: "var(--text-faint)", textDecoration: "none" }}>
-                  See insights →
+        {/* Recent sessions ledger */}
+        {sessions.length > 0 ? (
+          <div style={{ margin: "64px 0 0" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "0 0 12px", borderBottom: "1px solid var(--line-strong)" }}>
+              <p style={{ ...microLabel, margin: 0 }}>Recent sessions</p>
+              <Link href="/for-you" style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>Full insights</Link>
+            </div>
+            {sessions.slice(0, 6).map((s) => {
+              const skills = sessionSkillsMap[s.id] ?? [];
+              const skillText = skills.length > 0 ? skills.slice(0, 2).map(skillLabel).join(", ") + (skills.length > 2 ? "…" : "") : "—";
+              return (
+                <Link key={s.id} href={`/results/${s.id}`} style={{
+                  display: "grid", gridTemplateColumns: "1fr 116px 70px", alignItems: "baseline", gap: 20,
+                  padding: "16px 4px", borderBottom: "1px solid var(--border)",
+                }}>
+                  <span style={{ fontSize: 16, color: "var(--text-strong)" }}>
+                    {skillText} <span style={{ fontSize: 14, color: "var(--text-faint)" }}>· {s.domain_filter === "both" ? "Reading & Writing" : s.domain_filter}</span>
+                  </span>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>
+                    {s.completed_at ? new Date(s.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
+                  </span>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: (s.score ?? 0) >= 58 ? "var(--text-strong)" : "var(--accent)", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                    {s.score ?? "—"}%
+                  </span>
                 </Link>
-              </div>
-              {sessions.slice(0, 5).map((s, i) => {
-                const skills = sessionSkillsMap[s.id] ?? [];
-                const visible = skills.slice(0, 2);
-                const extra = skills.length - visible.length;
-                return (
-                  <div key={s.id} style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "12px 0", borderTop: i === 0 ? "none" : "1px solid var(--border)",
-                    gap: 10,
-                  }}>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontFamily: "var(--font-sans)", fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--text-strong)", margin: "0 0 3px", textTransform: "capitalize" }}>
-                        {s.domain_filter === "both" ? "Reading & Writing" : s.domain_filter}
-                      </p>
-                      <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", color: "var(--text-faint)", margin: "0 0 5px" }}>
-                        {s.completed_at ? new Date(s.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
-                      </p>
-                      {visible.length > 0 && (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                          {visible.map((sk) => <Badge key={sk} tone="sky">{skillLabel(sk)}</Badge>)}
-                          {extra > 0 && <Badge tone="sky">+{extra}</Badge>}
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                      <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "var(--text-sm)", color: (s.score ?? 0) >= 75 ? "var(--brand)" : "var(--text-muted)" }}>
-                        {s.score ?? "—"}%
-                      </span>
-                      <Link href={`/results/${s.id}`} style={{ fontSize: "var(--text-xs)", fontWeight: 500, color: "var(--text-faint)", textDecoration: "none" }}>
-                        →
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
-            </Card>
+              );
+            })}
           </div>
-        )}
-
-        {/* First-time empty state */}
-        {sessions.length === 0 && doneCt === 0 && (
-          <Card tone="lilac" padding="xl" radius="xl" shadow="sm" style={{ textAlign: "center", marginTop: 8 }}>
-            <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500, fontSize: "var(--text-lg)", color: "var(--brand-ink)", margin: "0 0 12px" }}>
-              Your stats will appear here after your first session.
-            </p>
-            <Button onClick={() => router.push("/plan/1")} size="lg">
-              Begin Day 1 →
-            </Button>
-          </Card>
+        ) : (
+          <div style={{ margin: "64px 0 0", paddingTop: 40, borderTop: "1px solid var(--border)", textAlign: "center" }}>
+            <p style={{ fontSize: 19, color: "var(--text-strong)", margin: "0 0 20px" }}>Your record will start appearing here after the first session.</p>
+            <button onClick={() => router.push("/plan/1")} style={{ border: "0", background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+              Begin Day 1
+            </button>
+          </div>
         )}
       </main>
     </div>

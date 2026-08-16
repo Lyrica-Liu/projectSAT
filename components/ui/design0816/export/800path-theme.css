@@ -1,0 +1,217 @@
+/* ════════════════════════════════════════════════════════════════
+   800Path — drop-in theme for Next.js / React
+   ────────────────────────────────────────────────────────────────
+   HOW TO USE (one time):
+   1. Copy this file into your app, e.g.  app/800path-theme.css
+   2. Import it once, at the top of app/layout.tsx (or _app.tsx):
+          import "./800path-theme.css";
+   3. Use the variables anywhere:  style={{ color: "var(--text-strong)",
+          background: "var(--surface)", borderRadius: "var(--radius-lg)" }}
+      …or in your own CSS:  .btn { background: var(--brand); }
+
+   Everything is here — fonts, colors, type, spacing, radii, motion.
+   Keep this import last among your global styles.
+
+   THE ONE RULE: ink does the work, wine is a mark. `--brand` is warm
+   charcoal — buttons, progress, data lines. `--mark` is wine and only
+   ever appears on small things (active nav, today's cell, links).
+   Large fills are bone, ink, or oat. Never a wine surface.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Webfonts (Google Fonts; needs internet) ── */
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,400&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ── Ink ramp: the brand. Warm near-black stepped into stone grays ── */
+  --ink-50:  #f1efe9;
+  --ink-100: #e4e1d9;
+  --ink-200: #cec9be;
+  --ink-300: #97928a;
+  --ink-400: #56524b;
+  --ink-500: #201f1c;  /* the brand value */
+  --ink-600: #383530;  /* hover — lifted charcoal */
+  --ink-700: #171613;
+
+  /* ── Wine: the small chromatic mark. Never a fill ── */
+  --wine-50:  #f3eae9;
+  --wine-100: #e5d2d0;
+  --wine-500: #6b3535;
+  --wine-600: #572a2b;
+  --wine-700: #401f20;
+
+  /* ── Oat: warm light neutral — sidebar, quiet panels, rails ── */
+  --oat-50:  #f1ede2;
+  --oat-100: #e8e4d8;
+  --oat-200: #ddd8c8;
+  --oat-300: #cfc8b4;
+  --oat-line: #d4cebd;
+
+  /* ── Supporting printed inks: sienna, olive, brass ── */
+  --claret-500: #8f4a35;
+  --claret-600: #743a29;
+  --claret-50:  #f6ece7;
+  --moss-500:   #4a5d47;
+  --moss-50:    #eef0e9;
+  --ochre-500:  #8a7550;
+  --ochre-50:   #f5f0e4;
+
+  /* ── Text (warm ink) ── */
+  --text-strong: #201f1c;
+  --text-body:   #423f3a;
+  --text-muted:  #736f68;
+  --text-faint:  #97928a;
+
+  /* ── Rules & surfaces — warm bone stock ── */
+  --line:        #e2ded5;
+  --line-strong: #cec9be;
+  --canvas:      #f6f4ef;
+  --surface:     #fdfcf9;
+  --surface-2:   #eeebe3;
+  --overlay:     rgba(32, 31, 28, 0.44);
+
+  /* ── Dark surfaces — hero panels, study chrome ── */
+  --dark-950: #171613;
+  --dark-900: #201f1c;
+  --dark-800: #2b2925;
+  --dark-700: #383530;
+  --dark-border: #393630;
+  --text-on-dark:       #f6f4ef;
+  --text-on-dark-muted: #a8a39a;
+  --text-on-dark-faint: #78736b;
+
+  /* ── Semantic ── */
+  --success:         var(--moss-500);
+  --success-surface: var(--moss-50);
+  --warning:         var(--ochre-500);
+  --warning-surface: var(--ochre-50);
+  --danger:          var(--claret-500);
+  --danger-surface:  var(--claret-50);
+
+  /* ── Aliases ── */
+  --brand:         var(--dark-900);   /* buttons, progress, data lines */
+  --brand-hover:   var(--dark-700);
+  --brand-soft:    var(--surface-2);
+  --brand-ink:     var(--dark-950);
+  --mark:          var(--wine-500);   /* active nav, today's cell, links */
+  --mark-hover:    var(--wine-600);
+  --mark-soft:     var(--wine-50);
+  --accent:        var(--claret-500);
+  --accent-hover:  var(--claret-600);
+  --accent-soft:   var(--claret-50);
+  --text-on-brand: #f6f4ef;
+  --border:        var(--line);
+  --border-strong: var(--line-strong);
+  --surface-card:   var(--surface);
+  --surface-sunken: var(--surface-2);
+  --bg-canvas:      var(--canvas);
+  --focus-ring:     rgba(32, 31, 28, 0.22);
+
+  /* ── Sidebar family — oat spine, ink type, wine active mark ── */
+  --sidebar-bg:        var(--oat-100);
+  --sidebar-line:      var(--oat-line);
+  --sidebar-hover:     var(--oat-200);
+  --sidebar-active:    var(--mark);
+  --sidebar-rail:      var(--oat-300);
+  --sidebar-ink:       #201f1c;
+  --sidebar-ink-muted: #5c574f;
+  --sidebar-ink-faint: #8a8479;
+
+  /* ── Typography — one serif reads, sans is chrome only ── */
+  --font-serif: "Source Serif 4", Charter, Georgia, "Times New Roman", serif;
+  --font-sans:  "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:  "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --weight-light:    300;
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+  --text-xs:   0.6875rem;
+  --text-sm:   0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md:   1.0625rem;
+  --text-lg:   1.3125rem;
+  --text-xl:   1.75rem;
+  --text-2xl:  2.375rem;
+  --text-3xl:  3rem;
+  --text-4xl:  4.25rem;
+  --text-5xl:  5.5rem;
+  --leading-tight:   1.04;
+  --leading-snug:    1.24;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.68;
+  --tracking-tight:  -0.022em;
+  --tracking-snug:   -0.012em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;
+  --tracking-caps:   0.16em;
+
+  /* ── Spacing (4px base) ── */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+  --space-40: 10rem;
+
+  /* ── Radii — crisp ── */
+  --radius-sm:   2px;
+  --radius-md:   4px;
+  --radius-lg:   6px;
+  --radius-xl:   8px;
+  --radius-2xl:  10px;
+  --radius-pill: 999px;
+
+  /* ── Shadows — effectively off. Separation is hairlines and air ── */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 1px 2px rgba(32, 31, 28, 0.04);
+  --shadow-lg: 0 8px 30px rgba(32, 31, 28, 0.07);
+  --shadow-brand: none;
+
+  /* ── Motion — subtle fades only ── */
+  --ease-out:    cubic-bezier(0.25, 0.6, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 130ms;
+  --dur-base: 260ms;
+  --dur-slow: 520ms;
+
+  /* ── Layout ── */
+  --container-sm: 26rem;
+  --container-md: 44rem;
+  --container-lg: 68rem;
+  --measure:      33rem;  /* passage reading measure */
+}
+
+/* ── Base resets, so the theme actually shows ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+  color: var(--text-body);
+  background: var(--bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1;
+}
+
+a { color: var(--mark); text-decoration: none; }
+a:hover { color: var(--mark-hover); }
+
+h1, h2, h3, h4 {
+  color: var(--text-strong);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+  line-height: var(--leading-snug);
+}

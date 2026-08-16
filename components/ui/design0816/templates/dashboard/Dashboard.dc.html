@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Dashboard" description="800Path dashboard — charcoal spine sidebar, a written daily briefing set in serif with a drop cap, then the figures, today's module in charcoal, the thirty-day map, and recent days as a ruled ledger" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+<style>
+html{-webkit-font-smoothing:antialiased}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fu{animation:fadeUp .6s cubic-bezier(.25,.6,.3,1) both}.f2{animation-delay:.06s}.f3{animation-delay:.12s}
+.sb{width:66px!important;transition:width .24s cubic-bezier(.2,.7,.3,1)}
+.sb:hover{width:218px!important}
+.sb .lbl{opacity:0;transition:opacity .16s;white-space:nowrap}
+.sb:hover .lbl{opacity:1}
+.sb a,.sb button{transition:background .16s,color .16s}
+.sb a:hover,.sb button:hover{background:var(--sidebar-hover);color:var(--sidebar-ink)}
+a.q:hover,button.q:hover{color:var(--text-strong)}
+.lrow:hover{background:var(--surface)}
+.cta:hover{background:var(--surface-2)}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);color:var(--text-body);font-family:var(--font-serif)">
+
+<aside class="sb" style="position:fixed;left:0;top:0;bottom:0;width:66px;background:var(--sidebar-bg);border-right:1px solid var(--sidebar-line);z-index:40;display:flex;flex-direction:column;overflow:hidden">
+<div style="height:60px;display:flex;align-items:center;gap:12px;padding:0 21px;flex:none;border-bottom:1px solid var(--sidebar-line)">
+<svg viewBox="0 0 230 140" width="30" height="18" style="flex:none"><g transform="translate(22,0) skewX(-10)" fill="var(--sidebar-ink)"><path d="M40,44 A20,22 0 1 1 80,44 A20,22 0 1 1 40,44 ZM47,41 A11,12 0 1 0 69,41 A11,12 0 1 0 47,41 ZM31,90 A27,28 0 1 1 85,90 A27,28 0 1 1 31,90 ZM40,86 A16,16 0 1 0 72,86 A16,16 0 1 0 40,86 ZM96,92 A22,26 0 1 1 140,92 A22,26 0 1 1 96,92 ZM105,88 A13,16 0 1 0 131,88 A13,16 0 1 0 105,88 ZM150,92 A22,26 0 1 1 194,92 A22,26 0 1 1 150,92 ZM159,88 A13,16 0 1 0 185,88 A13,16 0 1 0 159,88 ZM70,100 C80,112 96,108 106,100 C98,104 84,105 74,94 ZM132,101 C140,111 152,111 160,101 C152,106 141,106 135,96 ZM186,98 C198,94 204,84 203,73 C199,83 196,90 184,94 ZM40,29 C45,22 54,19 61,21 C54,23 48,26 44,32 Z"></path></g></svg>
+<span class="lbl" style="font-size:16px;font-weight:600;color:var(--sidebar-ink);letter-spacing:-.018em">800Path</span>
+</div>
+<nav style="display:flex;flex-direction:column;gap:2px;padding:14px 9px;flex:1;font-family:var(--font-sans);font-size:13px">
+<a href="../plan-overview/PlanOverview.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><rect x="2" y="3" width="12" height="11" rx="1"></rect><path d="M2 6.5h12M6 3v-1.5M10 3v-1.5"></path></svg><span class="lbl">My plan</span></a>
+<span style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);background:var(--sidebar-active);color:var(--text-on-brand)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><path d="M2 13V8M6 13V4M10 13V9.5M14 13V6"></path></svg><span class="lbl">Dashboard</span></span>
+<a href="../practice-setup/PracticeSetup.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><path d="M3 2.5h10v11H3zM5.5 6h5M5.5 9h3"></path></svg><span class="lbl">Extra practice</span></a>
+<a href="../history/History.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" style="flex:none"><circle cx="8" cy="8" r="5.7"></circle><path d="M8 5v3.2l2.2 1.4"></path></svg><span class="lbl">History</span></a>
+</nav>
+<div style="padding:16px 9px;border-top:1px solid var(--sidebar-line);flex:none">
+<div style="padding:0 12px 14px">
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:2px;width:34px">
+<sc-for list="{{ railCells }}" as="r" hint-placeholder-count="30">
+<span style="aspect-ratio:1;background:var(--sidebar-rail);border-radius:1px" ref="{{ r.ref }}"></span>
+</sc-for>
+</div>
+<p class="lbl" style="font-family:var(--font-sans);font-size:11px;color:var(--sidebar-ink-faint);margin:10px 0 0">Day {{ planDay }} of thirty · {{ streak }}-day streak</p>
+</div>
+<a href="../account-center/AccountCenter.dc.html" style="display:flex;align-items:center;gap:14px;padding:10px 12px;border-radius:var(--radius-md);color:var(--sidebar-ink-muted);font-family:var(--font-sans);font-size:13px"><span style="width:16px;height:16px;border-radius:999px;border:1px solid var(--sidebar-ink-faint);display:flex;align-items:center;justify-content:center;font-size:9px;flex:none">M</span><span class="lbl">Maya Ruiz</span></a>
+</div>
+</aside>
+
+<main style="margin-left:66px;padding:0 0 96px">
+<div style="max-width:1080px;margin:0 auto;padding:0 56px">
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;height:60px;border-bottom:1px solid var(--border);font-family:var(--font-sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint)">
+<span style="align-self:center">{{ dateLine }}</span>
+<span style="align-self:center;font-variant-numeric:tabular-nums">Day {{ planDay }} / 30 · {{ planSubj }}</span>
+</div>
+
+<div class="fu" style="display:grid;grid-template-columns:1fr 236px;gap:56px;align-items:start;padding:56px 0 0">
+<div>
+<h1 style="font-weight:400;font-size:15px;font-family:var(--font-sans);letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 22px;font-size:11px">The briefing</h1>
+<p style="font-size:23px;line-height:1.52;letter-spacing:-.012em;color:var(--text-strong);margin:0;max-width:54ch;text-wrap:pretty"><span style="float:left;font-size:62px;line-height:.82;font-weight:600;margin:5px 12px 0 0;color:var(--text-strong)">{{ briefCap }}</span>{{ briefOpen }}</p>
+<p style="font-size:17px;line-height:1.68;color:var(--text-muted);margin:20px 0 0;max-width:58ch;text-wrap:pretty">{{ briefBody }}</p>
+</div>
+<div style="border-left:1px solid var(--border);padding:2px 0 2px 24px">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 14px">In the margin</p>
+<p style="font-size:15px;line-height:1.6;color:var(--text-muted);margin:0 0 16px">Weakest skill this week</p>
+<p style="font-size:19px;line-height:1.3;color:var(--text-strong);margin:0 0 20px">Command of Evidence</p>
+<div style="height:1px;background:var(--border);margin:0 0 18px"></div>
+<p style="font-family:var(--font-sans);font-size:12px;line-height:1.66;color:var(--text-faint);margin:0">Day {{ planDay }} draws on it twice. Watch the line references — they are the whole answer.</p>
+</div>
+</div>
+
+<div class="fu f2" style="display:grid;grid-template-columns:repeat(4,1fr);margin:48px 0 0;border-top:1px solid var(--line-strong);border-bottom:1px solid var(--border)">
+<div style="padding:20px 28px 20px 0">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 10px">Plan progress</p>
+<p style="font-family:var(--font-sans);font-size:26px;font-weight:500;color:var(--text-strong);margin:0;line-height:1;font-variant-numeric:tabular-nums">{{ planDay }}<span style="font-size:14px;color:var(--text-faint)"> / 30</span></p>
+</div>
+<div style="padding:20px 28px;border-left:1px solid var(--border)">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 10px">Average accuracy</p>
+<p style="font-family:var(--font-sans);font-size:26px;font-weight:500;color:var(--text-strong);margin:0;line-height:1;font-variant-numeric:tabular-nums">76%</p>
+</div>
+<div style="padding:20px 28px;border-left:1px solid var(--border)">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 10px">Against last week</p>
+<p style="font-family:var(--font-sans);font-size:26px;font-weight:500;color:var(--text-strong);margin:0;line-height:1;font-variant-numeric:tabular-nums">+8</p>
+</div>
+<div style="padding:20px 0 20px 28px;border-left:1px solid var(--border)">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 10px">Days remaining</p>
+<p style="font-family:var(--font-sans);font-size:26px;font-weight:500;color:var(--text-strong);margin:0;line-height:1;font-variant-numeric:tabular-nums">{{ daysLeft }}</p>
+</div>
+</div>
+
+<div class="fu f3" style="display:grid;grid-template-columns:1.12fr 1fr;gap:48px;margin:48px 0 0;align-items:stretch">
+
+<div style="background:var(--dark-900);color:var(--text-on-dark);border-radius:var(--radius-2xl);padding:40px 44px 38px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin:0 0 24px;font-family:var(--font-sans);font-size:11px;color:var(--text-on-dark-faint)">
+<span style="letter-spacing:.16em;text-transform:uppercase">Today · Day {{ planDay }}</span>
+<span style="font-variant-numeric:tabular-nums">12 questions · {{ planMins }} min</span>
+</div>
+<h2 style="font-weight:400;font-size:34px;line-height:1.1;letter-spacing:-.022em;color:var(--text-on-dark);margin:0 0 14px;max-width:20ch;text-wrap:pretty">{{ planFocus }}</h2>
+<p style="font-size:16px;line-height:1.66;color:var(--text-on-dark-muted);margin:0 0 32px;max-width:40ch">A warm-up question, then the timed module. Nothing to choose — today is already decided.</p>
+<div style="margin-top:auto;display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+<button class="cta" onClick="{{ goToday }}" style="border:0;background:var(--text-on-dark);color:var(--dark-900);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:14px 28px;border-radius:var(--radius-lg);cursor:pointer;transition:background .16s">{{ beginLabel }}</button>
+<button onClick="{{ goPlan }}" style="border:0;background:none;font-family:var(--font-sans);font-size:13px;color:var(--text-on-dark-faint);cursor:pointer;padding:0">View the full plan</button>
+</div>
+</div>
+
+<div>
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 14px">The thirty days</p>
+<div style="display:grid;grid-template-columns:repeat(10,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden">
+<sc-for list="{{ planCells }}" as="c" hint-placeholder-count="30">
+<div style="aspect-ratio:1.15;display:flex;align-items:center;justify-content:center;background:var(--surface)" ref="{{ c.cellRef }}"><span style="font-family:var(--font-sans);font-size:11px;font-variant-numeric:tabular-nums;color:var(--ink-300)" ref="{{ c.numRef }}">{{ c.n }}</span></div>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0 0;border-top:1px solid var(--border);padding:18px 0 0">
+<span><span style="font-family:var(--font-sans);font-size:24px;font-weight:500;color:var(--text-strong);font-variant-numeric:tabular-nums">{{ streak }}</span><span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);display:block;margin-top:5px">day streak</span></span>
+<span><span style="font-family:var(--font-sans);font-size:24px;font-weight:500;color:var(--text-strong);font-variant-numeric:tabular-nums">{{ bestAccuracy }}%</span><span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);display:block;margin-top:5px">best of last three</span></span>
+</div>
+</div>
+
+</div>
+
+<div style="margin:64px 0 0">
+<div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 0 12px;border-bottom:1px solid var(--line-strong)">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0">Recent days</p>
+<a class="q" href="../history/History.dc.html" style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint)">Full history</a>
+</div>
+<a class="lrow" href="../results/Results.dc.html" style="display:grid;grid-template-columns:62px 1fr 116px 70px;align-items:baseline;gap:20px;padding:16px 4px;border-bottom:1px solid var(--border)">
+<span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);font-variant-numeric:tabular-nums">Day 11</span>
+<span style="font-size:16px;color:var(--text-strong)">Boundaries <span style="font-size:14px;color:var(--text-faint)">· English</span></span>
+<span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint)">Jul 20, 2026</span>
+<span style="font-family:var(--font-sans);font-size:13px;color:var(--text-strong);text-align:right;font-variant-numeric:tabular-nums">83%</span>
+</a>
+<a class="lrow" href="../results/Results.dc.html" style="display:grid;grid-template-columns:62px 1fr 116px 70px;align-items:baseline;gap:20px;padding:16px 4px;border-bottom:1px solid var(--border)">
+<span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);font-variant-numeric:tabular-nums">Day 10</span>
+<span style="font-size:16px;color:var(--text-strong)">Rhetorical Synthesis <span style="font-size:14px;color:var(--text-faint)">· English</span></span>
+<span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint)">Jul 19, 2026</span>
+<span style="font-family:var(--font-sans);font-size:13px;color:var(--accent);text-align:right;font-variant-numeric:tabular-nums">58%</span>
+</a>
+<a class="lrow" href="../results/Results.dc.html" style="display:grid;grid-template-columns:62px 1fr 116px 70px;align-items:baseline;gap:20px;padding:16px 4px;border-bottom:1px solid var(--border)">
+<span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);font-variant-numeric:tabular-nums">Day 9</span>
+<span style="font-size:16px;color:var(--text-strong)">Problem-Solving &amp; Data Analysis <span style="font-size:14px;color:var(--text-faint)">· Math</span></span>
+<span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint)">Jul 18, 2026</span>
+<span style="font-family:var(--font-sans);font-size:13px;color:var(--text-strong);text-align:right;font-variant-numeric:tabular-nums">75%</span>
+</a>
+</div>
+
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;planDay&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:12,&quot;min&quot;:1,&quot;max&quot;:30,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Plan state&quot;}}">
+class Component extends DCLogic {
+  state = { streak: 11, storedDay: null };
+
+  componentDidMount() {
+    try {
+      const d = parseInt(localStorage.getItem('800path_plan_day'), 10);
+      const streak = parseInt(localStorage.getItem('800path_streak') || '11', 10);
+      this.setState({ storedDay: d || null, streak: isNaN(streak) ? 11 : streak });
+    } catch (e) {}
+  }
+
+  goToday() { window.location.href = '../daily-session/DailySession.dc.html'; }
+  goPlan() { window.location.href = '../plan-overview/PlanOverview.dc.html'; }
+
+  renderVals() {
+    const st = this.state;
+    const planDay = Math.min(30, Math.max(1, parseInt(this.props.planDay ?? st.storedDay ?? 12, 10) || 12));
+    const isMath = planDay % 3 === 0;
+    const engSkills = ['Words in Context', 'Central Ideas & Details', 'Command of Evidence', 'Inferences', 'Text Structure & Purpose', 'Transitions', 'Rhetorical Synthesis', 'Boundaries', 'Cross-Text Connections', 'Form, Structure, & Sense'];
+    const mathUnits = ['Algebra — Linear Equations', 'Advanced Math — Nonlinear Functions', 'Problem-Solving & Data Analysis', 'Geometry & Trigonometry'];
+    const planFocus = isMath ? mathUnits[Math.floor(planDay / 3 - 1) % 4] : engSkills[(planDay - Math.floor(planDay / 3) - 1) % 10];
+
+    const planCells = [], railCells = [];
+    for (let d = 1; d <= 30; d++) {
+      const done = d < planDay, today = d === planDay;
+      const bg = done ? 'var(--surface-2)' : 'var(--surface)';
+      const col = today ? 'var(--accent)' : done ? 'var(--text-strong)' : 'var(--ink-300)';
+      planCells.push({
+        n: d,
+        cellRef: (el) => { if (el) el.style.background = bg; },
+        numRef: (el) => { if (el) el.style.color = col; }
+      });
+      const rbg = done ? 'var(--sidebar-ink-muted)' : today ? 'var(--mark)' : 'var(--sidebar-rail)';
+      railCells.push({ ref: (el) => { if (el) el.style.background = rbg; } });
+    }
+
+    const streak = st.streak;
+    let briefBody;
+    if (streak <= 0) briefBody = 'Nothing is behind you yet and nothing is lost — the sequence starts wherever you open it. Twelve questions is a smaller commitment than it sounds, and it is the whole ask for today.';
+    else if (streak < 3) briefBody = 'Two or three sittings in, the plan is still deciding what you are good at. Answer honestly rather than carefully; the sequence adjusts to what it sees.';
+    else if (streak < 7) briefBody = 'The habit is taking hold, which is the part most people never reach. From here the questions begin to lean harder on the skills you have been avoiding.';
+    else briefBody = streak + ' days unbroken. The plan now has enough of your work to aim properly, so expect today to be pointed rather than broad — it is chosen from your misses, not at random.';
+
+    const opener = isMath
+      ? 'oday is a Math sitting: twelve questions, twenty-two minutes, calculator when you want it.'
+      : 'oday is a Reading and Writing sitting: twelve questions, eighteen minutes, one passage at a time.';
+
+    const d = new Date();
+    const dateLine = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+    return {
+      streak, bestAccuracy: 83, dateLine, planDay, planFocus, planCells, railCells,
+      daysLeft: 30 - planDay + 1,
+      planSubj: isMath ? 'Math' : 'English',
+      planMins: isMath ? 22 : 18,
+      briefCap: 'T',
+      briefOpen: opener,
+      briefBody,
+      beginLabel: 'Begin Day ' + planDay,
+      goToday: () => this.goToday(),
+      goPlan: () => this.goPlan()
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+/* ─────────────────────────────────────────────────────────────
+   800Path — Color tokens
+   Bone & Charcoal. The sheet is warm bone stock; the ink is a soft
+   near-black with a brown undertone (never blue-black, never pure #000).
+   One chromatic accent — burnt sienna — appears once per view, on the
+   thing that matters. Olive marks correct, brass marks progress.
+   Nothing pastel. Colour lives in 1px rules and small marks, never in
+   large fills; large fills are bone or charcoal only.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* ── Charcoal ramp: the brand. Warm near-black stepped into stone grays. ── */
+  --lilac-50:  #f1efe9;  /* legacy slots → charcoal ramp */
+  --lilac-100: #e4e1d9;
+  --lilac-200: #cec9be;
+  --lilac-300: #97928a;
+  --lilac-400: #56524b;
+  --lilac-500: #201f1c;  /* primary — charcoal ink */
+  --lilac-600: #383530;  /* hover — lifted charcoal */
+  --lilac-700: #171613;  /* deepest */
+
+  /* ── Wine: the primary mark. Buttons, active state, the line that matters. ── */
+  --wine-50:  #f3eae9;
+  --wine-100: #e5d2d0;
+  --wine-500: #6b3535;
+  --wine-600: #572a2b;
+  --wine-700: #401f20;
+
+  /* ── Oat: warm light neutral. The sidebar, quiet panels, ruled fills. ── */
+  --oat-50:  #f1ede2;
+  --oat-100: #e8e4d8;
+  --oat-200: #ddd8c8;
+  --oat-300: #cfc8b4;
+  --oat-line: #d4cebd;
+
+  /* ── Sidebar family — oat spine, ink type, wine active mark. ── */
+  --sidebar-bg:        var(--oat-100);
+  --sidebar-line:      var(--oat-line);
+  --sidebar-hover:     var(--oat-200);
+  --sidebar-active:    var(--wine-500);
+  --sidebar-rail:      var(--oat-300);
+  --sidebar-ink:       #201f1c;
+  --sidebar-ink-muted: #5c574f;
+  --sidebar-ink-faint: #8a8479;
+
+  /* ── The accent: burnt sienna. Emphasis, live state, the one wrong answer. ── */
+  --claret-50:  #f6ece7;
+  --claret-100: #ebd9d0;
+  --claret-500: #8f4a35;
+  --claret-600: #743a29;
+  --claret-700: #57291c;
+
+  /* ── Olive: correct, complete, steady. A printed green, not a screen green. ── */
+  --moss-50:  #eef0e9;
+  --moss-100: #e0e4d8;
+  --moss-500: #4a5d47;
+  --moss-600: #3a4a37;
+
+  /* ── Brass: streaks, in-flight progress, brass-tack metadata. ── */
+  --ochre-50:  #f5f0e4;
+  --ochre-100: #eae2cd;
+  --ochre-500: #8a7550;
+  --ochre-600: #6f5d3e;
+
+  /* ── Two supporting inks, for category variety only ── */
+  --plum-50:  #f2ecee;
+  --plum-500: #6b4a4f;
+  --slate-50: #eceeef;
+  --slate-500: #45565c;
+
+  /* ── Legacy tone slots, remapped. Difficulty ramp: olive → brass → sienna. ── */
+  --mint-surface:   var(--moss-50);
+  --mint-ink:       var(--moss-500);
+  --sky-surface:    var(--slate-50);
+  --sky-ink:        var(--slate-500);
+  --butter-surface: var(--ochre-50);
+  --butter-ink:     var(--ochre-500);
+  --peach-surface:  var(--claret-50);
+  --peach-ink:      var(--claret-500);
+  --rose-surface:   var(--claret-50);
+  --rose-ink:       var(--claret-500);
+  --indigo-surface: var(--slate-50);
+  --indigo-ink:     var(--slate-500);
+  --violet-surface: var(--plum-50);
+  --violet-ink:     var(--plum-500);
+  --magenta-surface:var(--claret-50);
+  --magenta-ink:    var(--claret-600);
+  --cobalt-surface: var(--slate-50);
+  --cobalt-ink:     var(--slate-500);
+
+  /* ── Neutrals (warm ink) ── */
+  --ink-900: #201f1c;  /* primary text */
+  --ink-700: #423f3a;  /* body */
+  --ink-500: #736f68;  /* muted */
+  --ink-400: #97928a;  /* faint — metadata only */
+  --ink-300: #bdb8ae;
+  --line:    #e2ded5;  /* hairline on bone */
+  --line-strong: #cec9be;
+
+  /* ── Surfaces — warm bone stock ── */
+  --canvas:    #f6f4ef;  /* page background */
+  --surface:   #fdfcf9;  /* panels — a shade brighter than the sheet */
+  --surface-2: #eeebe3;  /* sunken / soft panel fill */
+  --overlay:   rgba(32, 31, 28, 0.44);
+
+  /* ── Semantic ── */
+  --success:         var(--moss-500);
+  --success-surface: var(--moss-50);
+  --warning:         var(--ochre-500);
+  --warning-surface: var(--ochre-50);
+  --danger:          var(--claret-500);
+  --danger-surface:  var(--claret-50);
+
+  /* ── Aliases ── */
+  /* Ink carries the weight: buttons, progress, data lines. Wine is reserved
+     for the small active mark (--mark) — nav state, today's cell. */
+  --brand:            var(--dark-900);
+  --brand-hover:      var(--dark-700);
+  --brand-soft:       var(--surface-2);
+  --brand-ink:        var(--dark-950);
+  --mark:             var(--wine-500);
+  --mark-hover:       var(--wine-600);
+  --mark-soft:        var(--wine-50);
+  --accent:           var(--claret-500);
+  --accent-hover:     var(--claret-600);
+  --accent-soft:      var(--claret-50);
+  --text-strong:      var(--ink-900);
+  --text-body:        var(--ink-700);
+  --text-muted:       var(--ink-500);
+  --text-faint:       var(--ink-400);
+  --text-on-brand:    #f6f4ef;
+  --border:           var(--line);
+  --border-strong:    var(--line-strong);
+  --surface-card:     var(--surface);
+  --surface-sunken:   var(--surface-2);
+  --bg-canvas:        var(--canvas);
+  --focus-ring:       rgba(32, 31, 28, 0.22);
+
+  /* ── Brass slots (legacy gold) ── */
+  --gold-400: #c2a878;
+  --gold-500: var(--ochre-500);
+  --gold-600: var(--ochre-600);
+
+  /* ── Charcoal surface family — the sidebar, hero panels, study chrome. ── */
+  --dark-950: #171613;
+  --dark-900: #201f1c;  /* primary dark surface */
+  --dark-800: #2b2925;  /* raised panel on charcoal */
+  --dark-700: #383530;  /* hover/active on charcoal */
+  --dark-border: #393630;
+  --text-on-dark:        #f6f4ef;
+  --text-on-dark-muted:  #a8a39a;
+  --text-on-dark-faint:  #78736b;
+
+  /* ── Gradient slots: charcoal into sienna. At most once per page. ── */
+  --gradient-radiant:      linear-gradient(135deg, #171613 0%, #3b2a22 55%, #8f4a35 100%); /* @kind color */
+  --gradient-radiant-soft: linear-gradient(135deg, #e4e1d9 0%, #ebd9d0 100%); /* @kind color */
+
+  /* ── Pop slots, remapped to printed inks ── */
+  --pop-pink:    var(--claret-500);
+  --pop-violet:  var(--plum-500);
+  --pop-blue:    var(--slate-500);
+  --pop-coral:   var(--ochre-500);
+}

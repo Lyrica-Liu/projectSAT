@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Daily Session" description="800Path daily plan session — the reading desk: passage scrolls independently on the left, question held fixed on the right, numbered navigator and a large mono timer in the chrome. Day intro, timed module, wrap-up." -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+<style>
+html{-webkit-font-smoothing:antialiased}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fade{animation:fadeUp .34s cubic-bezier(.25,.6,.3,1) both}
+.row:hover .rowtext{color:var(--text-strong)}
+a.q:hover,button.q:hover{color:var(--text-strong)}
+.nav-n:hover{border-color:var(--text-muted)}
+.cta:hover{background:var(--brand-hover)}
+.scroll::-webkit-scrollbar{width:9px}
+.scroll::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:99px;border:3px solid var(--canvas)}
+.scroll::-webkit-scrollbar-track{background:transparent}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--canvas);color:var(--text-body);font-family:var(--font-serif)">
+
+<header style="position:sticky;top:0;z-index:20;background:var(--canvas);border-bottom:1px solid var(--border)">
+<div style="max-width:1360px;margin:0 auto;padding:0 44px;display:flex;align-items:center;justify-content:space-between;gap:32px;height:64px">
+<span style="display:inline-flex;align-items:center;gap:16px;flex:none">
+<span style="font-size:16px;font-weight:600;color:var(--text-strong);letter-spacing:-.018em">800Path</span>
+<span style="width:1px;height:16px;background:var(--line-strong)"></span>
+<span style="font-family:var(--font-sans);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint)">Day {{ day }} · {{ subjLabel }}</span>
+</span>
+<sc-if value="{{ isIntro }}" hint-placeholder-val="{{ true }}">
+<a class="q" href="../plan-overview/PlanOverview.dc.html" style="font-family:var(--font-sans);font-size:13px;color:var(--text-muted)">← My plan</a>
+</sc-if>
+<sc-if value="{{ isQuiz }}" hint-placeholder-val="{{ false }}">
+<span style="display:flex;gap:4px;align-items:center">
+<sc-for list="{{ navCells }}" as="n" hint-placeholder-count="12">
+<button class="nav-n" onClick="{{ n.go }}" style="width:26px;height:26px;border:1px solid var(--border);background:transparent;border-radius:var(--radius-sm);font-family:var(--font-sans);font-size:11px;font-variant-numeric:tabular-nums;color:var(--text-faint);cursor:pointer;padding:0;transition:border-color .14s,background .14s" ref="{{ n.ref }}">{{ n.n }}</button>
+</sc-for>
+</span>
+</sc-if>
+<sc-if value="{{ isQuiz }}" hint-placeholder-val="{{ false }}">
+<span style="display:inline-flex;align-items:center;gap:24px;flex:none">
+<span style="text-align:right">
+<span style="display:block;font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--text-strong);font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.01em">{{ clock }}</span>
+<span style="display:block;font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin-top:5px">remaining</span>
+</span>
+<button class="q" onClick="{{ askExit }}" style="border:1px solid var(--border);background:none;font-family:var(--font-sans);font-size:12px;color:var(--text-muted);cursor:pointer;padding:7px 13px;border-radius:var(--radius-md)">Exit</button>
+</span>
+</sc-if>
+</div>
+<sc-if value="{{ isQuiz }}" hint-placeholder-val="{{ false }}">
+<div style="height:2px;background:var(--surface-2)">{{ progressEl }}</div>
+</sc-if>
+</header>
+
+<!-- INTRO -->
+<sc-if value="{{ isIntro }}" hint-placeholder-val="{{ true }}">
+<main class="fade" style="max-width:1080px;margin:0 auto;padding:88px 44px 112px">
+<div style="display:grid;grid-template-columns:1fr 300px;gap:64px;align-items:start">
+<div>
+<p style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 26px;display:flex;align-items:center;gap:14px"><span style="width:26px;height:1px;background:var(--line-strong)"></span>Day {{ day }} of thirty · {{ subjLabel }}</p>
+<h1 style="font-weight:400;font-size:52px;line-height:1.06;letter-spacing:-.026em;color:var(--text-strong);margin:0;max-width:20ch;text-wrap:pretty">{{ focus }}</h1>
+<p style="font-size:18px;line-height:1.66;color:var(--text-muted);margin:26px 0 0;max-width:48ch;text-wrap:pretty">One warm-up question, then the timed module. Accuracy first, pace second — the clock is here to make the pressure familiar, not to rush you.</p>
+<div style="display:flex;align-items:center;gap:24px;margin:40px 0 0">
+<button class="cta" onClick="{{ begin }}" style="border:0;background:var(--brand);color:var(--text-on-brand);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:15px 30px;border-radius:var(--radius-lg);cursor:pointer;transition:background .16s">Begin the module</button>
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint)">The timer starts when you begin.</span>
+</div>
+</div>
+<div style="border-left:1px solid var(--border);padding:4px 0 4px 24px">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 18px">Today's sitting</p>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 0 12px;border-bottom:1px solid var(--border);margin-bottom:12px"><span style="font-size:15px;color:var(--text-muted)">Warm-up</span><span style="font-family:var(--font-sans);font-size:12px;color:var(--text-strong)">1, untimed</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 0 12px;border-bottom:1px solid var(--border);margin-bottom:12px"><span style="font-size:15px;color:var(--text-muted)">Module</span><span style="font-family:var(--font-sans);font-size:12px;color:var(--text-strong);font-variant-numeric:tabular-nums">{{ moduleMeta }}</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:15px;color:var(--text-muted)">Counts toward</span><span style="font-family:var(--font-sans);font-size:12px;color:var(--text-strong)">Streak</span></div>
+</div>
+</div>
+</main>
+</sc-if>
+
+<!-- QUIZ -->
+<sc-if value="{{ isQuiz }}" hint-placeholder-val="{{ false }}">
+<main class="fade" style="max-width:1360px;margin:0 auto;padding:0 44px">
+<sc-if value="{{ isMathShell }}" hint-placeholder-val="{{ false }}">
+<p style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);margin:0;padding:12px 0;border-bottom:1px solid var(--border)">Math module · preview shell — generated questions will appear in this layout.</p>
+</sc-if>
+<div style="display:grid;grid-template-columns:1fr 1fr" ref="{{ deskRef }}">
+<sc-if value="{{ q.hasPassage }}" hint-placeholder-val="{{ true }}">
+<div class="scroll" style="height:calc(100vh - 66px);overflow-y:auto;padding:52px 56px 72px 0;border-right:1px solid var(--border)">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 24px">Passage</p>
+<p style="font-size:18px;line-height:1.8;color:var(--text-body);margin:0;max-width:34rem;text-wrap:pretty">{{ q.passage }}</p>
+</div>
+</sc-if>
+<div class="scroll" style="height:calc(100vh - 66px);overflow-y:auto;padding:52px 0 72px 56px" ref="{{ rightRef }}">
+<div style="max-width:34rem" ref="{{ measureRef }}">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 22px">{{ q.skill }} · {{ q.diff }}</p>
+<p style="font-size:20px;line-height:1.48;letter-spacing:-.008em;color:var(--text-strong);margin:0 0 32px;text-wrap:pretty">{{ q.prompt }}</p>
+<div style="border-top:1px solid var(--border)">
+<sc-for list="{{ opts }}" as="o" hint-placeholder-count="4">
+<div class="row" onClick="{{ o.pick }}" ref="{{ o.ref }}" style="display:flex;gap:18px;align-items:flex-start;padding:17px 18px;border-bottom:1px solid var(--border);border-left:2px solid transparent;background:transparent;cursor:pointer;transition:background .13s">
+<span style="font-family:var(--font-sans);font-size:11px;letter-spacing:.04em;color:var(--text-faint);padding-top:5px;width:11px;flex:none" ref="{{ o.letterRef }}">{{ o.letter }}</span>
+<span class="rowtext" style="font-size:17px;line-height:1.5;color:var(--text-body)" ref="{{ o.textRef }}">{{ o.text }}</span>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ showFeedback }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ isCorrect }}" hint-placeholder-val="{{ true }}">
+<div class="fade" style="margin:30px 0 0;background:var(--moss-50);border-left:2px solid var(--success);border-radius:0 var(--radius-md) var(--radius-md) 0;padding:20px 22px">
+<p style="font-family:var(--font-sans);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--success);margin:0 0 10px">Correct</p>
+<p style="font-size:16px;line-height:1.68;color:var(--text-body);margin:0">{{ q.explain }}</p>
+</div>
+</sc-if>
+<sc-if value="{{ isWrong }}" hint-placeholder-val="{{ false }}">
+<div class="fade" style="margin:30px 0 0;background:var(--claret-50);border-left:2px solid var(--danger);border-radius:0 var(--radius-md) var(--radius-md) 0;padding:20px 22px">
+<p style="font-family:var(--font-sans);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--danger);margin:0 0 10px">Not quite</p>
+<p style="font-size:16px;line-height:1.68;color:var(--text-body);margin:0">{{ q.explain }}</p>
+</div>
+</sc-if>
+<div style="display:flex;align-items:center;gap:24px;margin:32px 0 0">
+<button class="cta" onClick="{{ nextQ }}" style="border:0;background:var(--brand);color:var(--text-on-brand);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:13px 26px;border-radius:var(--radius-lg);cursor:pointer;transition:background .16s">{{ nextLabel }}</button>
+<span style="font-family:var(--font-sans);font-size:12px;color:var(--text-faint)">{{ qLabel }}</span>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</main>
+</sc-if>
+
+<!-- WRAP-UP -->
+<sc-if value="{{ isWrap }}" hint-placeholder-val="{{ false }}">
+<main class="fade" style="max-width:1080px;margin:0 auto;padding:88px 44px 112px">
+<p style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 26px;display:flex;align-items:center;gap:14px"><span style="width:26px;height:1px;background:var(--line-strong)"></span>Day {{ day }} of thirty · complete</p>
+<h1 style="font-weight:400;font-size:52px;line-height:1.06;letter-spacing:-.026em;color:var(--text-strong);margin:0">Well earned.</h1>
+<p style="font-size:18px;line-height:1.66;color:var(--text-muted);margin:24px 0 0;max-width:48ch;text-wrap:pretty">{{ wrapLine }}</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);margin:48px 0 0;border-top:1px solid var(--line-strong);border-bottom:1px solid var(--border)">
+<div style="padding:24px 32px 24px 0">
+<p style="font-family:var(--font-sans);font-size:30px;font-weight:500;color:var(--text-strong);margin:0;font-variant-numeric:tabular-nums;line-height:1">{{ accuracy }}%</p>
+<p style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);margin:9px 0 0">accuracy today</p>
+</div>
+<div style="padding:24px 32px;border-left:1px solid var(--border)">
+<p style="font-family:var(--font-sans);font-size:30px;font-weight:500;color:var(--text-strong);margin:0;font-variant-numeric:tabular-nums;line-height:1">{{ newStreak }}</p>
+<p style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);margin:9px 0 0">day streak</p>
+</div>
+<div style="padding:24px 0 24px 32px;border-left:1px solid var(--border)">
+<p style="font-family:var(--font-sans);font-size:30px;font-weight:500;color:var(--text-strong);margin:0;font-variant-numeric:tabular-nums;line-height:1">{{ daysLeft }}</p>
+<p style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);margin:9px 0 0">days remaining</p>
+</div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:24px;padding:20px 0;border-bottom:1px solid var(--border)">
+<span style="font-size:16px;color:var(--text-muted)">Tomorrow · <span style="color:var(--text-strong)">Day {{ tmwDay }}, {{ tmwSubj }}</span> — {{ tmwFocus }}</span>
+<span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);white-space:nowrap">Opens tomorrow</span>
+</div>
+<div style="display:flex;align-items:center;gap:26px;margin:40px 0 0">
+<button class="cta" onClick="{{ goResults }}" style="border:0;background:var(--brand);color:var(--text-on-brand);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:15px 30px;border-radius:var(--radius-lg);cursor:pointer;transition:background .16s">See full results</button>
+<button class="q" onClick="{{ goPlan }}" style="border:0;background:none;font-family:var(--font-sans);font-size:14px;color:var(--text-muted);cursor:pointer;padding:0">Back to my plan</button>
+</div>
+</main>
+</sc-if>
+
+<sc-if value="{{ showExit }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:50;background:var(--overlay);display:flex;align-items:center;justify-content:center;padding:24px">
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-2xl);padding:40px 40px 34px;max-width:420px;box-shadow:0 24px 60px rgba(32,31,28,.2)">
+<h2 style="font-weight:400;font-size:27px;line-height:1.15;color:var(--text-strong);margin:0 0 12px">Leave the module?</h2>
+<p style="font-size:16px;line-height:1.62;color:var(--text-muted);margin:0 0 28px">Day {{ day }} stays open, but today's answers won't be recorded. The timer is what keeps the practice honest.</p>
+<div style="display:flex;align-items:center;gap:24px">
+<button class="cta" onClick="{{ cancelExit }}" style="border:0;background:var(--brand);color:var(--text-on-brand);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:13px 26px;border-radius:var(--radius-lg);cursor:pointer;transition:background .16s">Keep going</button>
+<button class="q" onClick="{{ doExit }}" style="border:0;background:none;font-family:var(--font-sans);font-size:14px;color:var(--text-faint);cursor:pointer;padding:0">Leave anyway</button>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1360,&quot;height&quot;:900},&quot;day&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:12,&quot;min&quot;:1,&quot;max&quot;:30,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Session&quot;},&quot;subject&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;auto&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;english&quot;,&quot;math&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Session&quot;}}">
+class Component extends DCLogic {
+  state = { phase: 'intro', qi: 0, sel: null, correctCount: 0, secondsLeft: 18 * 60, showExit: false, storedDay: null };
+
+  componentDidMount() {
+    try { const d = parseInt(localStorage.getItem('800path_plan_day'), 10); if (d) this.setState({ storedDay: d }); } catch (e) {}
+  }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  planDay() { return Math.min(30, Math.max(1, parseInt(this.props.day ?? this.state.storedDay ?? 12, 10) || 12)); }
+
+  finishDay(day, accuracy) {
+    clearInterval(this._t);
+    try {
+      localStorage.setItem('800path_plan_day', String(Math.min(30, day + 1)));
+      localStorage.setItem('800path_streak', String(day));
+      localStorage.setItem('800path_acc_' + day, String(accuracy));
+    } catch (e) {}
+    this.setState({ phase: 'wrap' });
+  }
+
+  isMathDay() {
+    const day = this.planDay();
+    const subj = this.props.subject ?? 'auto';
+    return subj === 'auto' ? day % 3 === 0 : subj === 'math';
+  }
+
+  focusFor(d) {
+    const engSkills = ['Words in Context', 'Central Ideas & Details', 'Command of Evidence', 'Inferences', 'Text Structure & Purpose', 'Transitions', 'Rhetorical Synthesis', 'Boundaries', 'Cross-Text Connections', 'Form, Structure, & Sense'];
+    const mathUnits = ['Algebra — Linear Equations', 'Advanced Math — Nonlinear Functions', 'Problem-Solving & Data Analysis', 'Geometry & Trigonometry'];
+    if (d % 3 === 0) return mathUnits[Math.floor(d / 3 - 1) % 4];
+    return engSkills[(d - Math.floor(d / 3) - 1) % 10];
+  }
+
+  begin() {
+    const isMath = this.isMathDay();
+    this.setState({ phase: 'quiz', qi: 0, sel: null, correctCount: 0, secondsLeft: (isMath ? 22 : 18) * 60 });
+    clearInterval(this._t);
+    this._t = setInterval(() => {
+      this.setState(s => s.phase === 'quiz' && s.secondsLeft > 0 ? { secondsLeft: s.secondsLeft - 1 } : null);
+    }, 1000);
+  }
+
+  questions(isMath) {
+    if (isMath) return [
+      { skill: 'Warm-up', diff: 'Easy', hasPassage: false, prompt: 'If 3x + 5 = 20, what is the value of x?', options: ['3', '5', '15', '25/3'], correct: 1, explain: 'Subtract 5 from both sides (3x = 15), then divide by 3: x = 5.' },
+      { skill: 'Algebra', diff: 'Medium', hasPassage: false, prompt: 'A line passes through (0, 4) and (2, 10). What is its slope?', options: ['2', '3', '4', '6'], correct: 1, explain: 'Slope = (10 − 4) / (2 − 0) = 6 / 2 = 3.' },
+      { skill: 'Algebra', diff: 'Hard', hasPassage: false, prompt: 'If f(x) = 2x² − 3x and f(a) = 9, which could be the value of a?', options: ['−3', '−3/2', '3', '9/2'], correct: 2, explain: '2(3)² − 3(3) = 18 − 9 = 9, so a = 3 works.' }
+    ];
+    return [
+      { skill: 'Warm-up', diff: 'Easy', hasPassage: true, passage: 'The museum\u2019s new wing, though modest in size, transformed how visitors moved through the collection: instead of a fixed route, galleries now opened onto one another, inviting wandering. Curators had argued for years that the old enfilade taught visitors to hurry — one room implying the next — and that a plan without a prescribed order would slow them down. Attendance figures did not change; dwell time nearly doubled.', prompt: 'The passage suggests the new wing\u2019s main effect was to', options: ['increase the museum\u2019s total exhibition space', 'change how visitors navigate the collection', 'reduce crowding in the older galleries', 'showcase a newly acquired collection'], correct: 1, explain: 'The passage centers on movement — \u201ctransformed how visitors moved,\u201d \u201cinviting wandering\u201d — not size or crowding.' },
+      { skill: 'Words in Context', diff: 'Medium', hasPassage: true, passage: 'Early naturalists\u2019 field notes were often perfunctory — a date, a location, a species name — but Mora\u2019s journals were different: pages of careful observation, sketches, and questions that anticipated debates decades away. Her editors, preparing the 1911 collected edition, cut most of the questions on the grounds that a field guide should answer rather than ask.', prompt: 'As used in the text, \u201cperfunctory\u201d most nearly means', options: ['inaccurate', 'cursory', 'private', 'formal'], correct: 1, explain: 'Perfunctory notes are contrasted with \u201cpages of careful observation\u201d — brief and mechanical, i.e. cursory.' },
+      { skill: 'Command of Evidence', diff: 'Hard', hasPassage: true, passage: 'Researchers assumed urban birdsong grew louder to compete with traffic. But when Ferreira\u2019s team compared recordings across forty years, pitch had shifted upward more than volume had risen — songs moved above the noise rather than over it. The distinction matters: raising volume costs a bird energy it can ill afford, while shifting frequency costs comparatively little.', prompt: 'Which finding best supports the passage\u2019s conclusion?', options: ['Urban birds sing more often at dawn than rural birds', 'Recordings show rising average song volume since 1985', 'Song frequencies rose most near the loudest roadways', 'Bird populations declined in the noisiest districts'], correct: 2, explain: 'The claim is that pitch, not volume, adapted to noise — higher frequencies nearest the loudest noise directly supports it.' }
+    ];
+  }
+
+  renderVals() {
+    const st = this.state;
+    const day = this.planDay();
+    const isMath = this.isMathDay();
+    const qs = this.questions(isMath);
+    const q = qs[Math.min(st.qi, qs.length - 1)];
+    const answered = st.sel !== null;
+    const correct = answered && st.sel === q.correct;
+
+    const opts = q.options.map((text, i) => {
+      const isPick = i === st.sel, isKey = i === q.correct;
+      let edge = 'transparent', bg = 'transparent', textColor = 'var(--text-body)', letterColor = 'var(--text-faint)';
+      if (answered) {
+        if (isKey) { edge = 'var(--success)'; bg = 'var(--success-surface)'; textColor = 'var(--text-strong)'; letterColor = 'var(--success)'; }
+        else if (isPick) { edge = 'var(--danger)'; bg = 'var(--danger-surface)'; textColor = 'var(--text-muted)'; letterColor = 'var(--danger)'; }
+        else { textColor = 'var(--ink-400)'; letterColor = 'var(--ink-300)'; }
+      }
+      return {
+        letter: 'ABCD'[i], text,
+        ref: (el) => { if (!el) return; el.style.borderLeftColor = edge; el.style.background = bg; el.style.cursor = answered ? 'default' : 'pointer'; },
+        letterRef: (el) => { if (el) el.style.color = letterColor; },
+        textRef: (el) => { if (el) el.style.color = textColor; },
+        pick: answered ? undefined : () => this.setState(s => ({ sel: i, correctCount: s.correctCount + (i === q.correct ? 1 : 0) }))
+      };
+    });
+
+    const focus = this.focusFor(day);
+    const tmwDay = Math.min(30, day + 1);
+    const tmwIsMath = tmwDay % 3 === 0;
+    const mm = Math.floor(st.secondsLeft / 60), ss = st.secondsLeft % 60;
+    const last = st.qi === qs.length - 1;
+    const accuracy = Math.round((st.correctCount / qs.length) * 100);
+
+    const navCells = qs.map((_, i) => {
+      const isCur = i === st.qi, isPast = i < st.qi;
+      const border = isCur ? 'var(--text-strong)' : isPast ? 'var(--line-strong)' : 'var(--border)';
+      const bg = isPast ? 'var(--surface-2)' : 'transparent';
+      const col = isCur ? 'var(--text-strong)' : isPast ? 'var(--text-muted)' : 'var(--text-faint)';
+      return {
+        n: i + 1,
+        ref: (el) => { if (!el) return; el.style.borderColor = border; el.style.background = bg; el.style.color = col; el.style.fontWeight = isCur ? '600' : '400'; },
+        go: i <= st.qi ? () => this.setState({ qi: i, sel: null }) : undefined
+      };
+    });
+
+    return {
+      day, focus, subjLabel: isMath ? 'Math' : 'English',
+      isMathShell: isMath && st.phase === 'quiz',
+      moduleMeta: isMath ? '12 questions · 22 min' : '12 questions · 18 min',
+      isIntro: st.phase === 'intro', isQuiz: st.phase === 'quiz', isWrap: st.phase === 'wrap',
+      clock: mm + ':' + (ss < 10 ? '0' : '') + ss,
+      navCells,
+      deskRef: (el) => { if (el) el.style.gridTemplateColumns = q.hasPassage ? '1fr 1fr' : '1fr'; },
+      rightRef: (el) => { if (el) el.style.paddingLeft = q.hasPassage ? '56px' : '0'; },
+      measureRef: (el) => { if (el) el.style.margin = q.hasPassage ? '0' : '0 auto'; },
+      progressEl: React.createElement('div', { style: { width: ((st.qi + (answered ? 1 : 0)) / qs.length * 100) + '%', height: '100%', background: 'var(--brand)', transition: 'width .4s var(--ease-out)' } }),
+      q, opts, showFeedback: answered,
+      isCorrect: answered && correct,
+      isWrong: answered && !correct,
+      qLabel: 'Question ' + (st.qi + 1) + ' of ' + qs.length,
+      nextLabel: last ? 'Finish day' : 'Next question',
+      nextQ: () => last ? this.finishDay(day, accuracy) : this.setState(s => ({ qi: s.qi + 1, sel: null })),
+      showExit: st.showExit,
+      askExit: () => this.setState({ showExit: true }),
+      cancelExit: () => this.setState({ showExit: false }),
+      doExit: () => { window.location.href = '../plan-overview/PlanOverview.dc.html'; },
+      accuracy, newStreak: day, daysLeft: 30 - day,
+      wrapLine: accuracy >= 67 ? 'Careful work. Your record for today is written — come back tomorrow and keep the line unbroken.' : 'Every day counts, the hard ones most. Tomorrow\u2019s module revisits what tripped you up here.',
+      tmwDay, tmwSubj: tmwIsMath ? 'Math' : 'English', tmwFocus: this.focusFor(tmwDay),
+      begin: () => this.begin(),
+      goResults: () => { window.location.href = '../results/Results.dc.html'; },
+      goPlan: () => { window.location.href = '../plan-overview/PlanOverview.dc.html'; }
+    };
+  }
+}
+</script>
+</body>
+</html>

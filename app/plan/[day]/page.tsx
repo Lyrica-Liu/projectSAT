@@ -2,18 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingScreen, Wordmark } from "@/components/ui/nav";
-import { Button, Card, Badge } from "@/components/ui/ds";
 import {
   getPlanDay,
   getCurrentPlanDay,
   englishSlotNumber,
   ENGLISH_SESSION_LENGTH,
   MATH_SESSION_LENGTH,
-  DIFFICULTY_LABELS,
-  DIFFICULTY_TONES,
   calcStreak,
 } from "@/lib/plan";
 import type { PlanDayRow, Difficulty } from "@/lib/types";
@@ -22,9 +18,13 @@ type PageState = "loading" | "locked" | "done" | "intro" | "starting";
 
 interface WrapStats {
   streak: number;
-  projectedPts: number;
   tomorrow: { day: number; subj: string; focus: string } | null;
 }
+
+const microLabel: React.CSSProperties = {
+  fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 500,
+  letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-faint)",
+};
 
 export default function DailySessionPage() {
   const { day } = useParams<{ day: string }>();
@@ -42,7 +42,6 @@ export default function DailySessionPage() {
 
   const planDay = getPlanDay(dayNum);
   const displayFocus = rowInfo.subcategory ?? planDay?.focus ?? "";
-  const displayDifficulty = rowInfo.difficulty ?? planDay?.difficulty ?? null;
 
   useEffect(() => {
     if (!planDay || isNaN(dayNum)) {
@@ -71,22 +70,14 @@ export default function DailySessionPage() {
         setCompletedRow(thisRow);
 
         const streak = calcStreak(rows);
-        const baseline = user.user_metadata?.baseline_score ?? 1050;
-        const target = user.user_metadata?.target_score ?? 1450;
-        const projectedPts = Math.round((target - baseline) / 30);
-
         const nextDayNum = dayNum + 1;
         const nextRow = rows.find((r) => r.day_number === nextDayNum);
         const nextPlanDay = nextDayNum <= 30 ? getPlanDay(nextDayNum) : undefined;
         const tomorrow = nextPlanDay
-          ? {
-              day: nextDayNum,
-              subj: nextPlanDay.subject === "math" ? "Math" : "English",
-              focus: nextRow?.subcategory ?? nextPlanDay.focus,
-            }
+          ? { day: nextDayNum, subj: nextPlanDay.subject === "math" ? "Math" : "English", focus: nextRow?.subcategory ?? nextPlanDay.focus }
           : null;
 
-        setWrapStats({ streak, projectedPts, tomorrow });
+        setWrapStats({ streak, tomorrow });
         setState("done");
         return;
       }
@@ -96,14 +87,12 @@ export default function DailySessionPage() {
         return;
       }
 
-      // Slots 12-20 aren't assigned a category until slot 11 finishes.
       const slot = englishSlotNumber(dayNum);
       if (slot !== null && slot >= 12 && !thisRow?.subcategory) {
         setState("locked");
         return;
       }
 
-      // Resumeable: session started but not completed
       if (thisRow?.session_id) {
         router.replace(`/practice/${thisRow.session_id}`);
         return;
@@ -133,27 +122,13 @@ export default function DailySessionPage() {
     }
   }
 
-  const eyebrow: React.CSSProperties = {
-    fontFamily: "var(--font-sans)", fontSize: "var(--text-xs)", fontWeight: 700,
-    letterSpacing: "var(--tracking-caps)", textTransform: "uppercase",
-    color: "var(--text-faint)", margin: "0 0 8px", display: "block",
-  };
-
-  const headerRow = (
-    <header style={{
-      position: "sticky", top: 0, zIndex: 10,
-      background: "var(--surface)", borderBottom: "1px solid var(--border)",
-    }}>
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+  const header = (
+    <header style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--canvas)", borderBottom: "1px solid var(--border)" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 44px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 32, height: 64 }}>
         <Wordmark href="/dashboard" />
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Link href="/plan" style={{ fontSize: "var(--text-sm)", fontWeight: 500, color: "var(--text-muted)", textDecoration: "none" }}>
-            ← My plan
-          </Link>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)", fontWeight: 700, letterSpacing: "var(--tracking-caps)", textTransform: "uppercase", color: "var(--text-faint)" }}>
-            Day {dayNum} · {planDay?.subject === "math" ? "Math" : "English"}
-          </span>
-        </div>
+        <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-faint)" }}>
+          Day {dayNum} · {planDay?.subject === "math" ? "Math" : "English"}
+        </span>
       </div>
     </header>
   );
@@ -162,17 +137,16 @@ export default function DailySessionPage() {
 
   if (state === "locked") {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
-        {headerRow}
-        <main style={{ maxWidth: 520, margin: "80px auto", padding: "0 24px", textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
-          <h1 style={{ fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: "var(--text-xl)", color: "var(--text-strong)", margin: "0 0 10px" }}>
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
+        {header}
+        <main style={{ maxWidth: 1080, margin: "0 auto", padding: "112px 44px", textAlign: "center" }}>
+          <h1 style={{ fontWeight: 400, fontSize: 40, letterSpacing: "-0.024em", color: "var(--text-strong)", margin: "0 0 12px" }}>
             Day {dayNum} is locked
           </h1>
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: "0 0 28px", lineHeight: "var(--leading-relaxed)" }}>
-            Complete the previous day before unlocking this one.
-          </p>
-          <Button onClick={() => router.push("/plan")} variant="secondary">Back to plan</Button>
+          <p style={{ fontSize: 16, color: "var(--text-muted)", margin: "0 0 28px" }}>Complete the previous day before this one opens.</p>
+          <button onClick={() => router.push("/plan")} style={{ border: "1px solid var(--border-strong)", background: "transparent", color: "var(--text-strong)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 24px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+            Back to plan
+          </button>
         </main>
       </div>
     );
@@ -183,160 +157,102 @@ export default function DailySessionPage() {
     const wrapLine = accuracy == null
       ? "Nicely done — that's another day in the books."
       : accuracy >= 67
-      ? "Solid, careful work today. Your projection ticked up — come back tomorrow and keep it climbing."
-      : "Every day counts, even the hard ones. Tomorrow's module will revisit what tripped you up.";
+      ? "Careful work. Your record for today is written — come back tomorrow and keep the line unbroken."
+      : "Every day counts, the hard ones most. Tomorrow's module revisits what tripped you up here.";
 
     return (
-      <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
-        {headerRow}
-        <main style={{ maxWidth: 560, margin: "0 auto", padding: "48px 24px 80px" }}>
-          <div style={{
-            background: "linear-gradient(var(--surface),var(--surface)) padding-box, var(--gradient-radiant) border-box",
-            border: "4px solid transparent", borderRadius: "var(--radius-2xl)", boxShadow: "var(--shadow-md)",
-            padding: "var(--space-12)", textAlign: "center",
-          }}>
-            <div style={{
-              display: "inline-flex", width: 56, height: 56, borderRadius: "50%", background: "var(--brand)",
-              color: "#fff", alignItems: "center", justifyContent: "center", marginBottom: 18,
-            }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-            </div>
-            <span style={eyebrow}>Day {dayNum} of 30 complete</span>
-            <h1 style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500, fontSize: "var(--text-2xl)", color: "var(--text-strong)", margin: "0 0 10px", letterSpacing: "var(--tracking-snug)" }}>
-              Well earned.
-            </h1>
-            <p style={{ fontSize: "var(--text-md)", color: "var(--text-muted)", lineHeight: "var(--leading-relaxed)", margin: "0 auto 26px", maxWidth: 420 }}>
-              {wrapLine}
-            </p>
+      <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
+        {header}
+        <main style={{ maxWidth: 1080, margin: "0 auto", padding: "88px 44px 112px" }}>
+          <p style={{ ...microLabel, margin: "0 0 26px", display: "flex", alignItems: "center", gap: 14 }}>
+            <span style={{ width: 26, height: 1, background: "var(--line-strong)" }} />
+            Day {dayNum} of thirty · complete
+          </p>
+          <h1 style={{ fontWeight: 400, fontSize: 52, lineHeight: 1.06, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0 }}>Well earned.</h1>
+          <p style={{ fontSize: 18, lineHeight: 1.66, color: "var(--text-muted)", margin: "24px 0 0", maxWidth: "48ch", textWrap: "pretty" }}>{wrapLine}</p>
 
-            <div style={{ display: "flex", gap: 12, maxWidth: 440, margin: "0 auto 26px" }}>
-              <div style={{ flex: 1, background: "var(--surface-sunken)", borderRadius: "var(--radius-lg)", padding: "var(--space-4)" }}>
-                <p style={{ fontWeight: 800, fontSize: "var(--text-xl)", color: "var(--text-strong)", margin: 0, lineHeight: 1.1 }}>
-                  {accuracy != null ? `${accuracy}%` : "—"}
-                </p>
-                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "4px 0 0" }}>today&apos;s accuracy</p>
-              </div>
-              <div style={{ flex: 1, background: "var(--surface-sunken)", borderRadius: "var(--radius-lg)", padding: "var(--space-4)" }}>
-                <p style={{ fontWeight: 800, fontSize: "var(--text-xl)", color: "var(--text-strong)", margin: 0, lineHeight: 1.1 }}>
-                  {wrapStats?.streak ?? "—"}
-                </p>
-                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "4px 0 0" }}>day streak</p>
-              </div>
-              <div style={{ flex: 1, background: "var(--surface-sunken)", borderRadius: "var(--radius-lg)", padding: "var(--space-4)" }}>
-                <p style={{ fontWeight: 800, fontSize: "var(--text-xl)", color: "var(--indigo-ink)", margin: 0, lineHeight: 1.1 }}>
-                  +{wrapStats?.projectedPts ?? 0}
-                </p>
-                <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "4px 0 0" }}>projected pts</p>
-              </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", margin: "48px 0 0", borderTop: "1px solid var(--line-strong)", borderBottom: "1px solid var(--border)" }}>
+            <div style={{ padding: "24px 32px 24px 0" }}>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 30, fontWeight: 500, color: "var(--text-strong)", margin: 0, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{accuracy != null ? `${accuracy}%` : "—"}</p>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "9px 0 0" }}>accuracy today</p>
             </div>
+            <div style={{ padding: "24px 32px", borderLeft: "1px solid var(--border)" }}>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 30, fontWeight: 500, color: "var(--text-strong)", margin: 0, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{wrapStats?.streak ?? "—"}</p>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "9px 0 0" }}>day streak</p>
+            </div>
+            <div style={{ padding: "24px 0 24px 32px", borderLeft: "1px solid var(--border)" }}>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 30, fontWeight: 500, color: "var(--text-strong)", margin: 0, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{Math.max(0, 30 - dayNum)}</p>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "9px 0 0" }}>days remaining</p>
+            </div>
+          </div>
 
-            {wrapStats?.tomorrow && (
-              <div style={{
-                background: "var(--surface-sunken)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
-                padding: "var(--space-4) var(--space-5)", maxWidth: 440, margin: "0 auto 28px",
-                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-              }}>
-                <span style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", textAlign: "left" }}>
-                  Tomorrow · <strong style={{ color: "var(--text-strong)" }}>Day {wrapStats.tomorrow.day} · {wrapStats.tomorrow.subj}</strong> — {wrapStats.tomorrow.focus}
-                </span>
-                <span style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", whiteSpace: "nowrap" }}>Opens tomorrow</span>
-              </div>
+          {wrapStats?.tomorrow && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 24, padding: "20px 0", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 16, color: "var(--text-muted)" }}>
+                Tomorrow · <span style={{ color: "var(--text-strong)" }}>Day {wrapStats.tomorrow.day}, {wrapStats.tomorrow.subj}</span> — {wrapStats.tomorrow.focus}
+              </span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", whiteSpace: "nowrap" }}>Opens tomorrow</span>
+            </div>
+          )}
+
+          <div style={{ display: "flex", alignItems: "center", gap: 26, margin: "40px 0 0" }}>
+            {completedRow?.session_id && (
+              <button onClick={() => router.push(`/results/${completedRow.session_id}`)} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+                See full results
+              </button>
             )}
-
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-              {completedRow?.session_id && (
-                <Button size="lg" onClick={() => router.push(`/results/${completedRow.session_id}`)}>
-                  See full results →
-                </Button>
-              )}
-              <Button size="lg" variant="secondary" onClick={() => router.push("/plan")}>
-                Back to my plan
-              </Button>
-            </div>
+            <button onClick={() => router.push("/plan")} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)", cursor: "pointer", padding: 0 }}>
+              Back to my plan
+            </button>
           </div>
         </main>
       </div>
     );
   }
 
-  // Intro state
   if (!planDay) return null;
 
   const isMath = planDay.subject === "math";
   const sessionLength = isMath ? MATH_SESSION_LENGTH : ENGLISH_SESSION_LENGTH;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--canvas)", zoom: 1.15 }}>
-      {headerRow}
-
-      <main style={{ maxWidth: 560, margin: "0 auto", padding: "48px 24px 80px" }}>
-        <Card tone="surface" padding="xl" radius="2xl" shadow="lg" style={{ textAlign: "center" }}>
-          {/* Day badge */}
-          <div style={{
-            display: "inline-flex", width: 56, height: 56, borderRadius: "50%",
-            background: "var(--gradient-radiant)", color: "#fff",
-            alignItems: "center", justifyContent: "center",
-            fontWeight: 800, fontSize: 22, boxShadow: "var(--shadow-md)", marginBottom: 18,
-          }}>
-            {dayNum}
-          </div>
-
-          <span style={eyebrow}>Day {dayNum} of 30 · {isMath ? "Math" : "English"}</span>
-
-          <h1 style={{
-            fontFamily: "var(--font-serif)", fontStyle: "italic", fontWeight: 500,
-            fontSize: "var(--text-2xl)", color: "var(--text-strong)",
-            margin: "0 0 10px", letterSpacing: "var(--tracking-snug)",
-          }}>
-            {displayFocus}
-          </h1>
-
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 20 }}>
-            <Badge tone={isMath ? "peach" : "lilac"}>{isMath ? "Math" : "English"}</Badge>
-            {displayDifficulty && (
-              <Badge tone={DIFFICULTY_TONES[displayDifficulty] as "mint" | "sky" | "peach" | "rose"}>
-                {DIFFICULTY_LABELS[displayDifficulty]}
-              </Badge>
-            )}
-          </div>
-
-          <p style={{ fontSize: "var(--text-md)", color: "var(--text-muted)", lineHeight: "var(--leading-relaxed)", margin: "0 auto 28px", maxWidth: 400 }}>
-            Work carefully — accuracy first, pace second.
-          </p>
-
-          {/* Session breakdown */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 360, margin: "0 auto 28px", textAlign: "left" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface-sunken)", borderRadius: "var(--radius-md)", padding: "10px 14px" }}>
-              <span style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>Questions</span>
-              <span style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-strong)" }}>{sessionLength}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface-sunken)", borderRadius: "var(--radius-md)", padding: "10px 14px" }}>
-              <span style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>Estimated time</span>
-              <span style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-strong)" }}>~{planDay.durationMins} min</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface-sunken)", borderRadius: "var(--radius-md)", padding: "10px 14px" }}>
-              <span style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>Counts toward</span>
-              <span style={{ fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--text-strong)" }}>Streak · Day {dayNum}</span>
+    <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
+      {header}
+      <main style={{ maxWidth: 1080, margin: "0 auto", padding: "88px 44px 112px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 64, alignItems: "start" }}>
+          <div>
+            <p style={{ ...microLabel, margin: "0 0 26px", display: "flex", alignItems: "center", gap: 14 }}>
+              <span style={{ width: 26, height: 1, background: "var(--line-strong)" }} />
+              Day {dayNum} of thirty · {isMath ? "Math" : "English"}
+            </p>
+            <h1 style={{ fontWeight: 400, fontSize: 52, lineHeight: 1.06, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0, maxWidth: "20ch", textWrap: "pretty" }}>{displayFocus}</h1>
+            <p style={{ fontSize: 18, lineHeight: 1.66, color: "var(--text-muted)", margin: "26px 0 0", maxWidth: "48ch", textWrap: "pretty" }}>
+              One warm-up question, then the timed module. Accuracy first, pace second — the clock is here to make the pressure familiar, not to rush you.
+            </p>
+            {error && <p style={{ fontSize: 14, color: "var(--danger)", margin: "20px 0 0" }}>{error}</p>}
+            <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "40px 0 0" }}>
+              <button onClick={beginModule} disabled={state === "starting"} style={{
+                border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)",
+                cursor: state === "starting" ? "default" : "pointer", opacity: state === "starting" ? 0.7 : 1,
+              }}>
+                {state === "starting" ? "Generating questions…" : "Begin the module"}
+              </button>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>The timer starts when you begin.</span>
             </div>
           </div>
-
-          {error && (
-            <p style={{ fontSize: "var(--text-sm)", color: "var(--danger)", marginBottom: 14 }}>{error}</p>
-          )}
-
-          <Button
-            size="lg"
-            onClick={beginModule}
-            disabled={state === "starting"}
-            full
-          >
-            {state === "starting" ? "Generating questions…" : "Begin the module →"}
-          </Button>
-
-          <p style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", margin: "14px 0 0", lineHeight: "var(--leading-relaxed)" }}>
-            Questions are generated fresh for each session. Day {dayNum + 1} opens after this is complete.
-          </p>
-        </Card>
+          <div style={{ borderLeft: "1px solid var(--border)", padding: "4px 0 4px 24px" }}>
+            <p style={{ ...microLabel, margin: "0 0 18px" }}>Today&apos;s sitting</p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 12 }}>
+              <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Module</span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{sessionLength} questions · {planDay.durationMins} min</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Counts toward</span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)" }}>Streak</span>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );

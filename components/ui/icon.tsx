@@ -6,6 +6,7 @@ import {
   TrendingUp, CalendarCheck, Wallet,
   Lightbulb, PenTool, MessageSquare, CheckCheck, ChevronRight,
   Calculator, BarChart3, Triangle, Ban,
+  Calendar, FileText, Clock, CircleCheck,
 } from "lucide-react";
 
 const ICONS = {
@@ -30,12 +31,17 @@ const ICONS = {
   "bar-chart-3":           BarChart3,
   triangle:                Triangle,
   ban:                     Ban,
+  calendar:                Calendar,
+  document:                FileText,
+  clock:                   Clock,
+  "circle-check":          CircleCheck,
 } as const;
 
 type IconName = keyof typeof ICONS;
 
-export function Icon({ name, size = 16, color }: { name: string; size?: number; color?: string }) {
+/** Default stroke is 1.3 to match the design system's thin sans-serif chrome. */
+export function Icon({ name, size = 16, color, strokeWidth = 1.3 }: { name: string; size?: number; color?: string; strokeWidth?: number }) {
   const Comp = ICONS[name as IconName];
   if (!Comp) return null;
-  return <Comp size={size} color={color} />;
+  return <Comp size={size} color={color} strokeWidth={strokeWidth} />;
 }

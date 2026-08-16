@@ -4,6 +4,12 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Icon } from "@/components/ui/icon";
+import { Mark } from "@/components/ui/mark";
+import { getCurrentPlanDay, calcStreak } from "@/lib/plan";
+
+/** Fixed width of the collapsed sidebar — signed-in pages offset their content by this. */
+export const SIDEBAR_WIDTH = 66;
 
 export function Spinner({ size = 22, color = "var(--brand)" }: { size?: number; color?: string }) {
   return (
@@ -32,156 +38,123 @@ export function LoadingScreen({ message = "Loading…" }: { message?: string }) 
   );
 }
 
-export function Wordmark({ href = "/" }: { href?: string }) {
+export function Wordmark({ href = "/", dark = false }: { href?: string; dark?: boolean }) {
+  const ink = dark ? "var(--text-on-dark)" : "var(--text-strong)";
   return (
-    <Link href={href} style={{ display: "inline-flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
+    <Link href={href} style={{ display: "inline-flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
+      <Mark width={30} height={18} fill={ink} />
       <span style={{
-        width: 30, height: 30, borderRadius: 9,
-        background: "var(--gradient-radiant)", color: "#fff",
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 16, lineHeight: 1,
-        boxShadow: "var(--shadow-brand)", flexShrink: 0,
-      }}>8</span>
-      <span style={{
-        fontFamily: "var(--font-sans)", fontWeight: 800, fontSize: 18,
-        letterSpacing: "var(--tracking-tight)", color: "var(--text-strong)",
+        fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 19,
+        letterSpacing: "-0.02em", color: ink,
       }}>800Path</span>
     </Link>
   );
 }
 
-export function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} style={{
-      display: "inline-flex", alignItems: "center",
-      fontFamily: "var(--font-sans)", fontWeight: 500, fontSize: "var(--text-sm)",
-      color: "var(--text-muted)", padding: "6px 4px", textDecoration: "none",
-    }}>
-      {children}
-    </Link>
-  );
-}
-
-export function TopNav({
-  right,
-  maxWidth = 1040,
-  homeHref = "/",
-}: {
-  right?: React.ReactNode;
-  maxWidth?: number;
-  homeHref?: string;
-}) {
-  return (
-    <nav style={{
-      position: "sticky", top: 0, zIndex: 10,
-      background: "rgba(255, 255, 255, 0.9)",
-      backdropFilter: "blur(12px)",
-      borderBottom: "1px solid var(--border)",
-    }}>
-      <div style={{
-        maxWidth, margin: "0 auto",
-        padding: "14px 24px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <Wordmark href={homeHref} />
-        {right && (
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>{right}</div>
-        )}
-      </div>
-    </nav>
-  );
-}
-
-const NAV_LINKS = [
-  { href: "/plan",      label: "My plan"  },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/practice",  label: "Extra practice" },
-  { href: "/for-you",   label: "For you"  },
+const NAV_LINKS: { href: string; label: string; icon: string }[] = [
+  { href: "/plan",      label: "My plan",        icon: "calendar" },
+  { href: "/dashboard", label: "Dashboard",       icon: "bar-chart-3" },
+  { href: "/practice",  label: "Extra practice",  icon: "document" },
+  { href: "/for-you",   label: "For you",         icon: "compass" },
 ];
 
-export function AppNav({ maxWidth = 1040 }: { maxWidth?: number }) {
+/** Fixed 66px oat spine that widens to 218px on hover. See .pw-sidebar in globals.css. */
+export function Sidebar() {
   const pathname = usePathname();
   const [displayName, setDisplayName] = useState("");
+  const [planDay, setPlanDay] = useState(1);
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setDisplayName(
-          user.user_metadata?.display_name ||
-          user.user_metadata?.full_name ||
-          user.email?.split("@")[0] ||
-          ""
-        );
-      }
-    });
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setDisplayName(
+        user.user_metadata?.display_name ||
+        user.user_metadata?.full_name ||
+        user.email?.split("@")[0] ||
+        ""
+      );
+      const { data: planRows } = await supabase
+        .from("plan_days")
+        .select("day_number, completed_at")
+        .eq("user_id", user.id);
+      const rows = planRows ?? [];
+      setPlanDay(getCurrentPlanDay(rows.filter((r) => r.completed_at).map((r) => r.day_number)));
+      setStreak(calcStreak(rows));
+    })();
   }, []);
 
   const isActive = (href: string) =>
-    href === "/dashboard"
-      ? pathname === "/dashboard"
-      : pathname.startsWith(href);
+    href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+
+  const clampedDay = Math.min(30, Math.max(1, planDay));
 
   return (
-    <nav style={{
-      position: "sticky", top: 0, zIndex: 10,
-      background: "rgba(255, 255, 255, 0.9)",
-      backdropFilter: "blur(12px)",
-      borderBottom: "1px solid var(--border)",
+    <aside className="pw-sidebar" style={{
+      position: "fixed", left: 0, top: 0, bottom: 0, background: "var(--sidebar-bg)",
+      borderRight: "1px solid var(--sidebar-line)", zIndex: 40,
+      display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
-      <div style={{
-        maxWidth, margin: "0 auto",
-        padding: "14px 24px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
+      <Link href="/dashboard" style={{
+        height: 60, display: "flex", alignItems: "center", gap: 12, padding: "0 21px",
+        flexShrink: 0, borderBottom: "1px solid var(--sidebar-line)",
       }}>
-        <Wordmark href="/dashboard" />
+        <Mark width={30} height={18} fill="var(--sidebar-ink)" />
+        <span className="pw-lbl" style={{ fontSize: 16, fontWeight: 600, color: "var(--sidebar-ink)", letterSpacing: "-0.018em" }}>800Path</span>
+      </Link>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-          {NAV_LINKS.map(({ href, label }) => {
-            const active = isActive(href);
-            return (
-              <Link key={href} href={href} style={{
-                display: "inline-flex", alignItems: "center",
-                fontFamily: "var(--font-sans)",
-                fontWeight: active ? 600 : 500,
-                fontSize: "var(--text-sm)",
-                color: active ? "var(--brand)" : "var(--text-muted)",
-                padding: "6px 12px",
-                borderRadius: "var(--radius-sm)",
-                textDecoration: "none",
-                background: active ? "var(--lilac-50)" : "transparent",
-                transition: "color var(--dur-fast), background var(--dur-fast)",
-              }}>
-                {label}
-              </Link>
-            );
-          })}
-        </div>
+      <nav style={{ display: "flex", flexDirection: "column", gap: 2, padding: "14px 9px", flex: 1, fontFamily: "var(--font-sans)", fontSize: 13 }}>
+        {NAV_LINKS.map(({ href, label, icon }) => {
+          const active = isActive(href);
+          const rowStyle: React.CSSProperties = {
+            display: "flex", alignItems: "center", gap: 14, padding: "10px 12px",
+            borderRadius: "var(--radius-md)",
+            color: active ? "var(--text-on-brand)" : "var(--sidebar-ink-muted)",
+            background: active ? "var(--sidebar-active)" : "transparent",
+          };
+          const inner = (
+            <>
+              <Icon name={icon} size={16} color="currentColor" />
+              <span className="pw-lbl">{label}</span>
+            </>
+          );
+          return active ? (
+            <span key={href} style={rowStyle}>{inner}</span>
+          ) : (
+            <Link key={href} href={href} style={rowStyle}>{inner}</Link>
+          );
+        })}
+      </nav>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <form action="/auth/signout" method="post" style={{ display: "inline" }}>
-            <button type="submit" style={{
-              background: "none", border: "none", cursor: "pointer",
-              fontFamily: "var(--font-sans)", fontWeight: 500,
-              fontSize: "var(--text-sm)", color: "var(--text-muted)", padding: "6px 4px",
-            }}>
-              Sign out
-            </button>
-          </form>
-          {displayName && (
-            <Link href="/account" style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: "var(--gradient-radiant)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", fontFamily: "var(--font-sans)",
-              fontWeight: 700, fontSize: 13, flexShrink: 0,
-              boxShadow: "var(--shadow-brand)", textDecoration: "none",
-            }}>
-              {displayName[0].toUpperCase()}
-            </Link>
-          )}
+      <div style={{ padding: "16px 9px", borderTop: "1px solid var(--sidebar-line)", flexShrink: 0 }}>
+        <div style={{ padding: "0 12px 14px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 2, width: 34 }}>
+            {Array.from({ length: 30 }, (_, i) => {
+              const d = i + 1;
+              const bg = d === clampedDay ? "var(--mark)" : d < clampedDay ? "var(--sidebar-ink-muted)" : "var(--sidebar-rail)";
+              return <span key={d} style={{ aspectRatio: 1, background: bg, borderRadius: 1 }} />;
+            })}
+          </div>
+          <p className="pw-lbl" style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--sidebar-ink-faint)", margin: "10px 0 0" }}>
+            Day {clampedDay} of thirty · {streak}-day streak
+          </p>
         </div>
+        <Link href="/account" style={{
+          display: "flex", alignItems: "center", gap: 14, padding: "10px 12px",
+          borderRadius: "var(--radius-md)", color: "var(--sidebar-ink-muted)",
+          fontFamily: "var(--font-sans)", fontSize: 13,
+        }}>
+          <span style={{
+            width: 16, height: 16, borderRadius: 999, border: "1px solid var(--sidebar-ink-faint)",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, flexShrink: 0,
+          }}>
+            {(displayName[0] ?? "?").toUpperCase()}
+          </span>
+          <span className="pw-lbl">{displayName || "Account"}</span>
+        </Link>
       </div>
-    </nav>
+    </aside>
   );
 }

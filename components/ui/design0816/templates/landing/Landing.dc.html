@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Landing Page" description="800Path home — bone-and-charcoal editorial: roman serif statement hero beside a live specimen plate of the reading desk, plate-numbered sections, the thirty days as a printed grid" -->
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<script src="./ds-base.js"></script>
+<style>
+html{-webkit-font-smoothing:antialiased}
+@keyframes riseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes plateIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.rise{animation:riseIn .66s cubic-bezier(.25,.6,.3,1) both}
+.r2{animation-delay:.07s}.r3{animation-delay:.14s}.r4{animation-delay:.21s}
+.plate{animation:plateIn .8s cubic-bezier(.25,.6,.3,1) .16s both}
+a.q:hover{color:var(--text-strong)}
+a.qd:hover{color:var(--text-on-dark)}
+.daycell{transition:background .16s}
+.daycell:hover{background:var(--surface-2)}
+.cta:hover{background:var(--brand-hover)}
+.ctal:hover{background:var(--dark-700)}
+</style>
+</helmet>
+<div style="background:var(--canvas);min-height:100vh;color:var(--text-body);font-family:var(--font-serif)">
+
+<nav style="position:sticky;top:0;z-index:20;background:rgba(246,244,239,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)">
+<div style="max-width:1220px;margin:0 auto;padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:60px">
+<span style="display:inline-flex;align-items:center;gap:11px"><svg viewBox="0 0 230 140" width="33" height="20" style="flex:none"><g transform="translate(22,0) skewX(-10)" fill="var(--text-strong)"><path d="M40,44 A20,22 0 1 1 80,44 A20,22 0 1 1 40,44 ZM47,41 A11,12 0 1 0 69,41 A11,12 0 1 0 47,41 ZM31,90 A27,28 0 1 1 85,90 A27,28 0 1 1 31,90 ZM40,86 A16,16 0 1 0 72,86 A16,16 0 1 0 40,86 ZM96,92 A22,26 0 1 1 140,92 A22,26 0 1 1 96,92 ZM105,88 A13,16 0 1 0 131,88 A13,16 0 1 0 105,88 ZM150,92 A22,26 0 1 1 194,92 A22,26 0 1 1 150,92 ZM159,88 A13,16 0 1 0 185,88 A13,16 0 1 0 159,88 ZM70,100 C80,112 96,108 106,100 C98,104 84,105 74,94 ZM132,101 C140,111 152,111 160,101 C152,106 141,106 135,96 ZM186,98 C198,94 204,84 203,73 C199,83 196,90 184,94 ZM40,29 C45,22 54,19 61,21 C54,23 48,26 44,32 Z"></path></g></svg><span style="font-size:19px;font-weight:600;letter-spacing:-.02em;color:var(--text-strong)">800Path</span></span>
+<div style="display:flex;align-items:center;gap:32px;font-family:var(--font-sans);font-size:13px">
+<a class="q" href="#method" style="color:var(--text-muted)">The method</a>
+<a class="q" href="#sequence" style="color:var(--text-muted)">The thirty days</a>
+<a class="q" href="../auth/Auth.dc.html" style="color:var(--text-muted)">Sign in</a>
+<a class="cta" href="../onboarding/Onboarding.dc.html" style="background:var(--brand);color:var(--text-on-brand);font-weight:500;padding:9px 17px;border-radius:var(--radius-md);transition:background .16s">Begin</a>
+</div>
+</div>
+</nav>
+
+<section style="max-width:1220px;margin:0 auto;padding:0 40px">
+<div style="display:grid;grid-template-columns:1.02fr .98fr;gap:64px;align-items:center;padding:84px 0 88px">
+
+<div>
+<p class="rise" style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:0 0 30px;display:flex;align-items:center;gap:14px"><span style="width:26px;height:1px;background:var(--line-strong)"></span>Digital SAT · Reading, Writing &amp; Math</p>
+<h1 class="rise r2" style="font-weight:400;font-size:64px;line-height:1.03;letter-spacing:-.026em;color:var(--text-strong);margin:0;text-wrap:pretty">Made for people who intend to do this properly.</h1>
+<p class="rise r3" style="font-size:18px;line-height:1.62;color:var(--text-muted);margin:28px 0 0;max-width:44ch;text-wrap:pretty">Thirty days, decided in advance. Twelve questions a sitting, timed like the real thing and explained the way a good tutor would. Nothing to configure — only the work.</p>
+<div class="rise r4" style="display:flex;align-items:center;gap:24px;margin:36px 0 0">
+<a class="cta" href="../onboarding/Onboarding.dc.html" style="display:inline-flex;align-items:center;background:var(--brand);color:var(--text-on-brand);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:14px 26px;border-radius:var(--radius-lg);transition:background .16s">Start day one</a>
+<a class="q" href="#method" style="font-family:var(--font-sans);font-size:14px;color:var(--text-muted)">Read the method →</a>
+</div>
+<div class="rise r4" style="display:flex;gap:36px;margin:44px 0 0;padding:20px 0 0;border-top:1px solid var(--border);font-family:var(--font-sans);font-size:12px;color:var(--text-faint)">
+<span><span style="display:block;font-size:20px;font-weight:500;color:var(--text-strong);font-variant-numeric:tabular-nums;margin-bottom:5px">30</span>days, fixed</span>
+<span><span style="display:block;font-size:20px;font-weight:500;color:var(--text-strong);font-variant-numeric:tabular-nums;margin-bottom:5px">12</span>questions a sitting</span>
+<span><span style="display:block;font-size:20px;font-weight:500;color:var(--text-strong);font-variant-numeric:tabular-nums;margin-bottom:5px">18</span>minutes a day</span>
+</div>
+</div>
+
+<div class="plate">
+<div style="background:var(--dark-900);border-radius:var(--radius-2xl);padding:12px;box-shadow:0 24px 60px rgba(32,31,28,.14)">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px 14px;font-family:var(--font-sans);font-size:11px;color:var(--text-on-dark-faint)">
+<span style="letter-spacing:.14em;text-transform:uppercase">Day 4 · English</span>
+<span style="display:flex;align-items:center;gap:14px"><span style="font-variant-numeric:tabular-nums">3 / 12</span><span style="font-family:var(--font-mono);font-size:13px;color:var(--text-on-dark)">14:22</span></span>
+</div>
+<div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden">
+<div style="padding:26px 28px 22px;border-bottom:1px solid var(--border)">
+<p style="font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:0 0 14px">Passage</p>
+<p style="font-size:15px;line-height:1.7;color:var(--text-body);margin:0">The naturalist Anna Botsford Comstock argued that a child taught to look closely at a single leaf had learned more than one marched through a textbook. Her <span style="border-bottom:1.5px solid var(--accent);padding-bottom:1px;color:var(--text-strong)">terse</span> field guides omitted nearly everything a rival volume would include.</p>
+</div>
+<div style="padding:24px 28px 26px">
+<p style="font-size:16px;line-height:1.5;color:var(--text-strong);margin:0 0 16px">As used in the text, <span style="font-style:italic">terse</span> most nearly means</p>
+<div style="display:grid">
+<div style="display:flex;gap:14px;padding:11px 12px;border-top:1px solid var(--border);font-size:15px"><span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);width:11px;padding-top:3px">A</span><span>lengthy</span></div>
+<div style="display:flex;gap:14px;padding:11px 12px;border-top:1px solid var(--border);font-size:15px"><span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);width:11px;padding-top:3px">B</span><span>abrupt</span></div>
+<div style="display:flex;gap:14px;padding:11px 12px;border-top:1px solid var(--border);border-left:2px solid var(--success);background:var(--moss-50);font-size:15px;color:var(--text-strong)"><span style="font-family:var(--font-sans);font-size:11px;color:var(--success);width:11px;padding-top:3px">C</span><span>concise</span></div>
+<div style="display:flex;gap:14px;padding:11px 12px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:15px"><span style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);width:11px;padding-top:3px">D</span><span>unclear</span></div>
+</div>
+<p style="font-size:14px;line-height:1.62;color:var(--text-muted);margin:16px 0 0;padding-left:13px;border-left:2px solid var(--accent)">She is set against writers who were <span style="font-style:italic">exhaustive</span>. The contrast is length, not tone — which rules out <span style="font-style:italic">abrupt</span>.</p>
+</div>
+</div>
+</div>
+<p style="font-family:var(--font-sans);font-size:11px;color:var(--text-faint);margin:14px 0 0;display:flex;gap:10px"><span style="letter-spacing:.12em;color:var(--text-muted)">PLATE I</span><span>The reading desk — passage held left, reasoning right.</span></p>
+</div>
+
+</div>
+</section>
+
+<section id="method" style="background:var(--dark-900);color:var(--text-on-dark)">
+<div style="max-width:1220px;margin:0 auto;padding:96px 40px 100px">
+<div style="display:grid;grid-template-columns:180px 1fr;gap:48px;align-items:start">
+<p style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-on-dark-faint);margin:8px 0 0">Plate II<br /><span style="color:var(--dark-700)">——</span><br />The method</p>
+<div>
+<h2 style="font-weight:400;font-size:40px;line-height:1.14;letter-spacing:-.022em;color:var(--text-on-dark);margin:0;max-width:28ch;text-wrap:pretty">Most prep opens by asking what you would like to practice. On day one, that is the wrong question.</h2>
+<p style="font-size:17px;line-height:1.66;color:var(--text-on-dark-muted);margin:26px 0 0;max-width:52ch">You do not yet know where you are weakest, and the honest answer — everything, a little — makes a poor lesson plan. So the sequence is decided for you, then revised as your work comes in.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;margin:64px 0 0;border-top:1px solid var(--dark-border)">
+<div style="padding:30px 44px 30px 0;border-bottom:1px solid var(--dark-border)">
+<h3 style="font-weight:600;font-size:20px;color:var(--text-on-dark);margin:0 0 9px">One decision a day: begin</h3>
+<p style="font-size:15px;line-height:1.66;color:var(--text-on-dark-muted);margin:0">Today's module is already chosen — subject, skills, difficulty. Consistency is a design problem, and this is the solution.</p>
+</div>
+<div style="padding:30px 0 30px 44px;border-left:1px solid var(--dark-border);border-bottom:1px solid var(--dark-border)">
+<h3 style="font-weight:600;font-size:20px;color:var(--text-on-dark);margin:0 0 9px">Timed as the test is timed</h3>
+<p style="font-size:15px;line-height:1.66;color:var(--text-on-dark-muted);margin:0">Twelve questions against the clock at real pace. Thirty days of this and the timer stops being the thing you fear.</p>
+</div>
+<div style="padding:30px 44px 30px 0;border-bottom:1px solid var(--dark-border)">
+<h3 style="font-weight:600;font-size:20px;color:var(--text-on-dark);margin:0 0 9px">Reasoning, not verdicts</h3>
+<p style="font-size:15px;line-height:1.66;color:var(--text-on-dark-muted);margin:0">Every explanation names the clue in the text and why each wrong answer tempts you. You leave with a method, not a letter.</p>
+</div>
+<div style="padding:30px 0 30px 44px;border-left:1px solid var(--dark-border);border-bottom:1px solid var(--dark-border)">
+<h3 style="font-weight:600;font-size:20px;color:var(--text-on-dark);margin:0 0 9px">A record you can read</h3>
+<p style="font-size:15px;line-height:1.66;color:var(--text-on-dark-muted);margin:0">Accuracy per skill, day by day, kept plainly. On day thirty it becomes a score report and an honest retrospective.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="sequence" style="max-width:1220px;margin:0 auto;padding:96px 40px 0">
+<div style="display:grid;grid-template-columns:180px 1fr;gap:48px;align-items:start">
+<p style="font-family:var(--font-sans);font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);margin:8px 0 0">Plate III<br /><span style="color:var(--line-strong)">——</span><br />The sequence</p>
+<div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin:0 0 36px;flex-wrap:wrap">
+<h2 style="font-weight:400;font-size:38px;line-height:1.12;letter-spacing:-.022em;color:var(--text-strong);margin:0;max-width:22ch;text-wrap:pretty">Thirty days, printed in full before you start.</h2>
+<p style="font-size:15px;line-height:1.6;color:var(--text-muted);margin:0;max-width:32ch">Weeks run English, English, Math. Twenty modules of Reading &amp; Writing, ten of Math, and a closing report.</p>
+</div>
+<div style="display:grid;grid-template-columns:repeat(10,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden">
+<sc-for list="{{ days }}" as="d" hint-placeholder-count="30">
+<div class="daycell" style="background:var(--surface);aspect-ratio:1.24;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+<sc-if value="{{ d.isDone }}" hint-placeholder-val="{{ false }}">
+<span style="font-family:var(--font-sans);font-variant-numeric:tabular-nums;font-size:13px;color:var(--text-strong)">{{ d.n }}</span>
+<span style="font-family:var(--font-sans);font-size:9px;letter-spacing:.1em;color:var(--text-muted)">{{ d.tag }}</span>
+</sc-if>
+<sc-if value="{{ d.isToday }}" hint-placeholder-val="{{ false }}">
+<span style="font-family:var(--font-sans);font-variant-numeric:tabular-nums;font-size:13px;color:var(--accent)">{{ d.n }}</span>
+<span style="font-family:var(--font-sans);font-size:9px;letter-spacing:.1em;color:var(--accent)">{{ d.tag }}</span>
+</sc-if>
+<sc-if value="{{ d.isFuture }}" hint-placeholder-val="{{ true }}">
+<span style="font-family:var(--font-sans);font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-300)">{{ d.n }}</span>
+<span style="font-family:var(--font-sans);font-size:9px;letter-spacing:.1em;color:var(--ink-300)">{{ d.tag }}</span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;gap:26px;margin:14px 0 0;font-family:var(--font-sans);font-size:11px;color:var(--text-faint)">
+<span>E — Reading &amp; Writing</span><span>M — Math</span><span>R — Score report</span>
+</div>
+</div>
+</div>
+</section>
+
+<section style="max-width:1220px;margin:0 auto;padding:88px 40px 96px">
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-2xl);padding:52px 56px;display:flex;align-items:flex-end;justify-content:space-between;gap:48px;flex-wrap:wrap">
+<div>
+<h2 style="font-weight:400;font-size:36px;line-height:1.1;letter-spacing:-.022em;color:var(--text-strong);margin:0 0 12px;max-width:20ch;text-wrap:pretty">Day one is waiting. It takes eighteen minutes.</h2>
+<p style="font-size:15px;color:var(--text-muted);margin:0">Free, and free of paywalls. Bring a pencil for the Math weeks.</p>
+</div>
+<a class="cta" href="../onboarding/Onboarding.dc.html" style="display:inline-flex;align-items:center;background:var(--brand);color:var(--text-on-brand);font-family:var(--font-sans);font-size:14px;font-weight:500;padding:15px 30px;border-radius:var(--radius-lg);transition:background .16s">Begin the thirty days</a>
+</div>
+</section>
+
+<footer style="border-top:1px solid var(--border)">
+<div style="max-width:1220px;margin:0 auto;padding:24px 40px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;font-family:var(--font-sans);font-size:11px;color:var(--text-faint)">
+<span>800Path © 2026</span>
+<span>SAT is a trademark of College Board, which does not endorse this tool.</span>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900},&quot;currentDay&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:4,&quot;min&quot;:1,&quot;max&quot;:30,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Landing&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const today = this.props.currentDay ?? 4;
+    const days = [];
+    for (let n = 1; n <= 30; n++) {
+      const tag = n === 30 ? 'R' : (n % 3 === 0 ? 'M' : 'E');
+      days.push({ n: n, tag: tag, isDone: n < today, isToday: n === today, isFuture: n > today });
+    }
+    return { days: days, showSpecimen: this.props.showSpecimen ?? true };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Accent — Wine" subtitle="The small chromatic mark: active nav, today's cell, links" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../styles.css" />
+<style>
+body{margin:0;padding:20px;background:var(--surface)}
+.row{display:flex;gap:10px}
+.sw{flex:1;display:flex;flex-direction:column;gap:7px}
+.chip{height:64px;border-radius:var(--radius-md);border:1px solid rgba(0,0,0,.04)}
+.name{font-family:var(--font-sans);font-size:11px;font-weight:600;color:var(--text-strong)}
+.hex{font-family:var(--font-mono);font-size:10px;color:var(--text-faint)}
+.note{font-family:var(--font-sans);font-size:11px;color:var(--text-muted);margin:14px 0 0;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="row">
+<div class="sw"><div class="chip" style="background:var(--wine-50)"></div><span class="name">50</span><span class="hex">#f3eae9</span></div>
+<div class="sw"><div class="chip" style="background:var(--wine-100)"></div><span class="name">100</span><span class="hex">#e5d2d0</span></div>
+<div class="sw"><div class="chip" style="background:var(--wine-500)"></div><span class="name">500 ◆ mark</span><span class="hex">#6b3535</span></div>
+<div class="sw"><div class="chip" style="background:var(--wine-600)"></div><span class="name">600 deep</span><span class="hex">#572a2b</span></div>
+<div class="sw"><div class="chip" style="background:var(--wine-700)"></div><span class="name">700</span><span class="hex">#401f20</span></div>
+</div>
+<p class="note">Wine is a mark, not a surface — and never a fill. It carries the active nav item, today's cell and links. Primary buttons, progress and data lines are ink: on any given screen there should be far more ink than wine.</p>
+</body>
+</html>
