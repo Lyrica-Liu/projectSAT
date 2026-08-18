@@ -160,7 +160,7 @@ export default function AccountPage() {
     <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
       <Sidebar />
 
-      <main style={{ maxWidth: 880 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
+      <main className="pw-main-content" style={{ maxWidth: 880 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
           <span>Account center</span>
           <span>{daysLabel}</span>
@@ -298,8 +298,8 @@ export default function AccountPage() {
 
       {/* Sticky save bar */}
       {dirty && (
-        <div style={{ position: "sticky", bottom: 0, zIndex: 20, background: "var(--canvas)", borderTop: "1px solid var(--border)" }}>
-          <div style={{ maxWidth: 880 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "14px 56px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+        <div className="pw-main-content" style={{ position: "sticky", bottom: 0, zIndex: 20, background: "var(--canvas)", borderTop: "1px solid var(--border)" }}>
+          <div style={{ maxWidth: 880, marginRight: "auto", padding: "14px 56px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" }} />
               You have unsaved changes

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input } from "@/components/ui/ds";
-import { Mark } from "@/components/ui/mark";
+import { Wordmark } from "@/components/ui/nav";
 
 const STEPS = [
   { title: "Welcome aboard", sub: "Let's build your personal path to a higher score — it only takes a minute." },
@@ -114,9 +114,8 @@ export default function OnboardingPage() {
         overflow: "hidden", display: "flex", flexDirection: "column",
         justifyContent: "space-between", padding: "44px 48px", background: "var(--dark-900)",
       }}>
-        <div style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 11 }}>
-          <Mark width={30} height={18} fill="var(--text-on-dark)" />
-          <span style={{ fontWeight: 600, fontSize: 19, color: "var(--text-on-dark)", letterSpacing: "-0.018em" }}>800Path</span>
+        <div style={{ position: "relative", display: "inline-flex" }}>
+          <Wordmark dark />
         </div>
 
         <div style={{ position: "relative" }}>
@@ -245,7 +244,7 @@ export default function OnboardingPage() {
               <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 40px" }}>What&apos;s getting in the way?</h2>
               <div>
                 <p style={eyebrow}>
-                  What&apos;s something that bothers you while studying? <span style={{ color: "var(--ink-300)" }}>(pick any)</span>
+                  What&apos;s something that bothers you while studying? <span style={{ color: "var(--text-faint)" }}>(pick any)</span>
                 </p>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                   {STRUGGLE_OPTIONS.map((s) => {

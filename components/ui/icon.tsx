@@ -6,7 +6,7 @@ import {
   TrendingUp, CalendarCheck, Wallet,
   Lightbulb, PenTool, MessageSquare, CheckCheck, ChevronRight,
   Calculator, BarChart3, Triangle, Ban,
-  Calendar, FileText, Clock, CircleCheck,
+  Calendar, FileText, Clock, CircleCheck, Highlighter, Eraser,
 } from "lucide-react";
 
 const ICONS = {
@@ -35,6 +35,8 @@ const ICONS = {
   document:                FileText,
   clock:                   Clock,
   "circle-check":          CircleCheck,
+  highlighter:             Highlighter,
+  eraser:                  Eraser,
 } as const;
 
 type IconName = keyof typeof ICONS;

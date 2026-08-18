@@ -400,7 +400,7 @@ export default function ForYouPage() {
     return (
       <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
         <Sidebar />
-        <main style={{ maxWidth: 1060 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "88px 56px", textAlign: "center" }}>
+        <main className="pw-main-content" style={{ maxWidth: 1060 + SIDEBAR_WIDTH, marginRight: "auto", padding: "88px 56px", textAlign: "center" }}>
           <h1 style={{ fontWeight: 400, fontSize: 40, letterSpacing: "-0.024em", color: "var(--text-strong)", margin: "0 0 12px" }}>No insights yet</h1>
           <p style={{ fontSize: 16, color: "var(--text-muted)", margin: "0 0 28px" }}>Complete a plan day or a practice session and we&apos;ll show you exactly where to focus next.</p>
           <button onClick={() => router.push("/plan")} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
@@ -451,7 +451,7 @@ export default function ForYouPage() {
     <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
       <Sidebar />
 
-      <main style={{ maxWidth: 1060 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
+      <main className="pw-main-content" style={{ maxWidth: 1060 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
           <span>Picked for you</span>
           <span>Extra practice · not part of the plan</span>

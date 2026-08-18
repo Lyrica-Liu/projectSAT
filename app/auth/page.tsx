@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/ds";
-import { Mark } from "@/components/ui/mark";
+import { Wordmark } from "@/components/ui/nav";
 
 function GoogleIcon() {
   return (
@@ -94,10 +94,7 @@ function AuthForm() {
         background: "var(--dark-900)", display: "flex", flexDirection: "column",
         justifyContent: "space-between", padding: "44px 48px",
       }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 11 }}>
-          <Mark width={30} height={18} fill="var(--text-on-dark)" />
-          <span style={{ fontWeight: 600, fontSize: 19, letterSpacing: "-0.018em", color: "var(--text-on-dark)" }}>800Path</span>
-        </span>
+        <Wordmark dark />
 
         <div>
           <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-on-dark-faint)", margin: "0 0 26px", display: "flex", alignItems: "center", gap: 14 }}>

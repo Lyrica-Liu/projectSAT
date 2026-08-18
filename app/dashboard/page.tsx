@@ -152,7 +152,7 @@ export default function DashboardPage() {
     <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
       <Sidebar />
 
-      <main style={{ maxWidth: 1080 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
+      <main className="pw-main-content" style={{ maxWidth: 1080 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
 
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
           <span style={{ alignSelf: "center" }}>{dateLine}</span>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
             <h1 style={{ ...microLabel, margin: "0 0 22px" }}>The briefing</h1>
             <p style={{ fontSize: 23, lineHeight: 1.52, letterSpacing: "-0.012em", color: "var(--text-strong)", margin: 0, maxWidth: "54ch", textWrap: "pretty" }}>
               <span style={{ float: "left", fontSize: 62, lineHeight: 0.82, fontWeight: 600, margin: "5px 12px 0 0", color: "var(--text-strong)" }}>
-                {(displayName[0] || "H").toUpperCase()}
+                H
               </span>
               {`ey ${displayName} — ${allDone ? "the thirty days are behind you." : `today is a ${isMathToday ? "Math" : "Reading and Writing"} sitting: ${isMathToday ? MATH_SESSION_LENGTH : ENGLISH_SESSION_LENGTH} questions, focused on ${todayFocus.toLowerCase()}.`}`}
             </p>

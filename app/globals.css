@@ -308,10 +308,19 @@
 .pw-sidebar:hover .pw-lbl {
   opacity: 1;
 }
-.pw-sidebar a:hover,
-.pw-sidebar button:hover {
-  background: var(--sidebar-hover);
-  color: var(--sidebar-ink);
+/* Nav-item hover highlight is driven by React state (components/ui/nav.tsx),
+   not this selector — the active/inactive rows set `background` inline,
+   which a plain CSS :hover rule can never win against. */
+
+/* Signed-in page content — pushed right by the sidebar's width, and squeezed
+   further when the sidebar expands on hover (sidebar and content are always
+   siblings: <Sidebar /> then the page's own content element). */
+.pw-main-content {
+  margin-left: 66px;
+  transition: margin-left 0.24s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.pw-sidebar:hover ~ .pw-main-content {
+  margin-left: 218px;
 }
 
 /* Ruled ledger row hover (plan overview, dashboard's recent-sessions list) */

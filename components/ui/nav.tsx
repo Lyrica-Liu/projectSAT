@@ -64,6 +64,7 @@ export function Sidebar() {
   const [displayName, setDisplayName] = useState("");
   const [planDay, setPlanDay] = useState(1);
   const [streak, setStreak] = useState(0);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -108,11 +109,12 @@ export function Sidebar() {
       <nav style={{ display: "flex", flexDirection: "column", gap: 2, padding: "14px 9px", flex: 1, fontFamily: "var(--font-sans)", fontSize: 13 }}>
         {NAV_LINKS.map(({ href, label, icon }) => {
           const active = isActive(href);
+          const isHovered = hovered === href;
           const rowStyle: React.CSSProperties = {
             display: "flex", alignItems: "center", gap: 14, padding: "10px 12px",
             borderRadius: "var(--radius-md)",
-            color: active ? "var(--text-on-brand)" : "var(--sidebar-ink-muted)",
-            background: active ? "var(--sidebar-active)" : "transparent",
+            color: active ? "var(--text-on-brand)" : isHovered ? "var(--sidebar-ink)" : "var(--sidebar-ink-muted)",
+            background: active ? "var(--sidebar-active)" : isHovered ? "var(--sidebar-hover)" : "transparent",
           };
           const inner = (
             <>
@@ -123,7 +125,7 @@ export function Sidebar() {
           return active ? (
             <span key={href} style={rowStyle}>{inner}</span>
           ) : (
-            <Link key={href} href={href} style={rowStyle}>{inner}</Link>
+            <Link key={href} href={href} style={rowStyle} onMouseEnter={() => setHovered(href)} onMouseLeave={() => setHovered(null)}>{inner}</Link>
           );
         })}
       </nav>
@@ -141,9 +143,10 @@ export function Sidebar() {
             Day {clampedDay} of thirty · {streak}-day streak
           </p>
         </div>
-        <Link href="/account" style={{
+        <Link href="/account" onMouseEnter={() => setHovered("/account")} onMouseLeave={() => setHovered(null)} style={{
           display: "flex", alignItems: "center", gap: 14, padding: "10px 12px",
-          borderRadius: "var(--radius-md)", color: "var(--sidebar-ink-muted)",
+          borderRadius: "var(--radius-md)", color: hovered === "/account" ? "var(--sidebar-ink)" : "var(--sidebar-ink-muted)",
+          background: hovered === "/account" ? "var(--sidebar-hover)" : "transparent",
           fontFamily: "var(--font-sans)", fontSize: 13,
         }}>
           <span style={{

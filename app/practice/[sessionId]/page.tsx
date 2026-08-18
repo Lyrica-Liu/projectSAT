@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AnswerOption, Input } from "@/components/ui/ds";
@@ -11,6 +11,12 @@ import type { Question, Answer, Session } from "@/lib/types";
 
 type AnswerChoice = "A" | "B" | "C" | "D";
 
+interface Highlight {
+  start: number;
+  end: number;
+  color: string;
+}
+
 interface QuestionState {
   question: Question;
   answer: Answer | null;
@@ -19,15 +25,115 @@ interface QuestionState {
   correct: boolean | null;
   revealed: boolean;
   eliminated: AnswerChoice[];
+  highlights: Record<string, Highlight[]>;
 }
 
-/** Text-size steps for the passage/question/answer content, matching the real DSAT's "Aa" tool. */
-const TEXT_SIZE_LEVELS = [1.15, 1.4, 1.7, 2.0];
+/** Text-size steps for the passage/question/answer content — stepped with "− A +", matching the real DSAT's "Aa" tool. */
+const TEXT_SIZE_LEVELS = [0.85, 1.0, 1.15, 1.4, 1.7, 2.0];
+const DEFAULT_TEXT_SIZE_INDEX = 2;
+
+const HIGHLIGHT_COLORS = ["#fde68a", "#bbf7d0", "#bfdbfe", "#fbcfe8"];
 
 const microLabel: React.CSSProperties = {
   fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.16em",
   textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 22px",
 };
+
+/** Maps a Selection Range within `container` to plain-text character offsets, ignoring any markup already inside it. */
+function getSelectionOffsets(container: HTMLElement): { start: number; end: number } | null {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+  const range = sel.getRangeAt(0);
+  if (!container.contains(range.commonAncestorContainer)) return null;
+
+  const preRange = range.cloneRange();
+  preRange.selectNodeContents(container);
+  preRange.setEnd(range.startContainer, range.startOffset);
+  const start = preRange.toString().length;
+  const end = start + range.toString().length;
+  if (end <= start) return null;
+  return { start, end };
+}
+
+/**
+ * Renders `text` split around any highlighted ranges. While `highlightMode` is on, drag-selecting
+ * inside it adds a new highlight in `activeColor` — or, when `activeColor` is null (the eraser tool
+ * is active), erases whatever highlighted ranges the selection overlaps. Clicking an existing
+ * highlight always removes it outright, regardless of which tool is selected.
+ */
+function HighlightText({
+  text, highlights, highlightMode, activeColor, onAdd, onErase, onRemove, style,
+}: {
+  text: string;
+  highlights: Highlight[];
+  highlightMode: boolean;
+  activeColor: string | null;
+  onAdd: (h: Highlight) => void;
+  onErase: (start: number, end: number) => void;
+  onRemove: (index: number) => void;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+
+  function handleMouseUp() {
+    if (!highlightMode || !ref.current) return;
+    const offsets = getSelectionOffsets(ref.current);
+    window.getSelection()?.removeAllRanges();
+    if (!offsets) return;
+    if (activeColor === null) {
+      onErase(offsets.start, offsets.end);
+    } else {
+      onAdd({ start: offsets.start, end: offsets.end, color: activeColor });
+    }
+  }
+
+  const points = new Set<number>([0, text.length]);
+  highlights.forEach((h) => {
+    points.add(Math.max(0, Math.min(h.start, text.length)));
+    points.add(Math.max(0, Math.min(h.end, text.length)));
+  });
+  const bounds = Array.from(points).sort((a, b) => a - b);
+
+  const segments: { text: string; color: string | null; hIndex: number }[] = [];
+  for (let i = 0; i < bounds.length - 1; i++) {
+    const segStart = bounds[i];
+    const segEnd = bounds[i + 1];
+    if (segStart === segEnd) continue;
+    let color: string | null = null;
+    let hIndex = -1;
+    highlights.forEach((h, idx) => {
+      if (h.start <= segStart && h.end >= segEnd) {
+        color = h.color;
+        hIndex = idx;
+      }
+    });
+    segments.push({ text: text.slice(segStart, segEnd), color, hIndex });
+  }
+
+  return (
+    <span ref={ref} onMouseUp={handleMouseUp} style={{ ...style, cursor: highlightMode ? "text" : style?.cursor }}>
+      {segments.map((seg, i) =>
+        seg.color ? (
+          <mark
+            key={i}
+            onClick={(e) => {
+              if (!highlightMode) return;
+              e.stopPropagation();
+              e.preventDefault();
+              onRemove(seg.hIndex);
+            }}
+            title={highlightMode ? "Click to remove highlight" : undefined}
+            style={{ background: seg.color, color: "inherit", borderRadius: 2, cursor: highlightMode ? "pointer" : "text" }}
+          >
+            {seg.text}
+          </mark>
+        ) : (
+          <Fragment key={i}>{seg.text}</Fragment>
+        )
+      )}
+    </span>
+  );
+}
 
 export default function ActiveSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -48,7 +154,9 @@ export default function ActiveSessionPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [gridDraft, setGridDraft] = useState("");
   const [eliminateMode, setEliminateMode] = useState(false);
-  const [textSizeIndex, setTextSizeIndex] = useState(0);
+  const [highlightMode, setHighlightMode] = useState(false);
+  const [activeHighlightColor, setActiveHighlightColor] = useState<string | null>(HIGHLIGHT_COLORS[0]);
+  const [textSizeIndex, setTextSizeIndex] = useState(DEFAULT_TEXT_SIZE_INDEX);
   const textMult = TEXT_SIZE_LEVELS[textSizeIndex];
 
   useEffect(() => {
@@ -78,7 +186,9 @@ export default function ActiveSessionPage() {
       }
 
       setSession(sessionData);
-      setSecondsLeft(Math.round((sessionData.question_count ?? 20) * 1.5 * 60));
+      const totalSeconds = Math.round((sessionData.question_count ?? 20) * 1.5 * 60);
+      const elapsedSeconds = Math.floor((Date.now() - new Date(sessionData.started_at).getTime()) / 1000);
+      setSecondsLeft(Math.max(0, totalSeconds - elapsedSeconds));
 
       const { data: planDayRow } = await supabase
         .from("plan_days")
@@ -102,8 +212,22 @@ export default function ActiveSessionPage() {
         return;
       }
 
+      // Supabase can return a joined relation as a one-element array rather
+      // than a bare object depending on how it infers the FK cardinality —
+      // unwrap defensively (matches the pattern used on dashboard/for-you).
+      const rows = answerRows as unknown as (Answer & { question: Question | Question[] })[];
+      const normalized = rows
+        .map((row) => ({ ...row, question: Array.isArray(row.question) ? row.question[0] : row.question }))
+        .filter((row) => !!row.question);
+
+      if (normalized.length === 0) {
+        setError("Session data missing. Please start a new session.");
+        setLoading(false);
+        return;
+      }
+
       setQuestions(
-        answerRows.map((row: Answer & { question: Question }) => ({
+        normalized.map((row) => ({
           question: row.question,
           answer: row,
           selected: row.user_answer as AnswerChoice | null,
@@ -111,6 +235,7 @@ export default function ActiveSessionPage() {
           correct: row.is_correct,
           revealed: row.user_answer !== null || row.user_grid_answer !== null,
           eliminated: [],
+          highlights: {},
         }))
       );
 
@@ -179,6 +304,43 @@ export default function ActiveSessionPage() {
     );
   }
 
+  function addHighlight(field: string, h: Highlight) {
+    setQuestions((prev) =>
+      prev.map((q, i) =>
+        i !== currentIndex ? q : { ...q, highlights: { ...q.highlights, [field]: [...(q.highlights[field] ?? []), h] } }
+      )
+    );
+  }
+
+  function removeHighlight(field: string, index: number) {
+    setQuestions((prev) =>
+      prev.map((q, i) =>
+        i !== currentIndex
+          ? q
+          : { ...q, highlights: { ...q.highlights, [field]: (q.highlights[field] ?? []).filter((_, hi) => hi !== index) } }
+      )
+    );
+  }
+
+  /** Trims or splits any highlights in `field` that overlap [start, end) — used by the eraser tool. */
+  function eraseHighlight(field: string, start: number, end: number) {
+    setQuestions((prev) =>
+      prev.map((q, i) => {
+        if (i !== currentIndex) return q;
+        const remaining: Highlight[] = [];
+        for (const h of q.highlights[field] ?? []) {
+          if (h.end <= start || h.start >= end) {
+            remaining.push(h);
+            continue;
+          }
+          if (h.start < start) remaining.push({ ...h, end: start });
+          if (h.end > end) remaining.push({ ...h, start: end });
+        }
+        return { ...q, highlights: { ...q.highlights, [field]: remaining } };
+      })
+    );
+  }
+
   async function finishSession() {
     setSubmitting(true);
     if (planLinked) {
@@ -228,7 +390,7 @@ export default function ActiveSessionPage() {
         if (body.question && body.answer) {
           setQuestions((prev) => [
             ...prev,
-            { question: body.question, answer: body.answer, selected: null, gridValue: null, correct: null, revealed: false, eliminated: [] },
+            { question: body.question, answer: body.answer, selected: null, gridValue: null, correct: null, revealed: false, eliminated: [], highlights: {} },
           ]);
           setCurrentIndex((i) => i + 1);
         }
@@ -329,17 +491,37 @@ export default function ActiveSessionPage() {
       {/* Toolbar */}
       <div style={{ borderBottom: "1px solid var(--border)", padding: "8px 44px" }}>
         <div style={{ maxWidth: 1360, margin: "0 auto", display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", marginRight: 4 }}>Text size</span>
-            {TEXT_SIZE_LEVELS.map((lvl, i) => (
-              <button key={lvl} onClick={() => setTextSizeIndex(i)} aria-label={`Text size ${i + 1}`} style={{
-                width: 26, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                border: `1px solid ${textSizeIndex === i ? "var(--text-strong)" : "var(--border)"}`,
-                background: textSizeIndex === i ? "var(--surface-sunken)" : "transparent", borderRadius: "var(--radius-sm)",
-                cursor: "pointer", color: textSizeIndex === i ? "var(--text-strong)" : "var(--text-faint)",
-                fontFamily: "var(--font-sans)", fontSize: 10 + i * 2,
-              }}>A</button>
-            ))}
+            <button
+              onClick={() => setTextSizeIndex((i) => Math.max(0, i - 1))}
+              disabled={textSizeIndex === 0}
+              aria-label="Decrease text size"
+              style={{
+                width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                border: "1px solid var(--border)", background: "transparent", borderRadius: "var(--radius-sm)",
+                color: "var(--text-body)", cursor: textSizeIndex === 0 ? "default" : "pointer",
+                opacity: textSizeIndex === 0 ? 0.35 : 1, fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1, padding: 0,
+              }}
+            >
+              −
+            </button>
+            <span style={{ width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--text-strong)" }}>
+              A
+            </span>
+            <button
+              onClick={() => setTextSizeIndex((i) => Math.min(TEXT_SIZE_LEVELS.length - 1, i + 1))}
+              disabled={textSizeIndex === TEXT_SIZE_LEVELS.length - 1}
+              aria-label="Increase text size"
+              style={{
+                width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                border: "1px solid var(--border)", background: "transparent", borderRadius: "var(--radius-sm)",
+                color: "var(--text-body)", cursor: textSizeIndex === TEXT_SIZE_LEVELS.length - 1 ? "default" : "pointer",
+                opacity: textSizeIndex === TEXT_SIZE_LEVELS.length - 1 ? 0.35 : 1, fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1, padding: 0,
+              }}
+            >
+              +
+            </button>
           </div>
           <button onClick={() => setEliminateMode((v) => !v)} style={{
             display: "inline-flex", alignItems: "center", gap: 6,
@@ -352,6 +534,45 @@ export default function ActiveSessionPage() {
             <Icon name="ban" size={13} />
             Answer Eliminator
           </button>
+          <button onClick={() => setHighlightMode((v) => !v)} style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            border: `1px solid ${highlightMode ? "var(--text-strong)" : "var(--border)"}`,
+            background: highlightMode ? "var(--surface-sunken)" : "transparent",
+            color: highlightMode ? "var(--text-strong)" : "var(--text-faint)",
+            borderRadius: "var(--radius-md)", fontFamily: "var(--font-sans)", fontSize: 11,
+            padding: "5px 12px", cursor: "pointer",
+          }}>
+            <Icon name="highlighter" size={13} />
+            Highlighter
+          </button>
+          {highlightMode && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {HIGHLIGHT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setActiveHighlightColor(c)}
+                  aria-label={`Highlight color ${c}`}
+                  style={{
+                    width: 18, height: 18, borderRadius: "50%", padding: 0, cursor: "pointer", background: c,
+                    border: activeHighlightColor === c ? "2px solid var(--text-strong)" : "1px solid var(--border)",
+                  }}
+                />
+              ))}
+              <span style={{ width: 1, height: 14, background: "var(--line-strong)", margin: "0 2px" }} />
+              <button
+                onClick={() => setActiveHighlightColor(null)}
+                aria-label="Erase highlights"
+                title="Drag over highlighted text to erase it"
+                style={{
+                  width: 22, height: 22, display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  borderRadius: "50%", padding: 0, cursor: "pointer", background: "transparent", color: "var(--text-faint)",
+                  border: activeHighlightColor === null ? "2px solid var(--text-strong)" : "1px solid var(--border)",
+                }}
+              >
+                <Icon name="eraser" size={12} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -361,17 +582,31 @@ export default function ActiveSessionPage() {
           {hasPassage && (
             <div style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: "52px 56px 72px 0", borderRight: "1px solid var(--border)" }}>
               <p style={microLabel}>Passage</p>
-              <p style={{ fontSize: 18 * textMult / 14, lineHeight: 1.8, color: "var(--text-body)", margin: 0, maxWidth: "34rem", whiteSpace: "pre-wrap", textWrap: "pretty" }}>
-                {current.question.passage}
-              </p>
+              <HighlightText
+                text={current.question.passage ?? ""}
+                highlights={current.highlights.passage ?? []}
+                highlightMode={highlightMode}
+                activeColor={activeHighlightColor}
+                onAdd={(h) => addHighlight("passage", h)}
+                onErase={(s, e) => eraseHighlight("passage", s, e)}
+                onRemove={(i) => removeHighlight("passage", i)}
+                style={{ display: "block", fontSize: 18 * textMult, lineHeight: 1.8, color: "var(--text-body)", margin: 0, maxWidth: "34rem", whiteSpace: "pre-wrap", textWrap: "pretty" }}
+              />
             </div>
           )}
           <div style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: hasPassage ? "52px 0 72px 56px" : "52px 0 72px" }}>
             <div style={{ maxWidth: "34rem", margin: hasPassage ? 0 : "0 auto" }}>
               <p style={microLabel}>{current.question.skill.replace(/_/g, " ")} · {current.question.difficulty}</p>
-              <p style={{ fontSize: 18 * textMult, lineHeight: 1.48, letterSpacing: "-0.008em", color: "var(--text-strong)", margin: "0 0 32px", textWrap: "pretty" }}>
-                {current.question.stem}
-              </p>
+              <HighlightText
+                text={current.question.stem}
+                highlights={current.highlights.stem ?? []}
+                highlightMode={highlightMode}
+                activeColor={activeHighlightColor}
+                onAdd={(h) => addHighlight("stem", h)}
+                onErase={(s, e) => eraseHighlight("stem", s, e)}
+                onRemove={(i) => removeHighlight("stem", i)}
+                style={{ display: "block", fontSize: 18 * textMult, lineHeight: 1.48, letterSpacing: "-0.008em", color: "var(--text-strong)", margin: "0 0 32px", textWrap: "pretty" }}
+              />
 
               {current.question.question_type === "grid_in" ? (
                 <div className="qa-grid-input" style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 280 }}>
@@ -418,10 +653,17 @@ export default function ActiveSessionPage() {
                           </button>
                         )}
                         <div style={{ flex: 1 }}>
-                          <AnswerOption letter={c} state={stateFor(c)} disabled={current.revealed} onClick={() => selectAnswer(c)}>
-                            <span style={{ fontSize: 17 * textMult / 14, textDecoration: isEliminated ? "line-through" : "none", opacity: isEliminated ? 0.55 : 1 }}>
-                              {current.question.options?.[c]}
-                            </span>
+                          <AnswerOption letter={c} state={stateFor(c)} disabled={current.revealed} onClick={() => { if (!highlightMode) selectAnswer(c); }}>
+                            <HighlightText
+                              text={current.question.options?.[c] ?? ""}
+                              highlights={current.highlights[c] ?? []}
+                              highlightMode={highlightMode}
+                              activeColor={activeHighlightColor}
+                              onAdd={(h) => addHighlight(c, h)}
+                              onErase={(s, e) => eraseHighlight(c, s, e)}
+                              onRemove={(i) => removeHighlight(c, i)}
+                              style={{ fontSize: 17 * textMult, textDecoration: isEliminated ? "line-through" : "none", opacity: isEliminated ? 0.55 : 1 }}
+                            />
                           </AnswerOption>
                         </div>
                       </div>
@@ -444,7 +686,7 @@ export default function ActiveSessionPage() {
                       Correct answer: {current.question.grid_answer}
                     </p>
                   )}
-                  <p style={{ fontSize: 15 * textMult / 14, lineHeight: 1.68, margin: 0, color: "var(--text-body)" }}>
+                  <p style={{ fontSize: 15 * textMult, lineHeight: 1.68, margin: 0, color: "var(--text-body)" }}>
                     {current.question.explanation}
                   </p>
                 </div>

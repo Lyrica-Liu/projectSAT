@@ -20,8 +20,6 @@ const CATEGORIES: { label: string; subcategories: string[] }[] = [
   { label: "Math", subcategories: ["Algebra", "Data Analysis", "Geometry"] },
 ];
 
-const MATH_SUBCATEGORIES = new Set(["Algebra", "Data Analysis", "Geometry"]);
-
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
   { value: "easy", label: "Easy" },
   { value: "medium-low", label: "Medium low" },
@@ -45,7 +43,6 @@ export default function PracticeSetupPage() {
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isMathSelected = selected.size > 0 && MATH_SUBCATEGORIES.has(Array.from(selected)[0]);
 
   function toggleCategory(cat: string) {
     setExpanded((prev) => {
@@ -57,14 +54,8 @@ export default function PracticeSetupPage() {
 
   function toggleSubcategory(sub: string) {
     setSelected((prev) => {
-      if (prev.has(sub)) {
-        const next = new Set(prev);
-        next.delete(sub);
-        return next;
-      }
-      const switchingSubject = Array.from(prev).some((s) => MATH_SUBCATEGORIES.has(s) !== MATH_SUBCATEGORIES.has(sub));
-      const next = switchingSubject ? new Set<string>() : new Set(prev);
-      next.add(sub);
+      const next = new Set(prev);
+      next.has(sub) ? next.delete(sub) : next.add(sub);
       return next;
     });
   }
@@ -76,16 +67,16 @@ export default function PracticeSetupPage() {
 
     let sessionId: string;
     try {
-      const res = await fetch(isMathSelected ? "/api/start-math-practice" : "/api/generate-questions", {
+      const res = await fetch("/api/start-bank-practice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subcategories: Array.from(selected), difficulty, count }),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed to generate questions");
+      if (!res.ok) throw new Error(body.error ?? "Failed to start session");
       sessionId = body.sessionId;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Could not generate questions. Please try again.");
+      setError(err instanceof Error ? err.message : "Could not start the session. Please try again.");
       setLoading(false);
       return;
     }
@@ -100,7 +91,7 @@ export default function PracticeSetupPage() {
     <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
       <Sidebar />
 
-      <main style={{ maxWidth: 960 + SIDEBAR_WIDTH, marginLeft: SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
+      <main className="pw-main-content" style={{ maxWidth: 960 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
           <span>Extra practice</span>
           <span>Outside the thirty-day plan</span>
@@ -199,7 +190,7 @@ export default function PracticeSetupPage() {
                 cursor: selected.size === 0 || loading ? "default" : "pointer",
                 opacity: selected.size === 0 || loading ? 0.5 : 1,
               }}>
-                {loading ? (isMathSelected ? "Building your session…" : "Generating questions with AI…") : "Start session"}
+                {loading ? "Building your session…" : "Start session"}
               </button>
               <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>
                 {selected.size === 0 ? "Choose at least one skill" : estimate}
