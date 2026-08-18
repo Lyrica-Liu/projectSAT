@@ -34,6 +34,11 @@ const DEFAULT_TEXT_SIZE_INDEX = 2;
 
 const HIGHLIGHT_COLORS = ["#fde68a", "#bbf7d0", "#bfdbfe", "#fbcfe8"];
 
+/** Persists the countdown locally so it resumes exactly where it was left, rather than either resetting or ticking down while the tab was closed. */
+function timerStorageKey(sessionId: string) {
+  return `practice-timer-${sessionId}`;
+}
+
 const microLabel: React.CSSProperties = {
   fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.16em",
   textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 22px",
@@ -155,6 +160,8 @@ export default function ActiveSessionPage() {
   const [gridDraft, setGridDraft] = useState("");
   const [eliminateMode, setEliminateMode] = useState(false);
   const [highlightMode, setHighlightMode] = useState(false);
+  /** Set right before a genuine drag-to-highlight; swallows the click that follows so it doesn't also select the answer. A plain click (no drag) still selects normally, even in highlight mode. */
+  const suppressNextClickRef = useRef(false);
   const [activeHighlightColor, setActiveHighlightColor] = useState<string | null>(HIGHLIGHT_COLORS[0]);
   const [textSizeIndex, setTextSizeIndex] = useState(DEFAULT_TEXT_SIZE_INDEX);
   const textMult = TEXT_SIZE_LEVELS[textSizeIndex];
@@ -186,9 +193,16 @@ export default function ActiveSessionPage() {
       }
 
       setSession(sessionData);
-      const totalSeconds = Math.round((sessionData.question_count ?? 20) * 1.5 * 60);
-      const elapsedSeconds = Math.floor((Date.now() - new Date(sessionData.started_at).getTime()) / 1000);
-      setSecondsLeft(Math.max(0, totalSeconds - elapsedSeconds));
+      const storedSeconds = window.localStorage.getItem(timerStorageKey(sessionId));
+      if (storedSeconds !== null && !Number.isNaN(Number(storedSeconds))) {
+        setSecondsLeft(Math.max(0, Number(storedSeconds)));
+      } else {
+        // No local record of this session's clock (first visit, or a different device) —
+        // estimate from wall-clock time elapsed since it was created.
+        const totalSeconds = Math.round((sessionData.question_count ?? 20) * 1.5 * 60);
+        const elapsedSeconds = Math.floor((Date.now() - new Date(sessionData.started_at).getTime()) / 1000);
+        setSecondsLeft(Math.max(0, totalSeconds - elapsedSeconds));
+      }
 
       const { data: planDayRow } = await supabase
         .from("plan_days")
@@ -248,7 +262,12 @@ export default function ActiveSessionPage() {
   useEffect(() => {
     if (secondsLeft == null) return;
     const interval = setInterval(() => {
-      setSecondsLeft((s) => (s != null && s > 0 ? s - 1 : s));
+      setSecondsLeft((s) => {
+        if (s == null) return s;
+        const next = s > 0 ? s - 1 : 0;
+        window.localStorage.setItem(timerStorageKey(sessionId), String(next));
+        return next;
+      });
     }, 1000);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -305,6 +324,7 @@ export default function ActiveSessionPage() {
   }
 
   function addHighlight(field: string, h: Highlight) {
+    suppressNextClickRef.current = true;
     setQuestions((prev) =>
       prev.map((q, i) =>
         i !== currentIndex ? q : { ...q, highlights: { ...q.highlights, [field]: [...(q.highlights[field] ?? []), h] } }
@@ -324,6 +344,7 @@ export default function ActiveSessionPage() {
 
   /** Trims or splits any highlights in `field` that overlap [start, end) — used by the eraser tool. */
   function eraseHighlight(field: string, start: number, end: number) {
+    suppressNextClickRef.current = true;
     setQuestions((prev) =>
       prev.map((q, i) => {
         if (i !== currentIndex) return q;
@@ -343,6 +364,7 @@ export default function ActiveSessionPage() {
 
   async function finishSession() {
     setSubmitting(true);
+    window.localStorage.removeItem(timerStorageKey(sessionId));
     if (planLinked) {
       const res = await fetch("/api/finish-plan-day", {
         method: "POST",
@@ -653,7 +675,10 @@ export default function ActiveSessionPage() {
                           </button>
                         )}
                         <div style={{ flex: 1 }}>
-                          <AnswerOption letter={c} state={stateFor(c)} disabled={current.revealed} onClick={() => { if (!highlightMode) selectAnswer(c); }}>
+                          <AnswerOption letter={c} state={stateFor(c)} disabled={current.revealed} onClick={() => {
+                            if (suppressNextClickRef.current) { suppressNextClickRef.current = false; return; }
+                            selectAnswer(c);
+                          }}>
                             <HighlightText
                               text={current.question.options?.[c] ?? ""}
                               highlights={current.highlights[c] ?? []}
