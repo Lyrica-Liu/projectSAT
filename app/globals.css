@@ -240,6 +240,11 @@
   to   { opacity: 1; transform: none; }
 }
 
+@keyframes blink-caret {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
 @layer base {
   html,
   body {

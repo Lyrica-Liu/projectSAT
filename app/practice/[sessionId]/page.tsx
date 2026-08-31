@@ -34,9 +34,43 @@ const DEFAULT_TEXT_SIZE_INDEX = 2;
 
 const HIGHLIGHT_COLORS = ["#fde68a", "#bbf7d0", "#bfdbfe", "#fbcfe8"];
 
-/** Persists the countdown locally so it resumes exactly where it was left, rather than either resetting or ticking down while the tab was closed. */
+/**
+ * Persists the countdown locally so it resumes exactly where it was left, rather than either
+ * resetting or ticking down while the tab was closed. localStorage can throw in some contexts
+ * (private browsing, a sandboxed preview iframe) — if that happened inside the timer's own
+ * setState updater it would silently stop React from committing the tick at all, freezing the
+ * clock with no visible error, so every access here is guarded.
+ */
 function timerStorageKey(sessionId: string) {
   return `practice-timer-${sessionId}`;
+}
+
+function readTimer(sessionId: string): number | null {
+  try {
+    const raw = window.localStorage.getItem(timerStorageKey(sessionId));
+    if (raw === null) return null;
+    const n = Number(raw);
+    return Number.isNaN(n) ? null : n;
+  } catch {
+    return null;
+  }
+}
+
+function writeTimer(sessionId: string, seconds: number) {
+  try {
+    window.localStorage.setItem(timerStorageKey(sessionId), String(seconds));
+  } catch {
+    // Storage unavailable — the countdown still ticks in memory for this page view,
+    // it just won't resume from this exact point on the next visit.
+  }
+}
+
+function clearTimer(sessionId: string) {
+  try {
+    window.localStorage.removeItem(timerStorageKey(sessionId));
+  } catch {
+    // ignore
+  }
 }
 
 const microLabel: React.CSSProperties = {
@@ -193,9 +227,9 @@ export default function ActiveSessionPage() {
       }
 
       setSession(sessionData);
-      const storedSeconds = window.localStorage.getItem(timerStorageKey(sessionId));
-      if (storedSeconds !== null && !Number.isNaN(Number(storedSeconds))) {
-        setSecondsLeft(Math.max(0, Number(storedSeconds)));
+      const storedSeconds = readTimer(sessionId);
+      if (storedSeconds !== null) {
+        setSecondsLeft(Math.max(0, storedSeconds));
       } else {
         // No local record of this session's clock (first visit, or a different device) —
         // estimate from wall-clock time elapsed since it was created.
@@ -265,7 +299,7 @@ export default function ActiveSessionPage() {
       setSecondsLeft((s) => {
         if (s == null) return s;
         const next = s > 0 ? s - 1 : 0;
-        window.localStorage.setItem(timerStorageKey(sessionId), String(next));
+        writeTimer(sessionId, next);
         return next;
       });
     }, 1000);
@@ -364,7 +398,7 @@ export default function ActiveSessionPage() {
 
   async function finishSession() {
     setSubmitting(true);
-    window.localStorage.removeItem(timerStorageKey(sessionId));
+    clearTimer(sessionId);
     if (planLinked) {
       const res = await fetch("/api/finish-plan-day", {
         method: "POST",
@@ -656,10 +690,17 @@ export default function ActiveSessionPage() {
                   {(["A", "B", "C", "D"] as AnswerChoice[]).map((c) => {
                     const isEliminated = current.eliminated.includes(c);
                     return (
-                      <div key={c} style={{ display: "flex", alignItems: "stretch", gap: 8 }}>
+                      <div
+                        key={c}
+                        style={{ display: "flex", alignItems: "stretch", gap: 8, cursor: current.revealed ? "default" : "pointer" }}
+                        onClick={() => {
+                          if (suppressNextClickRef.current) { suppressNextClickRef.current = false; return; }
+                          selectAnswer(c);
+                        }}
+                      >
                         {eliminateMode && (
                           <button
-                            onClick={() => toggleEliminate(c)}
+                            onClick={(e) => { e.stopPropagation(); toggleEliminate(c); }}
                             disabled={current.revealed}
                             aria-label={isEliminated ? `Restore option ${c}` : `Eliminate option ${c}`}
                             style={{
@@ -675,10 +716,7 @@ export default function ActiveSessionPage() {
                           </button>
                         )}
                         <div style={{ flex: 1 }}>
-                          <AnswerOption letter={c} state={stateFor(c)} disabled={current.revealed} onClick={() => {
-                            if (suppressNextClickRef.current) { suppressNextClickRef.current = false; return; }
-                            selectAnswer(c);
-                          }}>
+                          <AnswerOption letter={c} state={stateFor(c)} disabled={current.revealed}>
                             <HighlightText
                               text={current.question.options?.[c] ?? ""}
                               highlights={current.highlights[c] ?? []}

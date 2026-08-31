@@ -5,11 +5,23 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
+import { Input } from "@/components/ui/ds";
 import {
   getPlanDay, getCurrentPlanDay, calcStreak,
   ENGLISH_SESSION_LENGTH, MATH_SESSION_LENGTH,
 } from "@/lib/plan";
 import type { Session, SkillStat, QuestionSkill, MathSkill, PlanDayRow, CategoryProgressRow } from "@/lib/types";
+
+function GoogleIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 18 18" fill="none">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+      <path d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  );
+}
 
 const SKILL_LABELS: Record<QuestionSkill, string> = {
   central_idea: "Central Idea",
@@ -51,10 +63,21 @@ export default function DashboardPage() {
   const [planRows, setPlanRows] = useState<PlanDayRow[]>([]);
   const [, setCategoryProgress] = useState<CategoryProgressRow[]>([]);
 
+  // Anonymous users get a plan (created quietly during onboarding) but no real account yet —
+  // once they've finished a session, the dashboard prompts them to save it for real.
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [accountEmail, setAccountEmail] = useState("");
+  const [accountPassword, setAccountPassword] = useState("");
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const [awaitingEmailConfirm, setAwaitingEmailConfirm] = useState(false);
+
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/auth"); return; }
+      setIsAnonymous(user.is_anonymous ?? false);
 
       setDisplayName(
         user.user_metadata?.display_name ??
@@ -115,6 +138,38 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function createAccountWithEmail() {
+    setAccountError(null);
+    if (!accountEmail.trim() || !accountPassword) {
+      setAccountError("Enter an email and password to continue.");
+      return;
+    }
+    setAccountLoading(true);
+    // Converts the current anonymous user into a real one — same user id, so every session,
+    // answer, and streak already saved stays exactly where it is.
+    const { error } = await supabase.auth.updateUser({ email: accountEmail, password: accountPassword });
+    setAccountLoading(false);
+    if (error) {
+      setAccountError(error.message);
+      return;
+    }
+    setAwaitingEmailConfirm(true);
+  }
+
+  async function continueWithGoogle() {
+    setAccountError(null);
+    setAccountLoading(true);
+    const { error } = await supabase.auth.linkIdentity({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) {
+      setAccountLoading(false);
+      setAccountError(error.message);
+    }
+    // On success the browser navigates to Google and back — nothing further runs here.
+  }
+
   if (loading) return <LoadingScreen />;
 
   const completedPlanRows = planRows.filter((r) => r.completed_at);
@@ -122,6 +177,7 @@ export default function DashboardPage() {
   const currentDay = getCurrentPlanDay(completedNums);
   const streak = calcStreak(planRows);
   const doneCt = completedNums.length;
+  const showAccountPrompt = isAnonymous && doneCt >= 1;
   const todayPlanDay = currentDay <= 30 ? getPlanDay(currentDay) : null;
   const todayRow = planRows.find((r) => r.day_number === currentDay) ?? null;
   const todayFocus = todayRow?.subcategory ?? todayPlanDay?.focus ?? "Today's session";
@@ -143,7 +199,7 @@ export default function DashboardPage() {
   const dateLine = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   let briefBody: string;
-  if (doneCt === 0) briefBody = "Nothing is behind you yet and nothing is lost — the sequence starts wherever you open it. Twelve questions is a smaller commitment than it sounds, and it is the whole ask for today.";
+  if (doneCt === 0) briefBody = "Nothing is behind you yet and nothing is lost — the sequence starts wherever you open it. Twenty questions is a smaller commitment than it sounds, and it is the whole ask for today.";
   else if (streak < 3) briefBody = "A sitting or two in, the plan is still deciding what you are good at. Answer honestly rather than carefully; the sequence adjusts to what it sees.";
   else if (streak < 7) briefBody = "The habit is taking hold, which is the part most people never reach. From here the questions begin to lean harder on the skills you have been avoiding.";
   else briefBody = `${streak} days unbroken. The plan now has enough of your work to aim properly, so expect today to be pointed rather than broad — it is chosen from your misses, not at random.`;
@@ -158,6 +214,29 @@ export default function DashboardPage() {
           <span style={{ alignSelf: "center" }}>{dateLine}</span>
           <span style={{ alignSelf: "center", fontVariantNumeric: "tabular-nums" }}>Day {Math.min(currentDay, 30)} / 30 · {isMathToday ? "Math" : "English"}</span>
         </div>
+
+        {/* Save-your-progress prompt — anonymous users see this once they've finished a session */}
+        {showAccountPrompt && (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap",
+            margin: "24px 0 0", padding: "18px 24px", background: "var(--danger-surface)", borderLeft: "2px solid var(--danger)",
+            borderRadius: "0 var(--radius-md) var(--radius-md) 0",
+          }}>
+            <div>
+              <p style={{ fontSize: 16, color: "var(--text-strong)", margin: "0 0 4px" }}>Your progress isn&apos;t saved to an account yet.</p>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
+                {streak} {streak === 1 ? "day" : "days"} of work lives only in this browser — clear it or switch devices and it&apos;s gone for good.
+              </p>
+            </div>
+            <button onClick={() => setShowAccountModal(true)} style={{
+              flexShrink: 0, border: 0, background: "var(--brand)", color: "var(--text-on-brand)",
+              fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "12px 24px",
+              borderRadius: "var(--radius-lg)", cursor: "pointer",
+            }}>
+              Create account
+            </button>
+          </div>
+        )}
 
         {/* Briefing */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 236px", gap: 56, alignItems: "start", padding: "56px 0 0" }}>
@@ -294,6 +373,73 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+
+      {showAccountModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "40px 40px 36px", maxWidth: 420, width: "100%" }}>
+            {awaitingEmailConfirm ? (
+              <>
+                <h2 style={{ fontWeight: 400, fontSize: 27, lineHeight: 1.2, color: "var(--text-strong)", margin: "0 0 12px" }}>Check your email</h2>
+                <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: "0 0 28px" }}>
+                  We sent a confirmation link to <strong style={{ color: "var(--text-strong)" }}>{accountEmail}</strong>. Once you confirm it, everything you&apos;ve done here is safely yours.
+                </p>
+                <button onClick={() => { setShowAccountModal(false); setAwaitingEmailConfirm(false); }} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+                  Done
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 style={{ fontWeight: 400, fontSize: 27, lineHeight: 1.2, color: "var(--text-strong)", margin: "0 0 8px" }}>Save your progress</h2>
+                <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: "0 0 24px" }}>
+                  Nothing you&apos;ve done is lost — it carries straight into your account.
+                </p>
+
+                <button
+                  type="button" onClick={continueWithGoogle} disabled={accountLoading}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    padding: "12px 0", marginBottom: 18, background: "transparent", border: "1px solid var(--border-strong)",
+                    borderRadius: "var(--radius-md)", cursor: accountLoading ? "default" : "pointer",
+                    fontFamily: "var(--font-sans)", fontWeight: 500, fontSize: 13, color: "var(--text-strong)",
+                    opacity: accountLoading ? 0.6 : 1,
+                  }}
+                >
+                  <GoogleIcon />
+                  Continue with Google
+                </button>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
+                  <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", whiteSpace: "nowrap" }}>or continue with email</span>
+                  <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: 8 }}>
+                  <Input label="Email" type="email" value={accountEmail} placeholder="you@example.com" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAccountEmail(e.target.value)} />
+                  <Input label="Password" type="password" value={accountPassword} placeholder="••••••••" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAccountPassword(e.target.value)} />
+                </div>
+
+                {accountError && (
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: "10px 0 0" }}>{accountError}</p>
+                )}
+
+                <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 24 }}>
+                  <button onClick={createAccountWithEmail} disabled={accountLoading} style={{
+                    border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                    fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
+                    cursor: accountLoading ? "default" : "pointer", opacity: accountLoading ? 0.6 : 1,
+                  }}>
+                    {accountLoading ? "Creating…" : "Create account"}
+                  </button>
+                  <button onClick={() => setShowAccountModal(false)} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-faint)", cursor: "pointer", padding: 0 }}>
+                    Not now
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

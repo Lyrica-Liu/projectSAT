@@ -38,6 +38,21 @@ function AuthForm() {
   async function signInWithGoogle() {
     setLoading(true);
     setError(null);
+    // An anonymous session (started from onboarding, before any account existed) already has
+    // real progress attached to it — link Google to that same user instead of starting a
+    // separate one, so nothing gets orphaned.
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.is_anonymous) {
+      const { error } = await supabase.auth.linkIdentity({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) {
+        setLoading(false);
+        setError(error.message);
+      }
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -57,6 +72,22 @@ function AuthForm() {
 
     try {
       if (mode === "signup") {
+        // Same reasoning as the Google path above — upgrade an existing anonymous session
+        // in place rather than creating an unrelated new account and losing its progress.
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser?.is_anonymous) {
+          const { error } = await supabase.auth.updateUser({
+            email, password,
+            data: displayName ? { display_name: displayName } : undefined,
+          });
+          if (error) {
+            setError(error.message);
+          } else {
+            setSuccessMsg("Check your email to confirm your account — everything you've already done is saved.");
+          }
+          return;
+        }
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -105,7 +136,7 @@ function AuthForm() {
             Steady, deliberate progress — one sitting at a time.
           </p>
           <p style={{ fontSize: 16, lineHeight: 1.62, color: "var(--text-on-dark-muted)", margin: 0, maxWidth: "36ch" }}>
-            Twelve questions a day, timed like the test, explained the way a good tutor would.
+            Twenty questions a day, timed like the test, explained the way a good tutor would.
           </p>
         </div>
 
