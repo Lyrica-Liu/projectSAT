@@ -22,8 +22,6 @@ interface QuestionState {
   answer: Answer | null;
   selected: AnswerChoice | null;
   gridValue: string | null;
-  correct: boolean | null;
-  revealed: boolean;
   eliminated: AnswerChoice[];
   highlights: Record<string, Highlight[]>;
 }
@@ -280,12 +278,18 @@ export default function ActiveSessionPage() {
           answer: row,
           selected: row.user_answer as AnswerChoice | null,
           gridValue: row.user_grid_answer,
-          correct: row.is_correct,
-          revealed: row.user_answer !== null || row.user_grid_answer !== null,
           eliminated: [],
           highlights: {},
         }))
       );
+
+      // Just like the real test, this is one straight pass — so "picking up where you left
+      // off" means the last question that has an answer on it, not necessarily the first one.
+      let lastWorkedIndex = -1;
+      normalized.forEach((row, i) => {
+        if (row.user_answer !== null || row.user_grid_answer !== null) lastWorkedIndex = i;
+      });
+      if (lastWorkedIndex >= 0) setCurrentIndex(lastWorkedIndex);
 
       setLoading(false);
     }
@@ -307,40 +311,43 @@ export default function ActiveSessionPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [secondsLeft == null]);
 
-  const [gridSyncKey, setGridSyncKey] = useState<{ i: number; qs: QuestionState[] } | null>(null);
-  if (gridSyncKey === null || gridSyncKey.i !== currentIndex || gridSyncKey.qs !== questions) {
-    setGridSyncKey({ i: currentIndex, qs: questions });
+  // Reload the draft input whenever navigation lands on a genuinely different question — done
+  // during render (not in an effect) so it stays keyed on the question's own id, not the whole
+  // `questions` array, since any unrelated update (highlighting, eliminating an option elsewhere)
+  // would otherwise wipe out an uncommitted grid-in draft.
+  const [gridSyncedFor, setGridSyncedFor] = useState<string | null>(null);
+  const currentQuestionId = questions[currentIndex]?.question.id ?? null;
+  if (gridSyncedFor !== currentQuestionId) {
+    setGridSyncedFor(currentQuestionId);
     setGridDraft(questions[currentIndex]?.gridValue ?? "");
   }
 
   async function selectAnswer(choice: AnswerChoice) {
     const state = questions[currentIndex];
-    if (state.revealed) return;
-
-    const isCorrect = choice === state.question.answer;
     setQuestions((prev) =>
-      prev.map((q, i) => (i === currentIndex ? { ...q, selected: choice, correct: isCorrect, revealed: true } : q))
+      prev.map((q, i) => (i === currentIndex ? { ...q, selected: choice } : q))
     );
 
     await supabase
       .from("answers")
-      .update({ user_answer: choice, is_correct: isCorrect })
+      .update({ user_answer: choice })
       .eq("session_id", sessionId)
       .eq("question_id", state.question.id);
   }
 
-  async function submitGridAnswer() {
+  /** Saves the current grid-in draft (if it's changed) — called on blur and before navigating away, so nothing typed is lost even without an explicit submit step. */
+  async function commitGridAnswer() {
     const state = questions[currentIndex];
-    if (state.revealed || !gridDraft.trim()) return;
+    if (!state || state.question.question_type !== "grid_in") return;
+    const value = gridDraft.trim() ? gridDraft : null;
+    if (value === state.gridValue) return;
 
-    const isCorrect = gradeGridAnswer(gridDraft, state.question.grid_answer ?? "");
     setQuestions((prev) =>
-      prev.map((q, i) => (i === currentIndex ? { ...q, gridValue: gridDraft, correct: isCorrect, revealed: true } : q))
+      prev.map((q, i) => (i === currentIndex ? { ...q, gridValue: value } : q))
     );
-
     await supabase
       .from("answers")
-      .update({ user_grid_answer: gridDraft, is_correct: isCorrect })
+      .update({ user_grid_answer: value })
       .eq("session_id", sessionId)
       .eq("question_id", state.question.id);
   }
@@ -397,8 +404,35 @@ export default function ActiveSessionPage() {
   }
 
   async function finishSession() {
+    await commitGridAnswer();
     setSubmitting(true);
     clearTimer(sessionId);
+
+    // Nothing has been graded yet — like a real test, correctness is checked only once
+    // everything is submitted, not question by question along the way.
+    const graded = questions.map((q) => ({
+      question: q.question,
+      correct: q.question.question_type === "grid_in"
+        ? gradeGridAnswer(q.gridValue ?? "", q.question.grid_answer ?? "")
+        : q.selected === q.question.answer,
+    }));
+
+    const { error: gradeErr } = await Promise.all(
+      graded.map((g) =>
+        supabase
+          .from("answers")
+          .update({ is_correct: g.correct })
+          .eq("session_id", sessionId)
+          .eq("question_id", g.question.id)
+      )
+    ).then((results) => ({ error: results.find((r) => r.error)?.error ?? null }));
+
+    if (gradeErr) {
+      setActionError("Could not save your answers. Please try again.");
+      setSubmitting(false);
+      return;
+    }
+
     if (planLinked) {
       const res = await fetch("/api/finish-plan-day", {
         method: "POST",
@@ -414,8 +448,8 @@ export default function ActiveSessionPage() {
       router.push(`/plan/${planDayNumber}`);
       return;
     } else {
-      const correct = questions.filter((q) => q.correct);
-      const score = Math.round((correct.length / questions.length) * 100);
+      const correctCount = graded.filter((g) => g.correct).length;
+      const score = Math.round((correctCount / graded.length) * 100);
       await supabase
         .from("sessions")
         .update({ completed_at: new Date().toISOString(), score })
@@ -428,7 +462,13 @@ export default function ActiveSessionPage() {
     router.push("/plan");
   }
 
+  async function goBack() {
+    await commitGridAnswer();
+    setCurrentIndex((i) => Math.max(0, i - 1));
+  }
+
   async function goNext() {
+    await commitGridAnswer();
     const target = session?.question_count ?? questions.length;
     const atFrontier = currentIndex === questions.length - 1;
 
@@ -446,7 +486,7 @@ export default function ActiveSessionPage() {
         if (body.question && body.answer) {
           setQuestions((prev) => [
             ...prev,
-            { question: body.question, answer: body.answer, selected: null, gridValue: null, correct: null, revealed: false, eliminated: [], highlights: {} },
+            { question: body.question, answer: body.answer, selected: null, gridValue: null, eliminated: [], highlights: {} },
           ]);
           setCurrentIndex((i) => i + 1);
         }
@@ -476,18 +516,24 @@ export default function ActiveSessionPage() {
 
   const current = questions[currentIndex];
   const sessionTarget = session?.question_count ?? questions.length;
-  const answeredCount = questions.filter((q) => q.selected !== null || q.gridValue !== null).length;
+  const isGridQuestion = current.question.question_type === "grid_in";
+  // The current question's draft may not be committed to `gridValue` yet (only happens on
+  // blur/navigate), so "answered" has to account for it directly to avoid a one-step-stale check.
+  const currentAnswered = isGridQuestion
+    ? (current.gridValue !== null || gridDraft.trim() !== "")
+    : current.selected !== null;
+  const answeredCount = questions.filter((q, i) => {
+    if (i === currentIndex) return currentAnswered;
+    return q.question.question_type === "grid_in" ? q.gridValue !== null : q.selected !== null;
+  }).length;
   const allAnswered = answeredCount === sessionTarget && questions.length === sessionTarget;
   const atFrontier = currentIndex === questions.length - 1;
   const hasMoreToGenerate = questions.length < sessionTarget;
   const hasPassage = !!current.question.passage;
 
-  type AnswerState = "default" | "selected" | "correct" | "incorrect" | "muted";
+  type AnswerState = "default" | "selected";
   function stateFor(letter: AnswerChoice): AnswerState {
-    if (!current.revealed) return current.selected === letter ? "selected" : "default";
-    if (letter === (current.question.answer as AnswerChoice)) return "correct";
-    if (letter === current.selected) return "incorrect";
-    return "muted";
+    return current.selected === letter ? "selected" : "default";
   }
 
   const mm = secondsLeft != null ? Math.floor(secondsLeft / 60) : 0;
@@ -510,7 +556,7 @@ export default function ActiveSessionPage() {
           <span style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
             {questions.map((q, i) => {
               const isCur = i === currentIndex;
-              const answered = q.selected !== null || q.gridValue !== null;
+              const answered = i === currentIndex ? currentAnswered : (q.question.question_type === "grid_in" ? q.gridValue !== null : q.selected !== null);
               return (
                 <button key={i} onClick={() => setCurrentIndex(i)} style={{
                   width: 26, height: 26, border: `1px solid ${isCur ? "var(--text-strong)" : answered ? "var(--line-strong)" : "var(--border)"}`,
@@ -664,26 +710,15 @@ export default function ActiveSessionPage() {
                 style={{ display: "block", fontSize: 18 * textMult, lineHeight: 1.48, letterSpacing: "-0.008em", color: "var(--text-strong)", margin: "0 0 32px", textWrap: "pretty" }}
               />
 
-              {current.question.question_type === "grid_in" ? (
-                <div className="qa-grid-input" style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 280 }}>
+              {isGridQuestion ? (
+                <div className="qa-grid-input" style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 280 }} onBlur={commitGridAnswer}>
                   <Input
                     label="Your answer"
                     placeholder="e.g. 17/4 or 4.25"
-                    value={current.revealed ? (current.gridValue ?? "") : gridDraft}
-                    disabled={current.revealed}
+                    value={gridDraft}
                     style={{ fontSize: 14 * textMult }}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGridDraft(e.target.value)}
                   />
-                  {!current.revealed && (
-                    <button onClick={submitGridAnswer} disabled={!gridDraft.trim()} style={{
-                      alignSelf: "flex-start", border: 0, background: "var(--brand)", color: "var(--text-on-brand)",
-                      fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500, padding: "11px 22px",
-                      borderRadius: "var(--radius-lg)", cursor: gridDraft.trim() ? "pointer" : "default",
-                      opacity: gridDraft.trim() ? 1 : 0.5,
-                    }}>
-                      Check answer
-                    </button>
-                  )}
                 </div>
               ) : (
                 <div style={{ borderTop: "1px solid var(--border)" }}>
@@ -692,7 +727,7 @@ export default function ActiveSessionPage() {
                     return (
                       <div
                         key={c}
-                        style={{ display: "flex", alignItems: "stretch", gap: 8, cursor: current.revealed ? "default" : "pointer" }}
+                        style={{ display: "flex", alignItems: "stretch", gap: 8, cursor: "pointer" }}
                         onClick={() => {
                           if (suppressNextClickRef.current) { suppressNextClickRef.current = false; return; }
                           selectAnswer(c);
@@ -701,14 +736,13 @@ export default function ActiveSessionPage() {
                         {eliminateMode && (
                           <button
                             onClick={(e) => { e.stopPropagation(); toggleEliminate(c); }}
-                            disabled={current.revealed}
                             aria-label={isEliminated ? `Restore option ${c}` : `Eliminate option ${c}`}
                             style={{
                               flexShrink: 0, width: 34, margin: "2px 0", borderRadius: "var(--radius-sm)",
                               border: `1px solid ${isEliminated ? "var(--text-strong)" : "var(--border)"}`,
                               background: isEliminated ? "var(--surface-sunken)" : "transparent",
                               color: isEliminated ? "var(--text-strong)" : "var(--text-faint)",
-                              cursor: current.revealed ? "default" : "pointer",
+                              cursor: "pointer",
                               display: "flex", alignItems: "center", justifyContent: "center",
                             }}
                           >
@@ -716,7 +750,7 @@ export default function ActiveSessionPage() {
                           </button>
                         )}
                         <div style={{ flex: 1 }}>
-                          <AnswerOption letter={c} state={stateFor(c)} disabled={current.revealed}>
+                          <AnswerOption letter={c} state={stateFor(c)}>
                             <HighlightText
                               text={current.question.options?.[c] ?? ""}
                               highlights={current.highlights[c] ?? []}
@@ -735,33 +769,13 @@ export default function ActiveSessionPage() {
                 </div>
               )}
 
-              {current.revealed && (
-                <div style={{
-                  margin: "30px 0 0", background: current.correct ? "var(--moss-50)" : "var(--claret-50)",
-                  borderLeft: `2px solid ${current.correct ? "var(--success)" : "var(--danger)"}`,
-                  borderRadius: "0 var(--radius-md) var(--radius-md) 0", padding: "20px 22px",
-                }}>
-                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: current.correct ? "var(--success)" : "var(--danger)", margin: "0 0 10px" }}>
-                    {current.correct ? "Correct" : "Not quite"}
-                  </p>
-                  {!current.correct && current.question.question_type === "grid_in" && (
-                    <p style={{ fontFamily: "var(--font-sans)", fontWeight: 700, fontSize: 14 * textMult, margin: "0 0 8px", color: "var(--text-body)" }}>
-                      Correct answer: {current.question.grid_answer}
-                    </p>
-                  )}
-                  <p style={{ fontSize: 15 * textMult, lineHeight: 1.68, margin: 0, color: "var(--text-body)" }}>
-                    {current.question.explanation}
-                  </p>
-                </div>
-              )}
-
               {actionError && (
                 <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "20px 0 0" }}>{actionError}</p>
               )}
 
               <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "32px 0 0" }}>
                 {currentIndex > 0 && (
-                  <button onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", padding: 0 }}>
+                  <button onClick={goBack} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", cursor: "pointer", padding: 0 }}>
                     ← Previous
                   </button>
                 )}
@@ -776,10 +790,10 @@ export default function ActiveSessionPage() {
                       {submitting ? "Saving…" : "Finish session"}
                     </button>
                   ) : (
-                    <button onClick={goNext} disabled={generatingNext || (atFrontier && hasMoreToGenerate && !current.revealed)} style={{
+                    <button onClick={goNext} disabled={generatingNext || (atFrontier && hasMoreToGenerate && !currentAnswered)} style={{
                       border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                       fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
-                      cursor: "pointer", opacity: generatingNext || (atFrontier && hasMoreToGenerate && !current.revealed) ? 0.5 : 1,
+                      cursor: "pointer", opacity: generatingNext || (atFrontier && hasMoreToGenerate && !currentAnswered) ? 0.5 : 1,
                     }}>
                       {generatingNext ? "Loading…" : atFrontier ? "Next question" : "Next"}
                     </button>

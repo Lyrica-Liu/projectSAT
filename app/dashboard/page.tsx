@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
 import { Input } from "@/components/ui/ds";
+import { Icon } from "@/components/ui/icon";
 import {
   getPlanDay, getCurrentPlanDay, calcStreak,
   ENGLISH_SESSION_LENGTH, MATH_SESSION_LENGTH,
@@ -72,6 +73,9 @@ export default function DashboardPage() {
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
   const [awaitingEmailConfirm, setAwaitingEmailConfirm] = useState(false);
+  const [testDate, setTestDate] = useState<string | null>(null);
+  const [editingTestDate, setEditingTestDate] = useState(false);
+  const [testDateSaving, setTestDateSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -84,6 +88,7 @@ export default function DashboardPage() {
         user.user_metadata?.full_name ??
         user.email?.split("@")[0] ?? "there"
       );
+      setTestDate(user.user_metadata?.test_date ?? null);
 
       const [sessionRes, planRes, progressRes] = await Promise.all([
         supabase.from("sessions").select("*").eq("user_id", user.id).not("completed_at", "is", null).order("completed_at", { ascending: false }).limit(10),
@@ -170,6 +175,15 @@ export default function DashboardPage() {
     // On success the browser navigates to Google and back — nothing further runs here.
   }
 
+  async function saveTestDate(value: string) {
+    const next = value || null;
+    setTestDate(next);
+    setEditingTestDate(false);
+    setTestDateSaving(true);
+    await supabase.auth.updateUser({ data: { test_date: next } });
+    setTestDateSaving(false);
+  }
+
   if (loading) return <LoadingScreen />;
 
   const completedPlanRows = planRows.filter((r) => r.completed_at);
@@ -186,12 +200,7 @@ export default function DashboardPage() {
 
   const avgScore = sessions.length > 0 ? Math.round(sessions.reduce((acc, s) => acc + (s.score ?? 0), 0) / sessions.length) : null;
 
-  const daysAgo = (s: Session) => s.completed_at ? (now - new Date(s.completed_at).getTime()) / 86400000 : Infinity;
-  const lastWeek = sessions.filter((s) => daysAgo(s) <= 7);
-  const priorWeek = sessions.filter((s) => daysAgo(s) > 7 && daysAgo(s) <= 14);
-  const lastWeekAvg = lastWeek.length > 0 ? Math.round(lastWeek.reduce((a, s) => a + (s.score ?? 0), 0) / lastWeek.length) : null;
-  const priorWeekAvg = priorWeek.length > 0 ? Math.round(priorWeek.reduce((a, s) => a + (s.score ?? 0), 0) / priorWeek.length) : null;
-  const vsLastWeek = lastWeekAvg != null && priorWeekAvg != null ? lastWeekAvg - priorWeekAvg : null;
+  const daysUntilTest = testDate ? Math.ceil((new Date(testDate).getTime() - now) / 86400000) : null;
 
   const sortedSkills = [...skillStats].sort((a, b) => a.accuracy - b.accuracy);
   const weakestSkill = sortedSkills.length > 0 ? skillLabel(sortedSkills[0].skill) : null;
@@ -210,9 +219,20 @@ export default function DashboardPage() {
 
       <main className="pw-main-content" style={{ maxWidth: 1080 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
 
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-          <span style={{ alignSelf: "center" }}>{dateLine}</span>
-          <span style={{ alignSelf: "center", fontVariantNumeric: "tabular-nums" }}>Day {Math.min(currentDay, 30)} / 30 · {isMathToday ? "Math" : "English"}</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
+          <span>{dateLine}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <span style={{ fontVariantNumeric: "tabular-nums" }}>Day {Math.min(currentDay, 30)} / 30 · {isMathToday ? "Math" : "English"}</span>
+            <form action="/auth/signout" method="post">
+              <button type="submit" style={{
+                border: "1px solid var(--border)", background: "none", fontFamily: "var(--font-sans)",
+                fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)",
+                cursor: "pointer", padding: "6px 12px", borderRadius: "var(--radius-md)",
+              }}>
+                Sign out
+              </button>
+            </form>
+          </span>
         </div>
 
         {/* Save-your-progress prompt — anonymous users see this once they've finished a session */}
@@ -262,18 +282,46 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats strip */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", margin: "48px 0 0", borderTop: "1px solid var(--line-strong)", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", margin: "48px 0 0", borderTop: "1px solid var(--line-strong)", borderBottom: "1px solid var(--border)" }}>
           {[
-            { label: "Plan progress", value: `${Math.min(currentDay, 30)}`, sub: "/ 30" },
+            { label: "Days until test", value: daysUntilTest != null ? `${Math.max(0, daysUntilTest)}` : "—", sub: null },
+            { label: "Days studied", value: `${doneCt}`, sub: "/ 30" },
             { label: "Average accuracy", value: avgScore != null ? `${avgScore}%` : "—", sub: null },
-            { label: "Against last week", value: vsLastWeek != null ? `${vsLastWeek >= 0 ? "+" : ""}${vsLastWeek}` : "—", sub: null },
-            { label: "Days remaining", value: `${Math.max(0, 30 - currentDay + 1)}`, sub: null },
           ].map((s, i) => (
-            <div key={s.label} style={{ padding: i === 0 ? "20px 28px 20px 0" : i === 3 ? "20px 0 20px 28px" : "20px 28px", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
-              <p style={microLabel}>{s.label}</p>
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 26, fontWeight: 500, color: "var(--text-strong)", margin: 0, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+            <div key={s.label} style={{ position: "relative", padding: i === 0 ? "20px 28px 20px 0" : i === 2 ? "20px 0 20px 28px" : "20px 28px", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
+                <p style={{ ...microLabel, margin: 0 }}>{s.label}</p>
+                {i === 0 && (
+                  <button
+                    onClick={() => setEditingTestDate((v) => !v)}
+                    aria-label="Edit test date"
+                    style={{ display: "flex", alignItems: "center", border: 0, background: "none", padding: 2, cursor: "pointer", color: "var(--text-faint)" }}
+                  >
+                    <Icon name="chevron-down" size={11} />
+                  </button>
+                )}
+              </div>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 26, fontWeight: 500, color: "var(--text-strong)", margin: 0, lineHeight: 1, fontVariantNumeric: "tabular-nums", opacity: i === 0 && testDateSaving ? 0.5 : 1 }}>
                 {s.value}{s.sub && <span style={{ fontSize: 14, color: "var(--text-faint)" }}> {s.sub}</span>}
               </p>
+              {i === 0 && editingTestDate && (
+                <div style={{
+                  position: "absolute", top: "100%", left: 0, marginTop: 8, zIndex: 5,
+                  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
+                  padding: 10, boxShadow: "var(--shadow-lg)",
+                }}>
+                  <input
+                    type="date"
+                    autoFocus
+                    value={testDate ?? ""}
+                    onChange={(e) => saveTestDate(e.target.value)}
+                    style={{
+                      fontFamily: "var(--font-sans)", fontSize: 13, border: "1px solid var(--border-strong)",
+                      borderRadius: "var(--radius-sm)", padding: "6px 8px", color: "var(--text-strong)", background: "var(--surface)",
+                    }}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>

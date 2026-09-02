@@ -6,7 +6,7 @@ import {
   TrendingUp, CalendarCheck, Wallet,
   Lightbulb, PenTool, MessageSquare, CheckCheck, ChevronRight,
   Calculator, BarChart3, Triangle, Ban,
-  Calendar, FileText, Clock, CircleCheck, Highlighter, Eraser,
+  Calendar, FileText, Clock, CircleCheck, Highlighter, Eraser, ChevronDown,
 } from "lucide-react";
 
 const ICONS = {
@@ -27,6 +27,7 @@ const ICONS = {
   "message-square":        MessageSquare,
   "check-check":           CheckCheck,
   "chevron-right":         ChevronRight,
+  "chevron-down":          ChevronDown,
   calculator:              Calculator,
   "bar-chart-3":           BarChart3,
   triangle:                Triangle,

@@ -4,12 +4,33 @@ import { ENGLISH_SESSION_LENGTH, MATH_SESSION_LENGTH, getPlanDay } from "@/lib/p
 import { computeSessionState, pickNextTier, TIER_ORDER } from "@/lib/adaptive";
 import { getBankQuestions } from "@/lib/questions/parser";
 import { getMathBankQuestions } from "@/lib/questions/mathParser";
+import { gradeGridAnswer } from "@/lib/grading";
 import type { Difficulty } from "@/lib/types";
 
 interface HistoryRow {
   position: number;
-  is_correct: boolean | null;
-  question: { difficulty: Difficulty; stem: string } | null;
+  user_answer: "A" | "B" | "C" | "D" | null;
+  user_grid_answer: string | null;
+  question: {
+    difficulty: Difficulty; stem: string; question_type: "multiple_choice" | "grid_in";
+    answer: "A" | "B" | "C" | "D" | null; grid_answer: string | null;
+  } | null;
+}
+
+/**
+ * Correctness is no longer written to `is_correct` as the session goes — like a real test,
+ * everything is graded together once the whole thing is submitted (see finishSession on the
+ * client). Adaptive generation still needs to know how the last question went, though, so it
+ * grades directly off the raw answer instead of trusting a column that won't be filled in yet.
+ */
+function isRowCorrect(h: HistoryRow): boolean | null {
+  if (!h.question) return null;
+  if (h.question.question_type === "grid_in") {
+    if (h.user_grid_answer === null) return null;
+    return gradeGridAnswer(h.user_grid_answer, h.question.grid_answer ?? "");
+  }
+  if (h.user_answer === null) return null;
+  return h.user_answer === h.question.answer;
 }
 
 export async function POST(req: NextRequest) {
@@ -38,7 +59,7 @@ export async function POST(req: NextRequest) {
 
   const { data: historyRows, error: hErr } = await supabase
     .from("answers")
-    .select("position, is_correct, question:questions(difficulty, stem)")
+    .select("position, user_answer, user_grid_answer, question:questions(difficulty, stem, question_type, answer, grid_answer)")
     .eq("session_id", sessionId)
     .order("position");
 
@@ -48,7 +69,8 @@ export async function POST(req: NextRequest) {
 
   const history = historyRows as unknown as HistoryRow[];
   const last = history[history.length - 1];
-  if (last.is_correct === null) {
+  const lastCorrect = isRowCorrect(last);
+  if (lastCorrect === null) {
     return NextResponse.json({ error: "Answer the current question first." }, { status: 400 });
   }
 
@@ -57,7 +79,7 @@ export async function POST(req: NextRequest) {
   }
 
   const state = computeSessionState(
-    history.map((h) => ({ difficulty: h.question!.difficulty, isCorrect: h.is_correct! })),
+    history.map((h) => ({ difficulty: h.question!.difficulty, isCorrect: isRowCorrect(h) ?? false })),
     startDifficulty
   );
 
