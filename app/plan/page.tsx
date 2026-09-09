@@ -120,6 +120,17 @@ export default function PlanPage() {
     tierByCategory[subcategory] = tierFromDifficulty(difficultyByCategory.get(subcategory) ?? "medium-low");
   }
 
+  // plan_days.difficulty is only a snapshot from whenever that row was last written (plan
+  // generation, or start-plan-day when the day actually begins) — it goes stale the moment
+  // category_progress adapts afterward (e.g. a good run on that skill elsewhere in the plan)
+  // without that day itself being touched again. For a not-yet-started day, showing the live
+  // category_progress value instead is what actually matches what starting it right now would
+  // give — the whole point of "adaptive," and what start-plan-day itself always reads fresh.
+  function liveDifficulty(row: PlanDayRow | undefined): Difficulty | null {
+    if (!row?.subcategory) return null;
+    return difficultyByCategory.get(row.subcategory) ?? row.difficulty ?? null;
+  }
+
   function isEditable(day: number): boolean {
     const row = planRows.find((r) => r.day_number === day);
     return !!row?.subcategory && !row.completed_at && !row.session_id;
@@ -285,9 +296,9 @@ export default function PlanPage() {
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, margin: "0 0 26px" }}>
                           <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-on-dark-faint)" }}>Today · Day {d} of 30 · {subj}</span>
-                            {row?.difficulty && (
-                              <Badge tone={DIFFICULTY_TONES[row.difficulty] as "mint" | "sky" | "peach" | "rose"} size="sm">
-                                {DIFFICULTY_LABELS[row.difficulty]}
+                            {liveDifficulty(row) && (
+                              <Badge tone={DIFFICULTY_TONES[liveDifficulty(row)!] as "mint" | "sky" | "peach" | "rose"} size="sm">
+                                {DIFFICULTY_LABELS[liveDifficulty(row)!]}
                               </Badge>
                             )}
                           </span>
@@ -329,9 +340,9 @@ export default function PlanPage() {
                         {focus} {!isPendingAssignment && <span style={{ fontSize: 14, color: isLocked ? "var(--ink-300)" : "var(--text-faint)" }}>· {subj}</span>}
                       </span>
                       <span style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "var(--font-sans)", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
-                        {!isDone && row?.difficulty && (
-                          <Badge tone={DIFFICULTY_TONES[row.difficulty] as "mint" | "sky" | "peach" | "rose"} size="sm">
-                            {DIFFICULTY_LABELS[row.difficulty]}
+                        {!isDone && liveDifficulty(row) && (
+                          <Badge tone={DIFFICULTY_TONES[liveDifficulty(row)!] as "mint" | "sky" | "peach" | "rose"} size="sm">
+                            {DIFFICULTY_LABELS[liveDifficulty(row)!]}
                           </Badge>
                         )}
                         {isDone && row?.score != null ? (

@@ -67,7 +67,24 @@ export default function DailySessionPage() {
       const currentDay = getCurrentPlanDay(completedNums);
 
       const thisRow = rows.find((r) => r.day_number === dayNum) ?? null;
-      setRowInfo({ subcategory: thisRow?.subcategory ?? null, difficulty: thisRow?.difficulty ?? null });
+
+      // thisRow.difficulty is only a snapshot from whenever this row was last written (plan
+      // generation, or the moment a session actually starts) — it goes stale the instant
+      // category_progress adapts afterward without this specific day being touched again. For
+      // a not-yet-started day (the only case this matters for — start-plan-day itself always
+      // reads fresh), show the live category_progress value instead, same source of truth
+      // start-plan-day will actually use once the module begins.
+      let liveDifficulty = thisRow?.difficulty ?? null;
+      if (thisRow?.subcategory && !thisRow.completed_at) {
+        const { data: progressRow } = await supabase
+          .from("category_progress")
+          .select("difficulty")
+          .eq("user_id", user.id)
+          .eq("subcategory", thisRow.subcategory)
+          .maybeSingle();
+        if (progressRow?.difficulty) liveDifficulty = progressRow.difficulty as Difficulty;
+      }
+      setRowInfo({ subcategory: thisRow?.subcategory ?? null, difficulty: liveDifficulty });
 
       if (thisRow?.completed_at) {
         setCompletedRow(thisRow);
