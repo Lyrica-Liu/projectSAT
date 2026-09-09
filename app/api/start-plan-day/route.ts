@@ -123,9 +123,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Could not save question: ${qErr?.message}` }, { status: 500 });
   }
 
+  // sessions.domain_filter only allows 'reading' | 'writing' | 'both' — `domain` here can be
+  // 'math' (a valid value on the separate questions.domain column, just set above), which the
+  // DB's check constraint rejects outright. "both" is the closest fit for a math day, matching
+  // every other math-linked session in the app; English days pass 'reading'/'writing' through
+  // unchanged since those are already valid domain_filter values.
+  const sessionDomainFilter = domain === "math" ? "both" : domain;
   const { data: session, error: sErr } = await supabase
     .from("sessions")
-    .insert({ user_id: user.id, question_count: sessionLength, domain_filter: domain })
+    .insert({ user_id: user.id, question_count: sessionLength, domain_filter: sessionDomainFilter })
     .select("id")
     .single();
 
