@@ -107,6 +107,14 @@ export default function OnboardingPage() {
   const [skipCategories, setSkipCategories] = useState<string[]>([]);
   const [reduceCategories, setReduceCategories] = useState<string[]>([]);
 
+  // A real plan (plan_days rows) only exists once onboarding has actually finished once before
+  // — a true first-timer has none yet, so this is only ever true on a second-or-later pass
+  // (via "Redo onboarding" on the Account page). Gates the "Quit" escape hatch below: a
+  // first-timer has nowhere meaningful to quit *to* yet (no plan, no dashboard worth seeing),
+  // while a redoer already has one they can safely bail back out to.
+  const [hasExistingPlan, setHasExistingPlan] = useState(false);
+  const [quitting, setQuitting] = useState(false);
+
   // Guards the draft-save effect so it doesn't overwrite a real saved draft with fresh
   // defaults before the restore pass (below) has had a chance to run.
   const restoredRef = useRef(false);
@@ -153,6 +161,9 @@ export default function OnboardingPage() {
         router.replace("/dashboard");
         return;
       }
+
+      const { count } = await supabase.from("plan_days").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+      setHasExistingPlan((count ?? 0) > 0);
 
       // The diagnostic is optional — the interstitial and the diagnostic session itself (via
       // its Exit button on /practice) both let a user skip it, persisted here so a refresh
@@ -293,6 +304,17 @@ export default function OnboardingPage() {
     setStep(6);
   }
 
+  // Only reachable when hasExistingPlan is true — abandons this redo attempt and restores
+  // onboarding_complete so the user lands back on their existing, untouched plan exactly as it
+  // was. generate-plan is never called here, so nothing about that plan changes; any diagnostic
+  // session started during this redo attempt is simply left unfinished (harmless — same as any
+  // other abandoned session) rather than cleaned up.
+  async function quitOnboarding() {
+    setQuitting(true);
+    await supabase.auth.updateUser({ data: { onboarding_complete: true } });
+    router.push("/dashboard");
+  }
+
   async function finish() {
     setSaving(true);
     setSaveError(null);
@@ -343,8 +365,22 @@ export default function OnboardingPage() {
         overflow: "hidden", display: "flex", flexDirection: "column",
         justifyContent: "space-between", padding: "44px 48px", background: "var(--dark-900)",
       }}>
-        <div style={{ position: "relative", display: "inline-flex" }}>
+        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <Wordmark dark />
+          {hasExistingPlan && (
+            <button
+              onClick={quitOnboarding}
+              disabled={quitting}
+              style={{
+                border: "1px solid var(--dark-700)", background: "none", fontFamily: "var(--font-sans)",
+                fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-on-dark-faint)",
+                cursor: quitting ? "default" : "pointer", padding: "6px 12px", borderRadius: "var(--radius-md)",
+                opacity: quitting ? 0.6 : 1,
+              }}
+            >
+              {quitting ? "Quitting…" : "Quit"}
+            </button>
+          )}
         </div>
 
         <div style={{ position: "relative" }}>
