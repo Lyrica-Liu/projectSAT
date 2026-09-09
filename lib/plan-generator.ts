@@ -184,23 +184,25 @@ export function generatePlanDays(
   return assignments.sort((a, b) => a.day - b.day);
 }
 
-/** A category's current state for a manual, post-onboarding reallocation — no diagnostic
- *  accuracy/confidence signal exists anymore, only wherever category_progress.difficulty
- *  has drifted to (see tierFromDifficulty in diagnostic-scoring.ts). */
+/** A category's state for a reallocation scoped to some subset of days. `confidence` is
+ *  optional and defaults to a neutral 50 — the post-onboarding "Adjust plan" control has no
+ *  diagnostic-accuracy signal left to give (only wherever category_progress.difficulty has
+ *  drifted to, tracked separately via tierFromDifficulty in diagnostic-scoring.ts) so it omits
+ *  this; generate-plan passes the real diagnostic/baseline-derived confidence when it's
+ *  redoing onboarding around already-locked days. */
 export interface CategoryState {
   category: string;
   tier: Tier;
+  confidence?: number;
   override: Override;
 }
 
 /**
  * Same allocate → sequence pipeline generatePlanDays runs, scoped to a caller-supplied set of
  * not-yet-started day numbers for one subject instead of the full 20/10-day onboarding budget.
- * Used by the post-onboarding "Adjust plan" control so a Reduce/Skip can be applied any time
- * without touching completed or in-progress days. Confidence is fixed at neutral (50) for every
- * category since there's nothing left to nudge it with post-diagnostic — tier alone drives the
- * weighting, exactly as it does for onboarding's own reduce/skip (confidence there only ever
- * nudges within a tier, never crosses one).
+ * Used by the post-onboarding "Adjust plan" control (Reduce/Skip any time, without touching
+ * completed or in-progress days) and by generate-plan itself when it's redoing onboarding
+ * around a prior plan's already-locked days.
  */
 export function reallocateRemainingDays(
   editableDays: number[],
@@ -210,7 +212,7 @@ export function reallocateRemainingDays(
   cap: number
 ): { day: number; subcategory: string; difficulty: Difficulty }[] {
   const allocInput: AllocInput[] = categories.map((c) => ({
-    category: c.category, tier: c.tier, confidence: 50, override: c.override,
+    category: c.category, tier: c.tier, confidence: c.confidence ?? 50, override: c.override,
   }));
   const counts = allocateDays(allocInput, editableDays.length, floor, cap);
 

@@ -139,7 +139,14 @@ export default function AccountPage() {
   async function redoOnboarding() {
     setRedoingOnboarding(true);
     setRedoError(null);
-    const { error: updateErr } = await supabase.auth.updateUser({ data: { onboarding_complete: false } });
+    // Also clear the prior diagnostic's state — otherwise onboarding's own guard sees it's
+    // already completed (or already skipped) and jumps straight past the diagnostic step to
+    // the stale old results, never actually letting it be retaken. generate-plan itself never
+    // touches a day already started or finished, and never resets category_progress for a
+    // category already practiced, so retaking the diagnostic reshapes only what's left.
+    const { error: updateErr } = await supabase.auth.updateUser({
+      data: { onboarding_complete: false, diagnostic_session_id: null, diagnostic_skipped: null },
+    });
     if (updateErr) {
       setRedoError(updateErr.message);
       setRedoingOnboarding(false);

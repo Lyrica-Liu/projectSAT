@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getDiagnosticCategoryResults } from "@/lib/server/diagnostic";
-import { ENGLISH_CATEGORY_ORDER, MATH_CATEGORY_ORDER } from "@/lib/plan";
+import { ENGLISH_CATEGORY_ORDER, MATH_CATEGORY_ORDER, ENGLISH_DAYS, MATH_DAYS } from "@/lib/plan";
 import { withConfidence, type CategoryResult } from "@/lib/diagnostic-scoring";
-import { generatePlanDays, STARTING_DIFFICULTY, type CategoryOverride } from "@/lib/plan-generator";
+import {
+  reallocateRemainingDays, STARTING_DIFFICULTY,
+  ENGLISH_FLOOR, ENGLISH_CAP, MATH_FLOOR, MATH_CAP,
+  type Override, type CategoryState,
+} from "@/lib/plan-generator";
 import type { Difficulty } from "@/lib/types";
 
 /**
@@ -33,9 +37,14 @@ function difficultyFromBaselineScore(score: number | null): Difficulty {
 }
 
 /**
- * Turns diagnostic results + any manual overrides into the actual personalized 30-day plan —
- * writes every plan_days row up front (instead of the old fixed-11 + lazy-reallocated-9
- * scheme) and seeds category_progress for all 14 categories from their diagnostic tier.
+ * Turns diagnostic results + any manual overrides into the personalized 30-day plan. Never
+ * touches a day the user has already started or finished, and never resets a category's
+ * adaptive difficulty once it's actually been practiced — this makes the route safe to re-call
+ * at *any* time, not just once at first onboarding: a brand-new user has no locked days or
+ * touched categories at all, so this naturally degrades to "generate everything." That's also
+ * what lets "Redo onboarding" (see app/account/page.tsx) retake the diagnostic and have fresh
+ * results actually reshape the *remaining* plan, without disturbing days already done or
+ * quietly erasing progress on categories already worked on.
  * Only `skip`/`reduce` are trusted from the client; the diagnostic scores themselves are
  * always recomputed server-side.
  */
@@ -72,10 +81,10 @@ export async function POST(req: NextRequest) {
     results = outcome.results;
   }
 
-  const overrides: CategoryOverride[] = [
-    ...(skip ?? []).map((category) => ({ category, override: "skip" as const })),
-    ...(reduce ?? []).map((category) => ({ category, override: "reduce" as const })),
-  ];
+  const overrideMap = new Map<string, Override>([
+    ...(skip ?? []).map((category) => [category, "skip" as const] as const),
+    ...(reduce ?? []).map((category) => [category, "reduce" as const] as const),
+  ]);
 
   const englishResults = results.filter((r) => r.subject === "english");
   const mathResults = results.filter((r) => r.subject === "math");
@@ -83,29 +92,65 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Diagnostic results are incomplete — can't build a plan yet." }, { status: 400 });
   }
 
-  const assignments = generatePlanDays(englishResults, mathResults, overrides);
-
-  const { error: pdErr } = await supabase.from("plan_days").upsert(
-    assignments.map((a) => ({
-      user_id: user.id, day_number: a.day, subcategory: a.subcategory,
-      difficulty: baselineDifficultyBySubject ? baselineDifficultyBySubject[a.subject] : a.difficulty,
-    })),
-    { onConflict: "user_id,day_number" }
+  // A day the user has already started (session_id) or finished (completed_at) is off-limits —
+  // both to a first-time generation (where none exist yet, so this is a no-op) and to a redo,
+  // where it's the whole point. A category that shows up on any such locked day also keeps its
+  // real category_progress difficulty below, rather than being reset to the fresh diagnostic's
+  // starting point.
+  const { data: existingPlanDays } = await supabase
+    .from("plan_days").select("day_number, subcategory, completed_at, session_id").eq("user_id", user.id);
+  const lockedDays = new Set((existingPlanDays ?? []).filter((r) => r.completed_at || r.session_id).map((r) => r.day_number));
+  const lockedSubcategories = new Set(
+    (existingPlanDays ?? []).filter((r) => lockedDays.has(r.day_number) && r.subcategory).map((r) => r.subcategory)
   );
-  if (pdErr) {
-    return NextResponse.json({ error: `Could not save the plan: ${pdErr.message}` }, { status: 500 });
+
+  function toCategoryStates(subjectResults: CategoryResult[]): CategoryState[] {
+    return subjectResults.map((r) => ({
+      category: r.category, tier: r.tier, confidence: r.confidence,
+      override: overrideMap.get(r.category) ?? "normal",
+    }));
   }
 
-  const { error: cpErr } = await supabase.from("category_progress").upsert(
-    results.map((r) => ({
+  const englishAssignments = reallocateRemainingDays(
+    ENGLISH_DAYS.filter((d) => !lockedDays.has(d)), toCategoryStates(englishResults),
+    ENGLISH_CATEGORY_ORDER.map((c) => c.subcategory), ENGLISH_FLOOR, ENGLISH_CAP
+  );
+  const mathAssignments = reallocateRemainingDays(
+    MATH_DAYS.filter((d) => !lockedDays.has(d)), toCategoryStates(mathResults),
+    MATH_CATEGORY_ORDER.map((c) => c.subcategory), MATH_FLOOR, MATH_CAP
+  );
+
+  const planDayRows = [
+    ...englishAssignments.map((a) => ({
+      user_id: user.id, day_number: a.day, subcategory: a.subcategory,
+      difficulty: baselineDifficultyBySubject ? baselineDifficultyBySubject.english : a.difficulty,
+    })),
+    ...mathAssignments.map((a) => ({
+      user_id: user.id, day_number: a.day, subcategory: a.subcategory,
+      difficulty: baselineDifficultyBySubject ? baselineDifficultyBySubject.math : a.difficulty,
+    })),
+  ];
+
+  if (planDayRows.length > 0) {
+    const { error: pdErr } = await supabase.from("plan_days").upsert(planDayRows, { onConflict: "user_id,day_number" });
+    if (pdErr) {
+      return NextResponse.json({ error: `Could not save the plan: ${pdErr.message}` }, { status: 500 });
+    }
+  }
+
+  const categoryProgressRows = results
+    .filter((r) => !lockedSubcategories.has(r.category))
+    .map((r) => ({
       user_id: user.id, subcategory: r.category,
       difficulty: baselineDifficultyBySubject ? baselineDifficultyBySubject[r.subject] : STARTING_DIFFICULTY[r.tier],
       updated_at: new Date().toISOString(),
-    })),
-    { onConflict: "user_id,subcategory" }
-  );
-  if (cpErr) {
-    return NextResponse.json({ error: `Could not save starting difficulty: ${cpErr.message}` }, { status: 500 });
+    }));
+
+  if (categoryProgressRows.length > 0) {
+    const { error: cpErr } = await supabase.from("category_progress").upsert(categoryProgressRows, { onConflict: "user_id,subcategory" });
+    if (cpErr) {
+      return NextResponse.json({ error: `Could not save starting difficulty: ${cpErr.message}` }, { status: 500 });
+    }
   }
 
   const { error: updateErr } = await supabase.auth.updateUser({ data: { onboarding_complete: true } });
