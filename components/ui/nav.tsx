@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Icon } from "@/components/ui/icon";
@@ -10,6 +10,62 @@ import { getCurrentPlanDay, calcStreak } from "@/lib/plan";
 
 /** Fixed width of the collapsed sidebar — signed-in pages offset their content by this. */
 export const SIDEBAR_WIDTH = 66;
+
+/**
+ * Fires `true` for `durationMs` the very first time this browser has ever seen `key` (tracked
+ * in localStorage), then `false` on every render after — for briefly drawing attention to a
+ * low-visibility affordance (an icon-only button, a hover-only panel) exactly once instead of
+ * on every visit. Give each call site its own key.
+ */
+export function useIntroReveal(key: string, durationMs = 2200): boolean {
+  const [reveal, setReveal] = useState(false);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    async function runIntro() {
+      try {
+        if (localStorage.getItem(key)) return;
+        localStorage.setItem(key, "1");
+      } catch {
+        // Storage unavailable (private mode, blocked site data) — skip the one-time reveal.
+        return;
+      }
+      setReveal(true);
+      timer = setTimeout(() => setReveal(false), durationMs);
+    }
+    runIntro();
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  return reveal;
+}
+
+/**
+ * Closes an open popover/panel on a click anywhere outside it — none of this app's hand-rolled
+ * `position:absolute` panels (test-date editor, per-day swap) had this, so they only ever closed
+ * by re-clicking their own trigger or picking a value; clicking away just left them open.
+ * `selector` should match a wrapper that contains *both* the trigger button and the panel
+ * itself (not the panel alone) — otherwise the trigger's own click both closes (via this hook)
+ * and reopens (via its own toggle handler) in the same gesture.
+ */
+export function useCloseOnOutsideClick(active: boolean, selector: string, onClose: () => void) {
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  useEffect(() => {
+    if (!active) return;
+    function handlePointerDown(e: MouseEvent) {
+      const target = e.target as Element | null;
+      if (target?.closest(selector)) return;
+      onCloseRef.current();
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [active, selector]);
+}
 
 export function Spinner({ size = 22, color = "var(--brand)" }: { size?: number; color?: string }) {
   return (
@@ -66,6 +122,13 @@ export function Sidebar() {
   const [streak, setStreak] = useState(0);
   const [hovered, setHovered] = useState<string | null>(null);
 
+  // Collapsed to a 66px icon strip by default (expands on hover — see .pw-sidebar in
+  // globals.css), which means a first-time user has no reason to ever hover it and can go
+  // the whole session without discovering it's there. Force the expanded, labelled state
+  // once, the first time this component ever mounts for a given browser, then let hover
+  // take back over — taught once, not on every visit.
+  const introExpand = useIntroReveal("800path-sidebar-intro-seen");
+
   useEffect(() => {
     const supabase = createClient();
     (async () => {
@@ -93,7 +156,7 @@ export function Sidebar() {
   const clampedDay = Math.min(30, Math.max(1, planDay));
 
   return (
-    <aside className="pw-sidebar" style={{
+    <aside className={`pw-sidebar${introExpand ? " pw-sidebar-intro" : ""}`} style={{
       position: "fixed", left: 0, top: 0, bottom: 0, background: "var(--sidebar-bg)",
       borderRight: "1px solid var(--sidebar-line)", zIndex: 40,
       display: "flex", flexDirection: "column", overflow: "hidden",

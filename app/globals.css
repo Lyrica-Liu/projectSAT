@@ -297,12 +297,16 @@
   margin: 0;
 }
 
-/* Sidebar hover-expand — 66px spine widens to 218px, labels fade in */
+/* Sidebar hover-expand — 66px spine widens to 218px, labels fade in. `.pw-sidebar-intro`
+   forces the same expanded state without a hover, so a brand-new user sees the labelled
+   sidebar once on their first signed-in page (see components/ui/nav.tsx) instead of
+   discovering it only if they happen to mouse over a 66px icon strip. */
 .pw-sidebar {
   width: 66px;
   transition: width 0.24s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
-.pw-sidebar:hover {
+.pw-sidebar:hover,
+.pw-sidebar.pw-sidebar-intro {
   width: 218px;
 }
 .pw-sidebar .pw-lbl {
@@ -310,7 +314,8 @@
   transition: opacity 0.16s;
   white-space: nowrap;
 }
-.pw-sidebar:hover .pw-lbl {
+.pw-sidebar:hover .pw-lbl,
+.pw-sidebar.pw-sidebar-intro .pw-lbl {
   opacity: 1;
 }
 /* Nav-item hover highlight is driven by React state (components/ui/nav.tsx),
@@ -324,7 +329,8 @@
   margin-left: 66px;
   transition: margin-left 0.24s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
-.pw-sidebar:hover ~ .pw-main-content {
+.pw-sidebar:hover ~ .pw-main-content,
+.pw-sidebar.pw-sidebar-intro ~ .pw-main-content {
   margin-left: 218px;
 }
 

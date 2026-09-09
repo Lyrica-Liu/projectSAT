@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingScreen, Wordmark } from "@/components/ui/nav";
+import { Badge } from "@/components/ui/ds";
 import {
   getPlanDay,
   getCurrentPlanDay,
@@ -11,6 +12,8 @@ import {
   ENGLISH_SESSION_LENGTH,
   MATH_SESSION_LENGTH,
   calcStreak,
+  DIFFICULTY_LABELS,
+  DIFFICULTY_TONES,
 } from "@/lib/plan";
 import type { PlanDayRow, Difficulty } from "@/lib/types";
 
@@ -247,6 +250,14 @@ export default function DailySessionPage() {
               <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Module</span>
               <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{sessionLength} questions · {planDay.durationMins} min</span>
             </div>
+            {rowInfo.difficulty && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 12 }}>
+                <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Difficulty</span>
+                <Badge tone={DIFFICULTY_TONES[rowInfo.difficulty] as "mint" | "sky" | "peach" | "rose"} size="sm">
+                  {DIFFICULTY_LABELS[rowInfo.difficulty]}
+                </Badge>
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Counts toward</span>
               <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)" }}>Streak</span>

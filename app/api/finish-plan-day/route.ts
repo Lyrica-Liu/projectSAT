@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { ENGLISH_CATEGORY_ORDER, dayForEnglishSlot, englishSlotNumber } from "@/lib/plan";
-import { computeSessionState, TIER_ORDER } from "@/lib/adaptive";
+import { computeSessionState } from "@/lib/adaptive";
 import type { Difficulty } from "@/lib/types";
 
 interface HistoryRow {
@@ -58,6 +57,11 @@ export async function POST(req: NextRequest) {
       planDayRow.difficulty as Difficulty
     );
 
+    // This is the ongoing per-session adaptive update — every category's day(s) are now
+    // assigned up front by /api/generate-plan during onboarding, so the reallocation this
+    // route used to trigger after English slot 11 (re-ranking categories and overwriting
+    // slots 12-20) has been removed: it would otherwise silently clobber the personalized
+    // plan the moment slot 11 finished.
     await supabase
       .from("category_progress")
       .upsert(
@@ -69,43 +73,6 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "user_id,subcategory" }
       );
-
-    // Once the 11th English slot (the last of the fixed category order)
-    // finishes, compute which 9 categories the remaining slots review.
-    if (englishSlotNumber(planDayRow.day_number) === 11) {
-      const { data: progressRows } = await supabase
-        .from("category_progress")
-        .select("subcategory, difficulty")
-        .eq("user_id", user.id);
-
-      const progressBySubcategory = new Map(
-        (progressRows ?? []).map((r) => [r.subcategory, r.difficulty as Difficulty])
-      );
-
-      const ranked = ENGLISH_CATEGORY_ORDER
-        .map((cat) => ({
-          subcategory: cat.subcategory,
-          difficulty: progressBySubcategory.get(cat.subcategory) ?? "medium-low",
-        }))
-        .sort((a, b) => TIER_ORDER.indexOf(a.difficulty) - TIER_ORDER.indexOf(b.difficulty))
-        .slice(0, 9);
-
-      for (let i = 0; i < ranked.length; i++) {
-        const reviewDay = dayForEnglishSlot(12 + i);
-        if (!reviewDay) continue;
-        await supabase
-          .from("plan_days")
-          .upsert(
-            {
-              user_id: user.id,
-              day_number: reviewDay,
-              subcategory: ranked[i].subcategory,
-              difficulty: ranked[i].difficulty,
-            },
-            { onConflict: "user_id,day_number" }
-          );
-      }
-    }
   }
 
   return NextResponse.json({ score });

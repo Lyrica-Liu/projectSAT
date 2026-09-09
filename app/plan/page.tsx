@@ -4,15 +4,41 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
+import { Sidebar, LoadingScreen, SIDEBAR_WIDTH, useIntroReveal, useCloseOnOutsideClick } from "@/components/ui/nav";
+import { Badge } from "@/components/ui/ds";
+import { Icon } from "@/components/ui/icon";
 import {
   PLAN,
   calcStreak,
   isGraceDayUsed,
   getCurrentPlanDay,
   englishSlotNumber,
+  ENGLISH_CATEGORY_ORDER,
+  MATH_CATEGORY_ORDER,
+  ENGLISH_DAYS,
+  MATH_DAYS,
+  DIFFICULTY_LABELS,
+  DIFFICULTY_TONES,
 } from "@/lib/plan";
-import type { PlanDayRow } from "@/lib/types";
+import { tierFromDifficulty, type Tier } from "@/lib/diagnostic-scoring";
+import type { PlanDayRow, Difficulty } from "@/lib/types";
+
+type Subject = "english" | "math";
+
+interface CategoryProgressRow {
+  subcategory: string;
+  difficulty: Difficulty;
+}
+
+const TIER_TONE: Record<Tier, "mint" | "butter" | "rose"> = { strong: "mint", medium: "butter", weak: "rose" };
+
+function miniChipStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: "5px 11px", border: `1px solid ${active ? "var(--text-strong)" : "var(--border-strong)"}`,
+    background: active ? "var(--surface-sunken)" : "transparent", borderRadius: "var(--radius-sm)",
+    fontFamily: "var(--font-sans)", fontSize: 11, color: active ? "var(--text-strong)" : "var(--text-faint)", cursor: "pointer",
+  };
+}
 
 const WEEKS = [
   { from: 1, to: 7, label: "Week 1 · Laying foundations" },
@@ -35,15 +61,32 @@ export default function PlanPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [planRows, setPlanRows] = useState<PlanDayRow[]>([]);
+  const [progressRows, setProgressRows] = useState<CategoryProgressRow[]>([]);
   const todayRef = useRef<HTMLDivElement>(null);
+
+  const [adjusting, setAdjusting] = useState(false);
+  const [skip, setSkip] = useState<Record<Subject, string[]>>({ english: [], math: [] });
+  const [reduce, setReduce] = useState<Record<Subject, string[]>>({ english: [], math: [] });
+  const [applying, setApplying] = useState<Subject | null>(null);
+  const [adjustError, setAdjustError] = useState<string | null>(null);
+
+  const [swappingDay, setSwappingDay] = useState<number | null>(null);
+  const [swapSaving, setSwapSaving] = useState<number | null>(null);
+  const [swapError, setSwapError] = useState<string | null>(null);
+  const swapHint = useIntroReveal("800path-planswap-intro-seen");
+  useCloseOnOutsideClick(swappingDay !== null, "[data-swap-container]", () => setSwappingDay(null));
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/auth"); return; }
 
-      const { data } = await supabase.from("plan_days").select("*").eq("user_id", user.id).order("day_number");
-      setPlanRows(data ?? []);
+      const [{ data: days }, { data: progress }] = await Promise.all([
+        supabase.from("plan_days").select("*").eq("user_id", user.id).order("day_number"),
+        supabase.from("category_progress").select("subcategory, difficulty").eq("user_id", user.id),
+      ]);
+      setPlanRows(days ?? []);
+      setProgressRows(progress ?? []);
       setLoading(false);
     }
     load();
@@ -71,6 +114,73 @@ export default function PlanPage() {
   const todayRow = planRows.find((r) => r.day_number === currentDay);
   const todayFocus = todayRow?.subcategory ?? todayPlan?.focus ?? "";
 
+  const difficultyByCategory = new Map(progressRows.map((r) => [r.subcategory, r.difficulty]));
+  const tierByCategory: Record<string, Tier> = {};
+  for (const { subcategory } of [...ENGLISH_CATEGORY_ORDER, ...MATH_CATEGORY_ORDER]) {
+    tierByCategory[subcategory] = tierFromDifficulty(difficultyByCategory.get(subcategory) ?? "medium-low");
+  }
+
+  function isEditable(day: number): boolean {
+    const row = planRows.find((r) => r.day_number === day);
+    return !!row?.subcategory && !row.completed_at && !row.session_id;
+  }
+  const editableEnglishDays = ENGLISH_DAYS.filter(isEditable);
+  const editableMathDays = MATH_DAYS.filter(isEditable);
+  const editableCount: Record<Subject, number> = { english: editableEnglishDays.length, math: editableMathDays.length };
+
+  function toggleOverride(subject: Subject, category: string, kind: "skip" | "reduce") {
+    if (kind === "skip") {
+      setSkip((prev) => ({ ...prev, [subject]: prev[subject].includes(category) ? prev[subject].filter((c) => c !== category) : [...prev[subject], category] }));
+      setReduce((prev) => ({ ...prev, [subject]: prev[subject].filter((c) => c !== category) }));
+    } else {
+      setReduce((prev) => ({ ...prev, [subject]: prev[subject].includes(category) ? prev[subject].filter((c) => c !== category) : [...prev[subject], category] }));
+      setSkip((prev) => ({ ...prev, [subject]: prev[subject].filter((c) => c !== category) }));
+    }
+  }
+
+  async function applyAdjust(subject: Subject) {
+    setApplying(subject);
+    setAdjustError(null);
+    try {
+      const res = await fetch("/api/adjust-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject, skip: skip[subject], reduce: reduce[subject] }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setAdjustError(json.error ?? "Could not adjust the plan."); return; }
+      const updates = new Map<number, { subcategory: string; difficulty: Difficulty }>(
+        (json.days as { day: number; subcategory: string; difficulty: Difficulty }[]).map((d) => [d.day, d])
+      );
+      setPlanRows((prev) => prev.map((r) => {
+        const u = updates.get(r.day_number);
+        return u ? { ...r, subcategory: u.subcategory, difficulty: u.difficulty } : r;
+      }));
+      setSkip((prev) => ({ ...prev, [subject]: [] }));
+      setReduce((prev) => ({ ...prev, [subject]: [] }));
+    } finally {
+      setApplying(null);
+    }
+  }
+
+  async function swapDay(day: number, subcategory: string) {
+    setSwapSaving(day);
+    setSwapError(null);
+    try {
+      const res = await fetch("/api/swap-plan-day", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ day, subcategory }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setSwapError(json.error ?? "Could not swap that day."); return; }
+      setPlanRows((prev) => prev.map((r) => r.day_number === day ? { ...r, subcategory: json.subcategory, difficulty: json.difficulty } : r));
+      setSwappingDay(null);
+    } finally {
+      setSwapSaving(null);
+    }
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
       <Sidebar />
@@ -78,8 +188,69 @@ export default function PlanPage() {
       <main className="pw-main-content" style={{ maxWidth: 1080 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
           <span>Your study plan</span>
-          <span style={{ fontVariantNumeric: "tabular-nums" }}>{doneCt} of 30 complete</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            <span style={{ fontVariantNumeric: "tabular-nums" }}>{doneCt} of 30 complete</span>
+            <button
+              onClick={() => setAdjusting((v) => !v)}
+              style={{ border: "1px solid var(--border-strong)", background: "transparent", color: "var(--text-muted)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", padding: "6px 12px", borderRadius: "var(--radius-md)", cursor: "pointer" }}
+            >
+              {adjusting ? "Close" : "Adjust plan"}
+            </button>
+          </span>
         </div>
+
+        {adjusting && (
+          <div style={{ margin: "24px 0 0", padding: 24, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface)" }}>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: "0 0 20px", lineHeight: 1.6 }}>
+              For anything marked strong, you can reduce or skip it for the rest of the plan. This only touches days you haven&apos;t started yet.
+            </p>
+            {adjustError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 16px" }}>{adjustError}</p>}
+            {(["english", "math"] as const).map((subject) => {
+              const cats = subject === "english" ? ENGLISH_CATEGORY_ORDER : MATH_CATEGORY_ORDER;
+              const count = editableCount[subject];
+              return (
+                <div key={subject} style={{ marginBottom: 28 }}>
+                  <p style={{ ...microLabel, margin: "0 0 4px" }}>{subject === "english" ? "Reading & Writing" : "Math"}</p>
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "0 0 12px" }}>{count} day{count === 1 ? "" : "s"} left to plan</p>
+                  <div style={{ borderTop: "1px solid var(--border)" }}>
+                    {cats.map((c) => {
+                      const tier = tierByCategory[c.subcategory];
+                      return (
+                        <div key={c.subcategory} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "11px 0", borderBottom: "1px solid var(--border)" }}>
+                          <span style={{ fontSize: 14, color: "var(--text-body)" }}>{c.subcategory}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                            <Badge tone={TIER_TONE[tier]} size="sm">{tier}</Badge>
+                            {tier === "strong" && (
+                              <div style={{ display: "flex", gap: 6 }}>
+                                <button onClick={() => toggleOverride(subject, c.subcategory, "reduce")} style={miniChipStyle(reduce[subject].includes(c.subcategory))}>
+                                  {reduce[subject].includes(c.subcategory) ? "Reducing" : "Reduce"}
+                                </button>
+                                <button onClick={() => toggleOverride(subject, c.subcategory, "skip")} style={miniChipStyle(skip[subject].includes(c.subcategory))}>
+                                  {skip[subject].includes(c.subcategory) ? "Skipping" : "Skip"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => applyAdjust(subject)}
+                    disabled={count === 0 || applying === subject || (skip[subject].length === 0 && reduce[subject].length === 0)}
+                    style={{
+                      marginTop: 14, border: 0, background: "var(--dark-900)", color: "var(--text-on-dark)",
+                      fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500, padding: "10px 18px", borderRadius: "var(--radius-md)",
+                      cursor: count === 0 ? "default" : "pointer", opacity: count === 0 || applying === subject ? 0.5 : 1,
+                    }}
+                  >
+                    {applying === subject ? "Applying…" : `Apply to remaining ${count} day${count === 1 ? "" : "s"}`}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 48, flexWrap: "wrap", padding: "52px 0 0" }}>
           <h1 style={{ fontWeight: 400, fontSize: 46, lineHeight: 1.04, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0 }}>The Thirty-Day Path</h1>
@@ -108,10 +279,38 @@ export default function PlanPage() {
                   const isLocked = (!isDone && !isToday) || isPendingAssignment;
 
                   if (isToday) {
+                    const todayEditable = isEditable(d);
                     return (
                       <div key={d} ref={todayRef} style={{ margin: "18px 0 22px", background: "var(--dark-900)", color: "var(--text-on-dark)", borderRadius: "var(--radius-2xl)", padding: "40px 44px 38px" }}>
-                        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 24, margin: "0 0 26px" }}>
-                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-on-dark-faint)" }}>Today · Day {d} of 30 · {subj}</span>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, margin: "0 0 26px" }}>
+                          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-on-dark-faint)" }}>Today · Day {d} of 30 · {subj}</span>
+                            {row?.difficulty && (
+                              <Badge tone={DIFFICULTY_TONES[row.difficulty] as "mint" | "sky" | "peach" | "rose"} size="sm">
+                                {DIFFICULTY_LABELS[row.difficulty]}
+                              </Badge>
+                            )}
+                          </span>
+                          {todayEditable && (
+                            <div data-swap-container="" style={{ position: "relative" }}>
+                              <button
+                                onClick={() => setSwappingDay((v) => (v === d ? null : d))}
+                                aria-label={`Change Day ${d}`}
+                                style={{ display: "flex", alignItems: "center", gap: 4, border: "1px solid var(--text-on-dark-faint)", background: "none", padding: "4px 8px", borderRadius: "var(--radius-sm)", cursor: "pointer", color: "var(--text-on-dark-faint)", fontFamily: "var(--font-sans)", fontSize: 11 }}
+                              >
+                                Swap <Icon name="chevron-down" size={11} />
+                              </button>
+                              {swappingDay === d && (
+                                <SwapPanel
+                                  error={swapError}
+                                  subject={planDay.subject}
+                                  current={row?.subcategory ?? null}
+                                  saving={swapSaving === d}
+                                  onPick={(cat) => swapDay(d, cat)}
+                                />
+                              )}
+                            </div>
+                          )}
                         </div>
                         <h2 style={{ fontWeight: 400, fontSize: 36, lineHeight: 1.08, letterSpacing: "-0.024em", color: "var(--text-on-dark)", margin: "0 0 16px", maxWidth: "22ch", textWrap: "pretty" }}>{focus}</h2>
                         <p style={{ fontSize: 16, lineHeight: 1.66, color: "var(--text-on-dark-muted)", margin: "0 0 32px", maxWidth: "46ch" }}>Steady work compounds. Settle in, take the questions one at a time, and let today&apos;s module do its job.</p>
@@ -122,18 +321,49 @@ export default function PlanPage() {
                     );
                   }
 
+                  const dayEditable = isEditable(d);
                   const rowContent = (
                     <div style={{ display: "grid", gridTemplateColumns: "56px 1fr auto", alignItems: "baseline", gap: 20, padding: "17px 4px", borderBottom: "1px solid var(--border)" }}>
                       <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: isLocked ? "var(--ink-300)" : "var(--text-faint)", fontVariantNumeric: "tabular-nums" }}>Day {d}</span>
                       <span style={{ fontSize: 16, color: isLocked ? "var(--ink-400)" : "var(--text-strong)" }}>
                         {focus} {!isPendingAssignment && <span style={{ fontSize: 14, color: isLocked ? "var(--ink-300)" : "var(--text-faint)" }}>· {subj}</span>}
                       </span>
-                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "var(--font-sans)", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
+                        {!isDone && row?.difficulty && (
+                          <Badge tone={DIFFICULTY_TONES[row.difficulty] as "mint" | "sky" | "peach" | "rose"} size="sm">
+                            {DIFFICULTY_LABELS[row.difficulty]}
+                          </Badge>
+                        )}
                         {isDone && row?.score != null ? (
                           <span style={{ color: row.score >= 75 ? "var(--text-strong)" : row.score >= 58 ? "var(--text-muted)" : "var(--accent)", fontSize: 13 }}>{row.score}%</span>
-                        ) : isLocked ? (
+                        ) : isLocked && !dayEditable ? (
                           <span style={{ color: "var(--ink-300)" }}>{d === currentDay + 1 ? "Opens tomorrow" : isPendingAssignment ? "Locked" : `After Day ${d - 1}`}</span>
                         ) : null}
+                        {dayEditable && (
+                          <div data-swap-container="" style={{ position: "relative" }}>
+                            <button
+                              onClick={() => setSwappingDay((v) => (v === d ? null : d))}
+                              aria-label={`Change Day ${d}`}
+                              style={{ display: "flex", alignItems: "center", gap: 4, border: 0, background: "none", padding: 2, cursor: "pointer", color: "var(--text-faint)" }}
+                            >
+                              {swapHint && (
+                                <span style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", background: "var(--surface-2)", borderRadius: "var(--radius-sm)", padding: "2px 6px" }}>
+                                  Swap
+                                </span>
+                              )}
+                              <Icon name="chevron-down" size={11} />
+                            </button>
+                            {swappingDay === d && (
+                              <SwapPanel
+                                error={swapError}
+                                subject={planDay.subject}
+                                current={row?.subcategory ?? null}
+                                saving={swapSaving === d}
+                                onPick={(cat) => swapDay(d, cat)}
+                              />
+                            )}
+                          </div>
+                        )}
                       </span>
                     </div>
                   );
@@ -201,6 +431,41 @@ export default function PlanPage() {
           </aside>
         </div>
       </main>
+    </div>
+  );
+}
+
+function SwapPanel({ subject, current, saving, error, onPick }: {
+  subject: "english" | "math";
+  current: string | null;
+  saving: boolean;
+  error?: string | null;
+  onPick: (category: string) => void;
+}) {
+  const cats = subject === "english" ? ENGLISH_CATEGORY_ORDER : MATH_CATEGORY_ORDER;
+  return (
+    <div style={{
+      position: "absolute", top: "100%", right: 0, marginTop: 8, zIndex: 5, minWidth: 210,
+      background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
+      padding: 10, boxShadow: "var(--shadow-lg)",
+    }}>
+      {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: "0 0 8px" }}>{error}</p>}
+      <select
+        autoFocus
+        disabled={saving}
+        defaultValue={current ?? ""}
+        onChange={(e) => onPick(e.target.value)}
+        style={{
+          width: "100%", fontFamily: "var(--font-sans)", fontSize: 13, border: "1px solid var(--border-strong)",
+          borderRadius: "var(--radius-sm)", padding: "6px 8px", color: "var(--text-strong)", background: "var(--surface)",
+        }}
+      >
+        {cats.map((c) => (
+          <option key={c.subcategory} value={c.subcategory}>
+            {c.subcategory}{c.subcategory === current ? " (current)" : ""}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

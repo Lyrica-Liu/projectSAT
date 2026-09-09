@@ -3,55 +3,50 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button, Input } from "@/components/ui/ds";
+import { Button, Input, Badge } from "@/components/ui/ds";
 import { Wordmark } from "@/components/ui/nav";
+import type { CategoryResult } from "@/lib/diagnostic-scoring";
 
 const STEPS = [
   { title: "Welcome aboard", sub: "Let's build your personal path to a higher score — it only takes a minute." },
-  { title: "First, the basics", sub: "A couple of details so 800Path feels like yours." },
+  { title: "Where you stand", sub: "A recent score, if you have one, gives the diagnostic a head start." },
   { title: "Aim high", sub: "Your target score shapes every practice set we choose." },
-  { title: "Where you're starting", sub: "A starting point just helps us calibrate — no pressure." },
-  { title: "What's getting in the way?", sub: "Knowing your struggles helps us shape a plan that actually sticks." },
-  { title: "Your 30-day plan", sub: "Twenty days of English, ten of Math — one steady day at a time." },
+  { title: "How it works", sub: "Every day follows the same shape — see it before you dive in." },
+  { title: "Quick diagnostic", sub: "About 48 questions, mixed difficulty, so the plan starts calibrated instead of guessing." },
+  { title: "Your results", sub: "Strong, medium, or weak — see exactly where you stand before anything's decided." },
   { title: "You're all set", sub: "Your 30-day path is built and Day 1 is waiting." },
 ];
 
 const GRADES = ["9", "10", "11", "12", "Other"];
-const STRUGGLE_OPTIONS = [
-  "Low attention span", "Not knowing what to study", "Running out of time",
-  "Test anxiety", "Forgetting what I learned", "Losing motivation",
-];
 
 const LAST_STEP = 6;
 const PCT_BY_STEP = [0, 17, 33, 50, 67, 83, 100];
 
-const DRAFT_KEY = "onboarding-draft-v1";
+const DRAFT_KEY = "onboarding-draft-v2";
 
 interface OnboardingDraft {
   step: number;
   name: string;
   grade: string;
+  mathScore: string;
+  noMathScore: boolean;
+  englishScore: string;
+  noEnglishScore: boolean;
   target: number;
   testDate: string;
-  baseline: string;
-  noScore: boolean;
-  struggles: string[];
-  startDate: string;
 }
 
 function metadataFor(d: {
-  name: string; grade: string; target: number; testDate: string;
-  baseline: string; noScore: boolean; struggles: string[]; startDate: string;
+  name: string; grade: string; mathScore: string; noMathScore: boolean;
+  englishScore: string; noEnglishScore: boolean; target: number; testDate: string;
 }) {
   return {
     display_name: d.name || undefined,
     grade: d.grade,
     target_score: d.target,
     test_date: d.testDate || null,
-    baseline_score: d.noScore ? null : (d.baseline || null),
-    struggles: d.struggles,
-    plan_start_date: d.startDate || null,
-    onboarding_complete: true,
+    math_baseline_score: d.noMathScore || !d.mathScore ? null : Number(d.mathScore),
+    english_baseline_score: d.noEnglishScore || !d.englishScore ? null : Number(d.englishScore),
   };
 }
 
@@ -61,6 +56,14 @@ function chipStyle(active: boolean): React.CSSProperties {
     border: `1px solid ${active ? "var(--text-strong)" : "var(--border-strong)"}`,
     background: "transparent", borderRadius: "var(--radius-md)", fontFamily: "var(--font-serif)",
     fontSize: 17, color: "var(--text-body)", cursor: "pointer",
+  };
+}
+
+function miniChipStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: "5px 11px", border: `1px solid ${active ? "var(--text-strong)" : "var(--border-strong)"}`,
+    background: active ? "var(--surface-sunken)" : "transparent", borderRadius: "var(--radius-sm)",
+    fontFamily: "var(--font-sans)", fontSize: 11, color: active ? "var(--text-strong)" : "var(--text-faint)", cursor: "pointer",
   };
 }
 
@@ -74,6 +77,8 @@ const eyebrow: React.CSSProperties = {
   textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 20px",
 };
 
+const TIER_TONE: Record<string, "mint" | "butter" | "rose"> = { strong: "mint", medium: "butter", weak: "rose" };
+
 export default function OnboardingPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -81,14 +86,26 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [grade, setGrade] = useState("11");
+  const [mathScore, setMathScore] = useState("");
+  const [noMathScore, setNoMathScore] = useState(false);
+  const [englishScore, setEnglishScore] = useState("");
+  const [noEnglishScore, setNoEnglishScore] = useState(false);
   const [target, setTarget] = useState(1450);
   const [testDate, setTestDate] = useState("");
-  const [baseline, setBaseline] = useState("");
-  const [noScore, setNoScore] = useState(false);
-  const [struggles, setStruggles] = useState<string[]>([]);
-  const [startDate, setStartDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const [diagnosticSessionId, setDiagnosticSessionId] = useState<string | null>(null);
+  const [diagnosticCompleted, setDiagnosticCompleted] = useState(false);
+  const [diagnosticSkipped, setDiagnosticSkipped] = useState(false);
+  const [diagnosticStarting, setDiagnosticStarting] = useState(false);
+  const [diagnosticError, setDiagnosticError] = useState<string | null>(null);
+
+  const [results, setResults] = useState<CategoryResult[] | null>(null);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  const [resultsError, setResultsError] = useState<string | null>(null);
+  const [skipCategories, setSkipCategories] = useState<string[]>([]);
+  const [reduceCategories, setReduceCategories] = useState<string[]>([]);
 
   // Guards the draft-save effect so it doesn't overwrite a real saved draft with fresh
   // defaults before the restore pass (below) has had a chance to run.
@@ -109,22 +126,59 @@ export default function OnboardingPage() {
       if (draft) {
         setName(draft.name ?? "");
         setGrade(draft.grade ?? "11");
+        setMathScore(draft.mathScore ?? "");
+        setNoMathScore(draft.noMathScore ?? false);
+        setEnglishScore(draft.englishScore ?? "");
+        setNoEnglishScore(draft.noEnglishScore ?? false);
         setTarget(draft.target ?? 1450);
         setTestDate(draft.testDate ?? "");
-        setBaseline(draft.baseline ?? "");
-        setNoScore(draft.noScore ?? false);
-        setStruggles(draft.struggles ?? []);
-        setStartDate(draft.startDate ?? "");
         if (draft.step != null) setStep(draft.step);
       }
 
-      // No account needed to work through the wizard — only a completed, real account gets
-      // redirected away (an anonymous one created mid-flow last time is welcome to continue).
+      // No account needed to work through the wizard — a user stays anonymous through their
+      // whole 30-day plan unless they separately convert from the dashboard, so an anonymous
+      // account with a finished plan is the *normal* case, not an edge case. Redirect away on
+      // onboarding_complete alone (regardless of account type) — an anonymous, already-onboarded
+      // user landing back here (bookmark, browser back, a stale link) must never be allowed to
+      // re-submit the results/override step and re-trigger generate-plan, which is destructive
+      // mid-plan: it overwrites subcategory/difficulty for every day (including completed ones)
+      // and resets category_progress back to raw diagnostic-tier starting difficulties, wiping
+      // out all adaptive progress made since.
       const { data: { user } } = await supabase.auth.getUser();
-      if (user && !user.is_anonymous && user.user_metadata?.onboarding_complete) {
+      if (!user) {
+        restoredRef.current = true;
+        return;
+      }
+      if (user.user_metadata?.onboarding_complete) {
         router.replace("/dashboard");
         return;
       }
+
+      // The diagnostic is optional — the interstitial and the diagnostic session itself (via
+      // its Exit button on /practice) both let a user skip it, persisted here so a refresh
+      // doesn't undo that choice and drag them back into "resume the diagnostic." A skip is
+      // authoritative over any in-progress session: skip straight to the finish step rather
+      // than reopening results for a diagnostic they explicitly chose not to take.
+      if (user.user_metadata?.diagnostic_skipped) {
+        setDiagnosticSkipped(true);
+        setStep(6);
+      } else {
+        // The diagnostic's completion state is authoritative over whatever step number happens
+        // to be sitting in the local draft — always resume (or return to results) from there.
+        const sessionId = user.user_metadata?.diagnostic_session_id as string | undefined;
+        if (sessionId) {
+          setDiagnosticSessionId(sessionId);
+          const { data: sessionRow } = await supabase
+            .from("sessions").select("completed_at").eq("id", sessionId).eq("user_id", user.id).maybeSingle();
+          if (sessionRow?.completed_at) {
+            setDiagnosticCompleted(true);
+            setStep(5);
+          } else {
+            setStep(4);
+          }
+        }
+      }
+
       restoredRef.current = true;
     }
     guard();
@@ -134,37 +188,65 @@ export default function OnboardingPage() {
   // Keep a local draft so progress survives a refresh.
   useEffect(() => {
     if (!restoredRef.current) return;
-    const draft: OnboardingDraft = { step, name, grade, target, testDate, baseline, noScore, struggles, startDate };
+    const draft: OnboardingDraft = { step, name, grade, mathScore, noMathScore, englishScore, noEnglishScore, target, testDate };
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch { /* ignore */ }
-  }, [step, name, grade, target, testDate, baseline, noScore, struggles, startDate]);
+  }, [step, name, grade, mathScore, noMathScore, englishScore, noEnglishScore, target, testDate]);
+
+  // Fetch diagnostic results once the results/override step becomes active.
+  useEffect(() => {
+    if (step !== 5 || results !== null || resultsLoading) return;
+    async function loadResults() {
+      setResultsLoading(true);
+      setResultsError(null);
+      try {
+        const res = await fetch("/api/diagnostic-results", { method: "POST" });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Could not load your results.");
+        setResults(body.results);
+      } catch (err) {
+        setResultsError(err instanceof Error ? err.message : "Could not load your results.");
+      } finally {
+        setResultsLoading(false);
+      }
+    }
+    loadResults();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   function next() { setStep((s) => Math.min(LAST_STEP, s + 1)); }
   function back() { setStep((s) => Math.max(0, s - 1)); }
-  function toggle(list: string[], setList: (v: string[]) => void, value: string) {
-    setList(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
+
+  function toggleOverride(category: string, kind: "skip" | "reduce") {
+    if (kind === "skip") {
+      setSkipCategories((prev) => (prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]));
+      setReduceCategories((prev) => prev.filter((c) => c !== category));
+    } else {
+      setReduceCategories((prev) => (prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]));
+      setSkipCategories((prev) => prev.filter((c) => c !== category));
+    }
   }
 
-  async function finish() {
+  // No account exists yet at this point — the diagnostic needs *some* real identity to save
+  // its questions/session against, so a quiet anonymous one is created here. It behaves
+  // exactly like a normal signed-in user until it's turned into a real account later, from
+  // the dashboard, once the plan has been seen in action.
+  async function enterDiagnostic() {
     setSaving(true);
     setSaveError(null);
 
-    // No account exists yet at this point — the plan needs *some* real identity to save
-    // against, so a quiet anonymous one is created here. It behaves exactly like a normal
-    // signed-in user (their sessions and streak all save normally) until they choose to turn
-    // it into a real account later, from the dashboard, once they've seen the plan in action.
     let { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       const { data, error } = await supabase.auth.signInAnonymously();
       if (error) {
         setSaving(false);
-        setSaveError("Couldn't start your plan just now. Please try again.");
+        setSaveError("Couldn't get started just now. Please try again.");
         return;
       }
       user = data.user;
     }
 
     const { error: updateErr } = await supabase.auth.updateUser({
-      data: metadataFor({ name, grade, target, testDate, baseline, noScore, struggles, startDate }),
+      data: metadataFor({ name, grade, mathScore, noMathScore, englishScore, noEnglishScore, target, testDate }),
     });
     if (updateErr) {
       setSaving(false);
@@ -172,8 +254,63 @@ export default function OnboardingPage() {
       return;
     }
 
-    clearDraft();
-    router.push("/plan");
+    setSaving(false);
+    setStep(4);
+  }
+
+  async function beginDiagnostic() {
+    setDiagnosticStarting(true);
+    setDiagnosticError(null);
+    try {
+      const res = await fetch("/api/start-diagnostic", { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Could not start the diagnostic.");
+      router.push(`/practice/${body.sessionId}`);
+    } catch (err) {
+      setDiagnosticError(err instanceof Error ? err.message : "Could not start the diagnostic.");
+      setDiagnosticStarting(false);
+    }
+  }
+
+  function resumeDiagnostic() {
+    if (diagnosticSessionId) router.push(`/practice/${diagnosticSessionId}`);
+  }
+
+  // The diagnostic is optional. Skipping means the plan below can't be personalized by
+  // performance — every category ends up on equal footing instead of extra time where it's
+  // actually needed — so this is a deliberate opt-out, not a silent default; the plan is still
+  // fully generated (via generate-plan's neutral fallback), just evenly paced.
+  async function skipDiagnostic() {
+    setSaving(true);
+    setDiagnosticError(null);
+    const { error } = await supabase.auth.updateUser({ data: { diagnostic_skipped: true } });
+    setSaving(false);
+    if (error) {
+      setDiagnosticError("Couldn't skip just now. Please try again.");
+      return;
+    }
+    setDiagnosticSkipped(true);
+    setStep(6);
+  }
+
+  async function finish() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch("/api/generate-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skip: skipCategories, reduce: reduceCategories }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Could not generate your plan.");
+      clearDraft();
+      router.push("/plan");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Could not generate your plan. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const currentStep = STEPS[step];
@@ -182,10 +319,18 @@ export default function OnboardingPage() {
 
   const planPreview = Array.from({ length: 9 }, (_, i) => (i + 1) % 3 === 0);
 
+  const currentScoreLabel = (() => {
+    const parts: string[] = [];
+    if (!noMathScore && mathScore) parts.push(`Math ${mathScore}`);
+    if (!noEnglishScore && englishScore) parts.push(`R&W ${englishScore}`);
+    return parts.length > 0 ? parts.join(" · ") : "Not taken yet";
+  })();
+
   const summary = [
-    { label: "30-day plan", value: startDate ? `Day 1 · ${startDate}` : "20 English · 10 Math" },
+    { label: "30-day plan", value: "20 English · 10 Math" },
+    { label: "Diagnostic", value: diagnosticSkipped ? "Skipped — evenly paced" : "Personalized to your results" },
     { label: "Target score", value: String(target) },
-    { label: "Current score", value: noScore ? "Not taken yet" : (baseline || "Not set") },
+    { label: "Current score", value: currentScoreLabel },
     { label: "Test day", value: testDate || "Not set" },
   ];
 
@@ -258,12 +403,69 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 1: What studying here looks like */}
+          {/* Step 1: Current score (split Math / English, both skippable) */}
           {step === 1 && (
+            <div>
+              <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 40px" }}>Have you taken it before?</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+                <div>
+                  <Input
+                    label="Math score (200-800)" type="number" placeholder="e.g. 650"
+                    value={mathScore} disabled={noMathScore}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setMathScore(e.target.value); setNoMathScore(false); }}
+                  />
+                  <button onClick={() => { setNoMathScore((v) => !v); setMathScore(""); }} style={{ ...chipStyle(noMathScore), marginTop: 14, fontSize: 13, padding: "9px 16px" }}>
+                    <ActiveMark active={noMathScore} />
+                    <span style={{ position: "relative" }}>Haven&apos;t taken the Math section</span>
+                  </button>
+                </div>
+                <div>
+                  <Input
+                    label="Reading & Writing score (200-800)" type="number" placeholder="e.g. 620"
+                    value={englishScore} disabled={noEnglishScore}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setEnglishScore(e.target.value); setNoEnglishScore(false); }}
+                  />
+                  <button onClick={() => { setNoEnglishScore((v) => !v); setEnglishScore(""); }} style={{ ...chipStyle(noEnglishScore), marginTop: 14, fontSize: 13, padding: "9px 16px" }}>
+                    <ActiveMark active={noEnglishScore} />
+                    <span style={{ position: "relative" }}>Haven&apos;t taken the R&amp;W section</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Target score + test date */}
+          {step === 2 && (
+            <div>
+              <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 40px" }}>Set your target score</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
+                <div>
+                  <p style={eyebrow}>What score are you aiming for?</p>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 24 }}>
+                    <span style={{ fontWeight: 400, fontSize: 72, lineHeight: 1, color: "var(--text-strong)", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{target}</span>
+                    <span style={{ fontSize: 17, color: "var(--text-faint)" }}>/ 1600</span>
+                  </div>
+                  <input
+                    type="range" min={1300} max={1600} step={10} value={target}
+                    onChange={(e) => setTarget(Number(e.target.value))}
+                    style={{ width: "100%", accentColor: "var(--brand)", cursor: "pointer" }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+                    <span style={{ fontSize: 17, color: "var(--text-faint)" }}>1300</span>
+                    <span style={{ fontSize: 17, color: "var(--text-faint)" }}>1600</span>
+                  </div>
+                </div>
+                <Input label="When's test day?" type="date" value={testDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestDate(e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: What a day looks like (relocated preview, leads into the diagnostic) */}
+          {step === 3 && (
             <div>
               <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Here&apos;s what a day looks like</h2>
               <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 32px", lineHeight: 1.62, maxWidth: "46ch" }}>
-                Every sitting follows the same shape, so there&apos;s nothing new to figure out once you begin.
+                Every sitting follows the same shape, so there&apos;s nothing new to figure out once you begin. First, a quick diagnostic — about 48 questions across Math and Reading &amp; Writing — so the plan starts calibrated instead of guessing.
               </p>
 
               {/* Mini reading-desk mockup — timed, one question at a time */}
@@ -329,105 +531,77 @@ export default function OnboardingPage() {
               <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "0 0 24px" }}>
                 A sequence built around the skills you miss, with an explanation for every answer, right or wrong.
               </p>
+              {saveError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 8px" }}>{saveError}</p>}
             </div>
           )}
 
-          {/* Step 2: Target score + test date */}
-          {step === 2 && (
-            <div>
-              <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 40px" }}>Set your target score</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
-                <div>
-                  <p style={eyebrow}>What score are you aiming for?</p>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 24 }}>
-                    <span style={{ fontWeight: 400, fontSize: 72, lineHeight: 1, color: "var(--text-strong)", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{target}</span>
-                    <span style={{ fontSize: 17, color: "var(--text-faint)" }}>/ 1600</span>
-                  </div>
-                  <input
-                    type="range" min={1300} max={1600} step={10} value={target}
-                    onChange={(e) => setTarget(Number(e.target.value))}
-                    style={{ width: "100%", accentColor: "var(--brand)", cursor: "pointer" }}
-                  />
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
-                    <span style={{ fontSize: 17, color: "var(--text-faint)" }}>1300</span>
-                    <span style={{ fontSize: 17, color: "var(--text-faint)" }}>1600</span>
-                  </div>
-                </div>
-                <Input label="When's test day?" type="date" value={testDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTestDate(e.target.value)} />
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Baseline */}
-          {step === 3 && (
-            <div>
-              <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 40px" }}>A recent score, if you have one</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                <Input
-                  label="What's your current score? A guess is totally fine."
-                  type="number" placeholder="e.g. 1080"
-                  value={baseline}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setBaseline(e.target.value); setNoScore(false); }}
-                  disabled={noScore}
-                />
-                <button onClick={() => { setNoScore((v) => !v); setBaseline(""); }} style={{ ...chipStyle(noScore), alignSelf: "flex-start" }}>
-                  <ActiveMark active={noScore} />
-                  <span style={{ position: "relative" }}>I haven&apos;t taken one yet</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Struggles */}
+          {/* Step 4: Diagnostic interstitial */}
           {step === 4 && (
             <div>
-              <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 40px" }}>What tends to trip you up?</h2>
-              <div>
-                <p style={eyebrow}>
-                  What&apos;s something that bothers you while studying? <span style={{ color: "var(--text-faint)" }}>(pick any)</span>
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                  {STRUGGLE_OPTIONS.map((s) => {
-                    const active = struggles.includes(s);
-                    return (
-                      <button key={s} onClick={() => toggle(struggles, setStruggles, s)} style={chipStyle(active)}>
-                        <ActiveMark active={active} />
-                        <span style={{ position: "relative" }}>{s}</span>
-                      </button>
-                    );
-                  })}
+              <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Ready for the diagnostic?</h2>
+              <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 40px", lineHeight: 1.62, maxWidth: "46ch" }}>
+                About 48 questions — every Math category and every Reading &amp; Writing subcategory, mixed difficulty. Answer honestly rather than carefully; this is what sets your starting point, not a score that follows you anywhere.
+              </p>
+              {diagnosticError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 20px" }}>{diagnosticError}</p>}
+              <Button
+                full size="lg" disabled={diagnosticStarting || saving}
+                onClick={diagnosticCompleted ? () => setStep(5) : diagnosticSessionId ? resumeDiagnostic : beginDiagnostic}
+              >
+                {diagnosticStarting ? "Preparing…" : diagnosticCompleted ? "See your results →" : diagnosticSessionId ? "Resume diagnostic →" : "Begin diagnostic →"}
+              </Button>
+              {!diagnosticCompleted && (
+                <div style={{ marginTop: 20, textAlign: "center" }}>
+                  <button onClick={skipDiagnostic} disabled={saving} style={{ background: "none", border: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", cursor: "pointer", textDecoration: "underline" }}>
+                    {saving ? "Skipping…" : "Skip the diagnostic"}
+                  </button>
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "8px 0 0", lineHeight: 1.5 }}>
+                    Without it, every skill gets equal time in the plan instead of extra time where you actually need it.
+                  </p>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* Step 5: Your 30-day plan */}
+          {/* Step 5: Results + manual override */}
           {step === 5 && (
             <div>
-              <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 40px" }}>Here&apos;s the shape of it</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-                <Input label="When does Day 1 begin?" type="date" value={startDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartDate(e.target.value)} />
-                <div>
-                  <p style={eyebrow}>Your rhythm — two English days, one Math day, repeating:</p>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                    {planPreview.map((isMath, i) => (
-                      <span key={i} style={{
-                        display: "inline-flex", alignItems: "center", justifyContent: "center",
-                        width: 42, height: 42, borderRadius: "var(--radius-sm)", fontFamily: "var(--font-sans)", fontSize: 12,
-                        border: `1px solid ${isMath ? "var(--text-strong)" : "var(--border-strong)"}`,
-                        background: isMath ? "var(--text-strong)" : "transparent",
-                        color: isMath ? "var(--canvas)" : "var(--text-muted)",
-                      }}>{isMath ? "M" : "E"}</span>
+              <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Here&apos;s where you stand</h2>
+              <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 32px", lineHeight: 1.62, maxWidth: "50ch" }}>
+                For anything marked strong, you can reduce or skip it — everything else is built into the plan automatically.
+              </p>
+
+              {resultsLoading && (
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-faint)" }}>Scoring your diagnostic…</p>
+              )}
+              {resultsError && (
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)" }}>{resultsError}</p>
+              )}
+
+              {results && (["english", "math"] as const).map((subject) => (
+                <div key={subject} style={{ marginBottom: 28 }}>
+                  <p style={eyebrow}>{subject === "english" ? "Reading & Writing" : "Math"}</p>
+                  <div style={{ borderTop: "1px solid var(--border)" }}>
+                    {results.filter((r) => r.subject === subject).map((r) => (
+                      <div key={r.category} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "13px 0", borderBottom: "1px solid var(--border)" }}>
+                        <span style={{ fontSize: 15, color: "var(--text-body)" }}>{r.category}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                          <Badge tone={TIER_TONE[r.tier]} size="sm">{r.tier}</Badge>
+                          {r.tier === "strong" && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button onClick={() => toggleOverride(r.category, "reduce")} style={miniChipStyle(reduceCategories.includes(r.category))}>
+                                {reduceCategories.includes(r.category) ? "Reducing" : "Reduce"}
+                              </button>
+                              <button onClick={() => toggleOverride(r.category, "skip")} style={miniChipStyle(skipCategories.includes(r.category))}>
+                                {skipCategories.includes(r.category) ? "Skipping" : "Skip"}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     ))}
-                    <span style={{ fontSize: 17, color: "var(--text-faint)", paddingLeft: 8 }}>… to Day 30</span>
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", borderTop: "1px solid var(--border)" }}>
-                  <p style={{ fontSize: 16, color: "var(--text-body)", margin: 0, padding: "14px 0", borderBottom: "1px solid var(--border)" }}><strong>20 English days, 10 Math days</strong> — each a warm-up plus a short timed module.</p>
-                  <p style={{ fontSize: 16, color: "var(--text-body)", margin: 0, padding: "14px 0", borderBottom: "1px solid var(--border)" }}>Days open <strong>one at a time, in order</strong> — one day per day, no cramming ahead.</p>
-                  <p style={{ fontSize: 16, color: "var(--text-body)", margin: 0, padding: "14px 0", borderBottom: "1px solid var(--border)" }}>Life happens — <strong>one grace day per week</strong> keeps a missed day from breaking your streak.</p>
-                </div>
-              </div>
+              ))}
             </div>
           )}
 
@@ -450,7 +624,7 @@ export default function OnboardingPage() {
               </div>
               {saveError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 20px" }}>{saveError}</p>}
               <Button full size="lg" onClick={finish} disabled={saving}>
-                {saving ? "Saving…" : "See my 30-day path →"}
+                {saving ? "Building your plan…" : "See my 30-day path →"}
               </Button>
               <div style={{ marginTop: 16 }}>
                 <button onClick={() => { clearDraft(); setStep(0); }} style={{ background: "none", border: "none", fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", cursor: "pointer", textDecoration: "underline" }}>
@@ -460,11 +634,17 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Nav (steps 1–5) */}
-          {step >= 1 && step <= 5 && (
+          {/* Nav (steps 1–5, except 4 which has its own dedicated action button) */}
+          {step >= 1 && step <= 5 && step !== 4 && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 44 }}>
-              <Button variant="ghost" onClick={back}>← Back</Button>
-              <Button onClick={next}>{step === 5 ? "Finish" : "Continue →"}</Button>
+              <Button variant="ghost" onClick={back} disabled={saving}>← Back</Button>
+              {step === 3 ? (
+                <Button onClick={enterDiagnostic} disabled={saving}>{saving ? "Preparing…" : "Continue →"}</Button>
+              ) : (
+                <Button onClick={next} disabled={step === 5 && (!results || resultsLoading)}>
+                  {step === 5 ? "Finish" : "Continue →"}
+                </Button>
+              )}
             </div>
           )}
         </div>

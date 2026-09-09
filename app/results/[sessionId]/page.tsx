@@ -44,6 +44,7 @@ interface AnswerRow {
   is_correct: boolean;
   user_answer: string | null;
   question: {
+    passage: string | null;
     stem: string;
     answer: string;
     explanation: string;
@@ -67,6 +68,10 @@ export default function ResultsPage() {
   } | null>(null);
   const [answers, setAnswers] = useState<AnswerRow[]>([]);
   const [skillMap, setSkillMap] = useState<Record<string, { total: number; correct: number }>>({});
+  // Command of Evidence (Textual) and (Quantitative) share one skill value on a saved question,
+  // so this maps answer id -> its real subcategory (resolved server-side) wherever it's known —
+  // see /api/resolve-command-of-evidence. Answers not in this map just show the generic skill.
+  const [coeMap, setCoeMap] = useState<Record<string, string>>({});
   const [planDay, setPlanDay] = useState<PlanDayRow | null>(null);
   const [nextDay, setNextDay] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
@@ -91,9 +96,28 @@ export default function ResultsPage() {
       const rows: AnswerRow[] = answerRows ?? [];
       setAnswers(rows);
 
+      // Resolve which of the two Command of Evidence subcategories each such question actually
+      // came from, so the breakdown below doesn't silently merge two different skills into one
+      // ambiguous "Command of Evidence" bucket.
+      const coeItems = rows
+        .filter((r) => r.question?.skill === "command_of_evidence")
+        .map((r) => ({ id: r.id, passage: r.question!.passage, stem: r.question!.stem }));
+      let resolved: Record<string, string> = {};
+      if (coeItems.length > 0) {
+        try {
+          const res = await fetch("/api/resolve-command-of-evidence", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: coeItems }),
+          });
+          if (res.ok) resolved = (await res.json()).resolved ?? {};
+        } catch {
+          // Non-critical — falls back to the generic "Command of Evidence" label below.
+        }
+      }
+      setCoeMap(resolved);
+
       const map: Record<string, { total: number; correct: number }> = {};
       rows.forEach((row) => {
-        const skill = row.question?.skill as QuestionSkill | undefined;
+        const skill = resolved[row.id] ?? (row.question?.skill as QuestionSkill | undefined);
         if (!skill) return;
         if (!map[skill]) map[skill] = { total: 0, correct: 0 };
         map[skill].total++;
@@ -150,7 +174,12 @@ export default function ResultsPage() {
   const score = session.score ?? (totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0);
   const sortedSkills = Object.entries(skillMap).sort(([, a], [, b]) => a.correct / a.total - b.correct / b.total);
   const dateLine = session.completed_at ? new Date(session.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
-  const title = planDay ? `${getPlanDay(planDay.day_number)?.subject === "math" ? "Math" : "English"} — ${getPlanDay(planDay.day_number)?.focus}` : (session.domain_filter === "both" ? "Reading & Writing" : session.domain_filter);
+  // planDay.subcategory is the live, personalized topic for this day (written by generate-plan/
+  // adjust-plan/swap-plan-day) — getPlanDay()'s .focus is only the static pre-personalization
+  // default, so falling back to it unconditionally here would show the wrong topic for any day
+  // whose subcategory has since diverged from that default (the common case under the
+  // diagnostic-driven plan, same fallback pattern already used on /plan and /plan/[day]).
+  const title = planDay ? `${getPlanDay(planDay.day_number)?.subject === "math" ? "Math" : "English"} — ${planDay.subcategory ?? getPlanDay(planDay.day_number)?.focus}` : (session.domain_filter === "both" ? "Reading & Writing" : session.domain_filter);
   const nextPlanDay = nextDay ? getPlanDay(nextDay) : null;
 
   return (
@@ -217,7 +246,7 @@ export default function ResultsPage() {
                   </p>
                 </div>
                 <div>
-                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 14px" }}>{skillLabel(q.skill)}</p>
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 14px" }}>{skillLabel(coeMap[row.id] ?? q.skill)}</p>
                   <p style={{ fontSize: 19, lineHeight: 1.5, color: "var(--text-strong)", margin: "0 0 16px", maxWidth: "52ch" }}>{q.stem}</p>
                   <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: "0 0 18px" }}>
                     Your answer <span style={{ color: row.is_correct ? "var(--success)" : "var(--danger)" }}>{row.user_answer ?? "Skipped"}</span>

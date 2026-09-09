@@ -180,11 +180,13 @@ export default function ActiveSessionPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [questions, setQuestions] = useState<QuestionState[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const questionNavRef = useRef<HTMLSpanElement>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [generatingNext, setGeneratingNext] = useState(false);
   const [planLinked, setPlanLinked] = useState(false);
   const [planDayNumber, setPlanDayNumber] = useState<number | null>(null);
+  const [diagnosticLinked, setDiagnosticLinked] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [showExit, setShowExit] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -219,11 +221,14 @@ export default function ActiveSessionPage() {
         return;
       }
 
+      const isDiagnostic = user.user_metadata?.diagnostic_session_id === sessionId;
+
       if (sessionData.completed_at) {
-        router.replace(`/results/${sessionId}`);
+        router.replace(isDiagnostic ? "/onboarding" : `/results/${sessionId}`);
         return;
       }
 
+      setDiagnosticLinked(isDiagnostic);
       setSession(sessionData);
       const storedSeconds = readTimer(sessionId);
       if (storedSeconds !== null) {
@@ -310,6 +315,15 @@ export default function ActiveSessionPage() {
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [secondsLeft == null]);
+
+  // Keep the current question's button visible in the scrollable nav strip as the user
+  // navigates — without this, jumping past what's on-screen (e.g. via next/back) would leave
+  // the highlighted button scrolled out of view with no visual cue where you are.
+  useEffect(() => {
+    const container = questionNavRef.current;
+    const active = container?.children[currentIndex] as HTMLElement | undefined;
+    active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [currentIndex]);
 
   // Reload the draft input whenever navigation lands on a genuinely different question — done
   // during render (not in an effect) so it stays keyed on the question's own id, not the whole
@@ -455,10 +469,21 @@ export default function ActiveSessionPage() {
         .update({ completed_at: new Date().toISOString(), score })
         .eq("id", sessionId);
     }
-    router.push(`/results/${sessionId}`);
+    router.push(diagnosticLinked ? "/onboarding" : `/results/${sessionId}`);
   }
 
-  function leaveSession() {
+  // For a plan day, leaving just pauses — the session and its answers are already saved, so
+  // returning to /plan/[day] later resumes right where it left off (see start-plan-day). The
+  // diagnostic has no such resume-partial-results path (scoring needs it fully completed), so
+  // leaving it early is treated as a deliberate skip: persist that choice (so a refresh doesn't
+  // drag the user back into "resume the diagnostic") and hand off to onboarding's own skip
+  // handling, which still generates a plan — just evenly paced instead of personalized.
+  async function leaveSession() {
+    if (diagnosticLinked) {
+      await supabase.auth.updateUser({ data: { diagnostic_skipped: true } });
+      router.push("/onboarding");
+      return;
+    }
     router.push("/plan");
   }
 
@@ -541,7 +566,13 @@ export default function ActiveSessionPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)", color: "var(--text-body)", fontFamily: "var(--font-serif)" }}>
-      <style>{`.qa-grid-input label { font-size: ${14 * textMult}px !important; }`}</style>
+      <style>{`
+        .qa-grid-input label { font-size: ${14 * textMult}px !important; }
+        .qa-nav-scroll { scrollbar-width: thin; }
+        .qa-nav-scroll::-webkit-scrollbar { height: 4px; }
+        .qa-nav-scroll::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
+        .qa-nav-scroll::-webkit-scrollbar-track { background: transparent; }
+      `}</style>
 
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "var(--canvas)", borderBottom: "1px solid var(--border)" }}>
         <div style={{ maxWidth: 1360, margin: "0 auto", padding: "0 44px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 32, height: 64 }}>
@@ -549,17 +580,21 @@ export default function ActiveSessionPage() {
             <Wordmark href="/dashboard" />
             <span style={{ width: 1, height: 16, background: "var(--line-strong)" }} />
             <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-              {planLinked ? `Day ${planDayNumber}` : "Extra practice"}
+              {diagnosticLinked ? "Diagnostic" : planLinked ? `Day ${planDayNumber}` : "Extra practice"}
             </span>
           </span>
 
-          <span style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
+          <span
+            ref={questionNavRef}
+            className="qa-nav-scroll"
+            style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden", flex: "1 1 auto", minWidth: 0, padding: "2px 1px" }}
+          >
             {questions.map((q, i) => {
               const isCur = i === currentIndex;
               const answered = i === currentIndex ? currentAnswered : (q.question.question_type === "grid_in" ? q.gridValue !== null : q.selected !== null);
               return (
                 <button key={i} onClick={() => setCurrentIndex(i)} style={{
-                  width: 26, height: 26, border: `1px solid ${isCur ? "var(--text-strong)" : answered ? "var(--line-strong)" : "var(--border)"}`,
+                  width: 26, height: 26, flexShrink: 0, border: `1px solid ${isCur ? "var(--text-strong)" : answered ? "var(--line-strong)" : "var(--border)"}`,
                   background: answered && !isCur ? "var(--surface-2)" : "transparent", borderRadius: "var(--radius-sm)",
                   fontFamily: "var(--font-sans)", fontSize: 11, fontVariantNumeric: "tabular-nums",
                   color: isCur ? "var(--text-strong)" : answered ? "var(--text-muted)" : "var(--text-faint)",
@@ -580,7 +615,7 @@ export default function ActiveSessionPage() {
                 <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", marginTop: 5 }}>remaining</span>
               </span>
             )}
-            {planLinked && (
+            {(planLinked || diagnosticLinked) && (
               <button onClick={() => setShowExit(true)} style={{ border: "1px solid var(--border)", background: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", padding: "7px 13px", borderRadius: "var(--radius-md)" }}>Exit</button>
             )}
           </span>
@@ -808,16 +843,20 @@ export default function ActiveSessionPage() {
       {showExit && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "40px 40px 34px", maxWidth: 420 }}>
-            <h2 style={{ fontWeight: 400, fontSize: 27, lineHeight: 1.15, color: "var(--text-strong)", margin: "0 0 12px" }}>Leave the module?</h2>
+            <h2 style={{ fontWeight: 400, fontSize: 27, lineHeight: 1.15, color: "var(--text-strong)", margin: "0 0 12px" }}>
+              {diagnosticLinked ? "Skip the diagnostic?" : "Leave the module?"}
+            </h2>
             <p style={{ fontSize: 16, lineHeight: 1.62, color: "var(--text-muted)", margin: "0 0 28px" }}>
-              Your answers so far are already saved, so you can pick up right where you left off — today&apos;s day just won&apos;t be marked complete yet.
+              {diagnosticLinked
+                ? `It's the one thing that personalizes your 30-day plan — without it, every skill gets equal time instead of extra time where you actually need it. You've answered ${answeredCount} of ${sessionTarget}.`
+                : "Your answers so far are already saved, so you can pick up right where you left off — today's day just won't be marked complete yet."}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
               <button onClick={() => setShowExit(false)} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
                 Keep going
               </button>
               <button onClick={leaveSession} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-faint)", cursor: "pointer", padding: 0 }}>
-                Leave anyway
+                {diagnosticLinked ? "Skip anyway" : "Leave anyway"}
               </button>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
+import { Sidebar, LoadingScreen, SIDEBAR_WIDTH, useIntroReveal, useCloseOnOutsideClick } from "@/components/ui/nav";
 import { Input } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -74,8 +74,11 @@ export default function DashboardPage() {
   const [accountError, setAccountError] = useState<string | null>(null);
   const [awaitingEmailConfirm, setAwaitingEmailConfirm] = useState(false);
   const [testDate, setTestDate] = useState<string | null>(null);
+  const [grade, setGrade] = useState<string | null>(null);
   const [editingTestDate, setEditingTestDate] = useState(false);
   const [testDateSaving, setTestDateSaving] = useState(false);
+  const testDateHint = useIntroReveal("800path-testdate-intro-seen");
+  useCloseOnOutsideClick(editingTestDate, "[data-testdate-panel]", () => setEditingTestDate(false));
 
   useEffect(() => {
     async function load() {
@@ -89,6 +92,7 @@ export default function DashboardPage() {
         user.email?.split("@")[0] ?? "there"
       );
       setTestDate(user.user_metadata?.test_date ?? null);
+      setGrade(user.user_metadata?.grade ?? null);
 
       const [sessionRes, planRes, progressRes] = await Promise.all([
         supabase.from("sessions").select("*").eq("user_id", user.id).not("completed_at", "is", null).order("completed_at", { ascending: false }).limit(10),
@@ -213,6 +217,12 @@ export default function DashboardPage() {
   else if (streak < 7) briefBody = "The habit is taking hold, which is the part most people never reach. From here the questions begin to lean harder on the skills you have been avoiding.";
   else briefBody = `${streak} days unbroken. The plan now has enough of your work to aim properly, so expect today to be pointed rather than broad — it is chosen from your misses, not at random.`;
 
+  // Grade nudges the briefing's urgency at the two ends of the range — a senior close to
+  // applications reads a different tone than a freshman with years of runway — while 10/11/
+  // unspecified stay on the streak-only copy above.
+  if (grade === "12") briefBody += " Senior year moves fast — this is the stretch that actually counts.";
+  else if (grade === "9") briefBody += " Plenty of runway from here — steady beats rushed.";
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
       <Sidebar />
@@ -288,15 +298,20 @@ export default function DashboardPage() {
             { label: "Days studied", value: `${doneCt}`, sub: "/ 30" },
             { label: "Average accuracy", value: avgScore != null ? `${avgScore}%` : "—", sub: null },
           ].map((s, i) => (
-            <div key={s.label} style={{ position: "relative", padding: i === 0 ? "20px 28px 20px 0" : i === 2 ? "20px 0 20px 28px" : "20px 28px", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
+            <div key={s.label} data-testdate-panel={i === 0 ? "" : undefined} style={{ position: "relative", padding: i === 0 ? "20px 28px 20px 0" : i === 2 ? "20px 0 20px 28px" : "20px 28px", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
                 <p style={{ ...microLabel, margin: 0 }}>{s.label}</p>
                 {i === 0 && (
                   <button
                     onClick={() => setEditingTestDate((v) => !v)}
                     aria-label="Edit test date"
-                    style={{ display: "flex", alignItems: "center", border: 0, background: "none", padding: 2, cursor: "pointer", color: "var(--text-faint)" }}
+                    style={{ display: "flex", alignItems: "center", gap: 4, border: 0, background: "none", padding: 2, cursor: "pointer", color: "var(--text-faint)" }}
                   >
+                    {testDateHint && (
+                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", background: "var(--surface-2)", borderRadius: "var(--radius-sm)", padding: "2px 6px" }}>
+                        Edit
+                      </span>
+                    )}
                     <Icon name="chevron-down" size={11} />
                   </button>
                 )}
@@ -304,6 +319,11 @@ export default function DashboardPage() {
               <p style={{ fontFamily: "var(--font-sans)", fontSize: 26, fontWeight: 500, color: "var(--text-strong)", margin: 0, lineHeight: 1, fontVariantNumeric: "tabular-nums", opacity: i === 0 && testDateSaving ? 0.5 : 1 }}>
                 {s.value}{s.sub && <span style={{ fontSize: 14, color: "var(--text-faint)" }}> {s.sub}</span>}
               </p>
+              {i === 1 && (
+                <div style={{ height: 2, background: "var(--surface-2)", margin: "12px 0 0" }}>
+                  <div style={{ width: `${Math.round((doneCt / 30) * 100)}%`, height: "100%", background: "var(--brand)" }} />
+                </div>
+              )}
               {i === 0 && editingTestDate && (
                 <div style={{
                   position: "absolute", top: "100%", left: 0, marginTop: 8, zIndex: 5,

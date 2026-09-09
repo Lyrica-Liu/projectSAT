@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getPlanDay, englishSlotNumber, ENGLISH_SESSION_LENGTH, MATH_SESSION_LENGTH } from "@/lib/plan";
+import { getPlanDay, ENGLISH_SESSION_LENGTH, MATH_SESSION_LENGTH } from "@/lib/plan";
 import { getBankQuestions } from "@/lib/questions/parser";
 import { getMathBankQuestions } from "@/lib/questions/mathParser";
 import type { Difficulty } from "@/lib/types";
@@ -32,9 +32,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sessionId: existing.session_id, resumed: true });
   }
 
-  let subcategory: string;
-  let difficulty: Difficulty;
-  let sessionLength: number;
+  // Every day's subcategory is written up front by /api/generate-plan during onboarding
+  // (the persisted plan_days row is the source of truth); getPlanDay()'s own subcategory is
+  // only a fallback for the rare case that row is somehow missing. Difficulty is always read
+  // fresh from category_progress — a subcategory can now recur on non-consecutive days under
+  // personalized allocation, so a later occurrence must reflect whatever the tier has become
+  // since the earlier one, never a stale plan-time snapshot (previously only true for math).
+  const subcategory = existing?.subcategory ?? planDay.subcategory;
+  if (!subcategory) {
+    return NextResponse.json(
+      { error: "This day isn't set up yet — finish onboarding first." },
+      { status: 400 }
+    );
+  }
+
+  const { data: progress } = await supabase
+    .from("category_progress")
+    .select("difficulty")
+    .eq("user_id", user.id)
+    .eq("subcategory", subcategory)
+    .maybeSingle();
+  const difficulty: Difficulty = (progress?.difficulty as Difficulty) ?? "medium-low";
+
+  const sessionLength = planDay.subject === "math" ? MATH_SESSION_LENGTH : ENGLISH_SESSION_LENGTH;
+
   let domain: "reading" | "writing" | "math";
   let firstQuestion: {
     skill: string;
@@ -49,17 +70,6 @@ export async function POST(req: NextRequest) {
   };
 
   if (planDay.subject === "math") {
-    subcategory = planDay.subcategory!;
-    sessionLength = MATH_SESSION_LENGTH;
-
-    const { data: progress } = await supabase
-      .from("category_progress")
-      .select("difficulty")
-      .eq("user_id", user.id)
-      .eq("subcategory", subcategory)
-      .maybeSingle();
-    difficulty = (progress?.difficulty as Difficulty) ?? "medium-low";
-
     const startingPool = getMathBankQuestions(subcategory, difficulty);
     if (startingPool.length === 0) {
       return NextResponse.json(
@@ -75,24 +85,6 @@ export async function POST(req: NextRequest) {
       explanation: picked.explanation, questionType: picked.questionType,
     };
   } else {
-    const slot = englishSlotNumber(dayNumber)!;
-    sessionLength = ENGLISH_SESSION_LENGTH;
-
-    if (slot <= 11) {
-      subcategory = planDay.subcategory!;
-      difficulty = planDay.difficulty!;
-    } else {
-      // Slots 12-20: assigned once slot 11 finishes (see /api/finish-plan-day).
-      if (!existing?.subcategory || !existing?.difficulty) {
-        return NextResponse.json(
-          { error: "This day isn't unlocked yet — finish more study days first." },
-          { status: 400 }
-        );
-      }
-      subcategory = existing.subcategory;
-      difficulty = existing.difficulty as Difficulty;
-    }
-
     const startingPool = getBankQuestions(subcategory, difficulty);
     if (startingPool.length === 0) {
       return NextResponse.json(

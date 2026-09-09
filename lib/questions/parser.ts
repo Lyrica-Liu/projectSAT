@@ -68,8 +68,12 @@ function parseQuestion(block: string, subcategory: string, difficulty: Difficult
   const domain = SUBCATEGORY_TO_DOMAIN[subcategory];
   if (!skill || !domain) return null;
 
-  // Passage (optional — some questions have no passage)
-  const passageM = block.match(/Passage:\s*\n([\s\S]*?)(?=\n\s*Prompt:)/);
+  // Passage (optional — some questions have no passage). Most subcategories label this
+  // "Passage:", but Cross-Text Connections uses "Passage 1:"/"Passage 2:" (both captured
+  // together here, since only one "Prompt:" follows both) and Rhetorical Synthesis uses
+  // "Notes:" for its bullet list — without matching those too, both subcategories parsed
+  // with passage: null for every question, silently dropping the source text/notes.
+  const passageM = block.match(/(?:Passage(?:\s*\d+)?:|Notes:)\s*\n([\s\S]*?)(?=\n\s*Prompt:)/);
   const passage = passageM ? passageM[1].replace(/\n\s*/g, "\n").trim() || null : null;
 
   // Prompt / stem
@@ -170,4 +174,36 @@ export function getQuestionBank(): QuestionBank {
 export function getBankQuestions(subcategory: string, difficulty: Difficulty): BankQuestion[] {
   const bank = getQuestionBank();
   return bank[subcategory]?.[difficulty] ?? [];
+}
+
+const ALL_DIFFICULTIES: Difficulty[] = ["easy", "medium-low", "medium-high", "hard"];
+
+let _coeIndex: Map<string, string> | null = null;
+
+/**
+ * Command of Evidence (Textual) and (Quantitative) share one skill value on a saved question
+ * (command_of_evidence), so a question row can't say on its own which of the two it came from
+ * — a real ambiguity anywhere that groups by skill (results page, dashboard, for-you). Rather
+ * than a schema change, rebuild a passage+stem -> subcategory lookup from the same bank data
+ * getBankQuestions reads, so any already-saved Command of Evidence question can be traced back
+ * to its real subcategory after the fact. Passage+stem is a safe fingerprint here: the two
+ * subcategories' bank cells draw from genuinely different source content (different passages/
+ * graphs), so a collision between them is not realistic at this bank's size (~280 entries total
+ * across both subcategories and all 4 tiers).
+ */
+function buildCommandOfEvidenceIndex(): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const subcategory of ["Command of Evidence (Textual)", "Command of Evidence (Quantitative)"]) {
+    for (const difficulty of ALL_DIFFICULTIES) {
+      for (const q of getBankQuestions(subcategory, difficulty)) {
+        index.set(`${q.passage ?? ""}|||${q.stem}`, subcategory);
+      }
+    }
+  }
+  return index;
+}
+
+export function resolveCommandOfEvidenceSubcategory(passage: string | null, stem: string): string | null {
+  if (!_coeIndex) _coeIndex = buildCommandOfEvidenceIndex();
+  return _coeIndex.get(`${passage ?? ""}|||${stem}`) ?? null;
 }

@@ -38,8 +38,10 @@ interface FormState {
   displayName: string;
   email: string;
   grade: string;
-  currentScore: number;
-  noScore: boolean;
+  mathScore: number;
+  noMathScore: boolean;
+  englishScore: number;
+  noEnglishScore: boolean;
   targetScore: number;
   testDate: string;
   rw: string;
@@ -70,8 +72,10 @@ export default function AccountPage() {
         displayName: meta.display_name ?? meta.full_name ?? "",
         email: user.email ?? "",
         grade: meta.grade ?? "11",
-        currentScore: typeof meta.baseline_score === "number" ? meta.baseline_score : Number(meta.baseline_score) || 1080,
-        noScore: meta.baseline_score == null,
+        mathScore: typeof meta.math_baseline_score === "number" ? meta.math_baseline_score : Number(meta.math_baseline_score) || 500,
+        noMathScore: meta.math_baseline_score == null,
+        englishScore: typeof meta.english_baseline_score === "number" ? meta.english_baseline_score : Number(meta.english_baseline_score) || 500,
+        noEnglishScore: meta.english_baseline_score == null,
         targetScore: meta.target_score ?? 1400,
         testDate: meta.test_date ?? "",
         rw: meta.rw_preference ?? "Balanced",
@@ -107,7 +111,8 @@ export default function AccountPage() {
         display_name: form.displayName,
         grade: form.grade,
         target_score: form.targetScore,
-        baseline_score: form.noScore ? null : form.currentScore,
+        math_baseline_score: form.noMathScore ? null : form.mathScore,
+        english_baseline_score: form.noEnglishScore ? null : form.englishScore,
         test_date: form.testDate || null,
         rw_preference: form.rw,
         goals: form.goals,
@@ -145,9 +150,11 @@ export default function AccountPage() {
 
   if (loading || !form) return <LoadingScreen message="Loading account…" />;
 
-  const gap = form.targetScore - form.currentScore;
-  const gapLabel = form.noScore
-    ? "Set a current score to see your climb"
+  const hasCombinedScore = !form.noMathScore && !form.noEnglishScore;
+  const combinedCurrentScore = (form.noMathScore ? 0 : form.mathScore) + (form.noEnglishScore ? 0 : form.englishScore);
+  const gap = form.targetScore - combinedCurrentScore;
+  const gapLabel = !hasCombinedScore
+    ? "Set both section scores to see your climb"
     : gap > 0 ? `+${gap} points to your goal` : "You've hit your target.";
 
   let daysLabel = "No test date set";
@@ -207,28 +214,46 @@ export default function AccountPage() {
         <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "30px 32px", marginBottom: 20 }}>
           <SectionHeading icon="target">Scores</SectionHeading>
           <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", margin: "0 0 20px", paddingLeft: 36 }}>
-            Your current score calibrates difficulty; your target guides which sets we pick.
+            Your diagnostic sets the plan; these section scores and your target are mostly for tracking your own climb.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22, alignItems: "start" }}>
             <div>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-body)" }}>Current score</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-body)" }}>Math score</span>
                 <span style={{ fontWeight: 600, fontSize: 21, color: "var(--text-strong)", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
-                  {form.noScore ? "Not set" : form.currentScore}
+                  {form.noMathScore ? "Not set" : form.mathScore}
                 </span>
               </div>
-              <input type="range" min={400} max={1600} step={10} value={form.currentScore}
-                onChange={(e) => set({ currentScore: Number(e.target.value), noScore: false })}
+              <input type="range" min={200} max={800} step={10} value={form.mathScore}
+                onChange={(e) => set({ mathScore: Number(e.target.value), noMathScore: false })}
                 style={{ width: "100%", accentColor: "var(--brand)", cursor: "pointer" }} />
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                <span style={{ fontSize: 12, color: "var(--text-faint)" }}>400</span>
-                <span style={{ fontSize: 12, color: "var(--text-faint)" }}>1600</span>
+                <span style={{ fontSize: 12, color: "var(--text-faint)" }}>200</span>
+                <span style={{ fontSize: 12, color: "var(--text-faint)" }}>800</span>
               </div>
-              <button onClick={() => set({ noScore: !form.noScore })} style={{ ...chipStyle(form.noScore), marginTop: 12, fontSize: 12, padding: "8px 14px" }}>
+              <button onClick={() => set({ noMathScore: !form.noMathScore })} style={{ ...chipStyle(form.noMathScore), marginTop: 12, fontSize: 12, padding: "8px 14px" }}>
                 Haven&apos;t tested yet
               </button>
             </div>
             <div>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-body)" }}>Reading &amp; Writing score</span>
+                <span style={{ fontWeight: 600, fontSize: 21, color: "var(--text-strong)", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>
+                  {form.noEnglishScore ? "Not set" : form.englishScore}
+                </span>
+              </div>
+              <input type="range" min={200} max={800} step={10} value={form.englishScore}
+                onChange={(e) => set({ englishScore: Number(e.target.value), noEnglishScore: false })}
+                style={{ width: "100%", accentColor: "var(--brand)", cursor: "pointer" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                <span style={{ fontSize: 12, color: "var(--text-faint)" }}>200</span>
+                <span style={{ fontSize: 12, color: "var(--text-faint)" }}>800</span>
+              </div>
+              <button onClick={() => set({ noEnglishScore: !form.noEnglishScore })} style={{ ...chipStyle(form.noEnglishScore), marginTop: 12, fontSize: 12, padding: "8px 14px" }}>
+                Haven&apos;t tested yet
+              </button>
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-body)" }}>Target score</span>
                 <span style={{ fontWeight: 600, fontSize: 21, color: "var(--text-strong)", fontFamily: "var(--font-sans)", fontVariantNumeric: "tabular-nums" }}>{form.targetScore}</span>
