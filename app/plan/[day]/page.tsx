@@ -175,10 +175,10 @@ export default function DailySessionPage() {
   if (state === "done" && planDay) {
     const accuracy = completedRow?.score ?? null;
     const wrapLine = accuracy == null
-      ? "Nicely done — that's another day in the books."
+      ? "Nicely done — another day in the books."
       : accuracy >= 67
-      ? "Careful work. Your record for today is written — come back tomorrow and keep the line unbroken."
-      : "Every day counts, the hard ones most. Tomorrow's module revisits what tripped you up here.";
+      ? "Careful work. Come back tomorrow and keep it going."
+      : "Tomorrow's module revisits what tripped you up here.";
 
     return (
       <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
@@ -247,7 +247,7 @@ export default function DailySessionPage() {
             </p>
             <h1 style={{ fontWeight: 400, fontSize: 52, lineHeight: 1.06, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0, maxWidth: "20ch", textWrap: "pretty" }}>{displayFocus}</h1>
             <p style={{ fontSize: 18, lineHeight: 1.66, color: "var(--text-muted)", margin: "26px 0 0", maxWidth: "48ch", textWrap: "pretty" }}>
-              One warm-up question, then the timed module. Accuracy first, pace second — the clock is here to make the pressure familiar, not to rush you.
+              One warm-up question, then the timed module.
             </p>
             {error && <p style={{ fontSize: 14, color: "var(--danger)", margin: "20px 0 0" }}>{error}</p>}
             <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "40px 0 0" }}>

@@ -215,7 +215,15 @@ export default function ResultsPage() {
 
       <main className="pw-main-content" style={{ maxWidth: 1000 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-          <span>Day report</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <button
+              onClick={() => router.push(planDay ? "/plan" : "/practice")}
+              style={{ border: 0, background: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", letterSpacing: "inherit", textTransform: "inherit", color: "inherit" }}
+            >
+              ← Back
+            </button>
+            <span>Day report</span>
+          </span>
           <span>{planDay ? `Day ${planDay.day_number} of 30 · ` : ""}{dateLine}</span>
         </div>
 

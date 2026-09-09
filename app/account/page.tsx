@@ -61,6 +61,9 @@ export default function AccountPage() {
   const [justSaved, setJustSaved] = useState(false);
   const [redoingOnboarding, setRedoingOnboarding] = useState(false);
   const [redoError, setRedoError] = useState<string | null>(null);
+  const [confirmingRestart, setConfirmingRestart] = useState(false);
+  const [restarting, setRestarting] = useState(false);
+  const [restartError, setRestartError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -153,6 +156,20 @@ export default function AccountPage() {
       return;
     }
     router.push("/onboarding");
+  }
+
+  async function restartPlan() {
+    setRestarting(true);
+    setRestartError(null);
+    try {
+      const res = await fetch("/api/restart-plan", { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Could not restart your plan.");
+      router.push("/plan");
+    } catch (err) {
+      setRestartError(err instanceof Error ? err.message : "Could not restart your plan.");
+      setRestarting(false);
+    }
   }
 
   if (loading || !form) return <LoadingScreen message="Loading account…" />;
@@ -316,6 +333,27 @@ export default function AccountPage() {
           <Button variant="secondary" onClick={redoOnboarding} disabled={redoingOnboarding}>
             {redoingOnboarding ? "Loading…" : "Redo onboarding"}
           </Button>
+        </section>
+
+        {/* Restart plan */}
+        <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "30px 32px", marginBottom: 20 }}>
+          <h2 style={sectionLabel}>Restart plan</h2>
+          <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: "10px 0 20px", maxWidth: "50ch" }}>
+            Clears every day&apos;s progress — Day 1 again, same topics and skill level.
+          </p>
+          {restartError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 14px" }}>{restartError}</p>}
+          {confirmingRestart ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <Button variant="secondary" onClick={restartPlan} disabled={restarting}>
+                {restarting ? "Restarting…" : "Yes, restart"}
+              </Button>
+              <button onClick={() => setConfirmingRestart(false)} disabled={restarting} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-faint)", cursor: "pointer", padding: 0 }}>
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <Button variant="secondary" onClick={() => setConfirmingRestart(true)}>Restart plan</Button>
+          )}
         </section>
 
         {/* Sign out */}

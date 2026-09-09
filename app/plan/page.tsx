@@ -209,7 +209,7 @@ export default function PlanPage() {
         {adjusting && (
           <div style={{ margin: "24px 0 0", padding: 24, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface)" }}>
             <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: "0 0 20px", lineHeight: 1.6 }}>
-              For anything marked strong, you can reduce or skip it for the rest of the plan. This only touches days you haven&apos;t started yet.
+              Reduce or skip anything marked strong. Only affects days you haven&apos;t started.
             </p>
             {adjustError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 16px" }}>{adjustError}</p>}
             {(["english", "math"] as const).map((subject) => {
@@ -262,7 +262,7 @@ export default function PlanPage() {
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 48, flexWrap: "wrap", padding: "52px 0 0" }}>
           <h1 style={{ fontWeight: 400, fontSize: 46, lineHeight: 1.04, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0 }}>The Thirty-Day Path</h1>
           <p style={{ fontSize: 15, lineHeight: 1.62, color: "var(--text-muted)", margin: 0, maxWidth: "38ch", textWrap: "pretty" }}>
-            Twenty days of English, ten of Math — two English, one Math, repeating. The next day opens only when today&apos;s work is done.
+            20 English, 10 Math. Each day unlocks after the last.
           </p>
         </div>
 

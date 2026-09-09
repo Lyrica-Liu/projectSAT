@@ -212,16 +212,16 @@ export default function DashboardPage() {
   const dateLine = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   let briefBody: string;
-  if (doneCt === 0) briefBody = "Nothing is behind you yet and nothing is lost — the sequence starts wherever you open it. Twenty questions is a smaller commitment than it sounds, and it is the whole ask for today.";
-  else if (streak < 3) briefBody = "A sitting or two in, the plan is still deciding what you are good at. Answer honestly rather than carefully; the sequence adjusts to what it sees.";
-  else if (streak < 7) briefBody = "The habit is taking hold, which is the part most people never reach. From here the questions begin to lean harder on the skills you have been avoiding.";
-  else briefBody = `${streak} days unbroken. The plan now has enough of your work to aim properly, so expect today to be pointed rather than broad — it is chosen from your misses, not at random.`;
+  if (doneCt === 0) briefBody = "Twenty questions — the whole ask for today.";
+  else if (streak < 3) briefBody = "Answer honestly — the plan adjusts to what it sees.";
+  else if (streak < 7) briefBody = "The habit's taking hold. Today leans into what needs work.";
+  else briefBody = `${streak} days unbroken. Today's chosen from your misses.`;
 
   // Grade nudges the briefing's urgency at the two ends of the range — a senior close to
   // applications reads a different tone than a freshman with years of runway — while 10/11/
   // unspecified stay on the streak-only copy above.
-  if (grade === "12") briefBody += " Senior year moves fast — this is the stretch that actually counts.";
-  else if (grade === "9") briefBody += " Plenty of runway from here — steady beats rushed.";
+  if (grade === "12") briefBody += " Senior year moves fast.";
+  else if (grade === "9") briefBody += " Plenty of runway — steady beats rushed.";
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>

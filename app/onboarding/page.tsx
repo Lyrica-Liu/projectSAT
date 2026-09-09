@@ -576,7 +576,7 @@ export default function OnboardingPage() {
             <div>
               <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Ready for the diagnostic?</h2>
               <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 40px", lineHeight: 1.62, maxWidth: "46ch" }}>
-                About 48 questions — every Math category and every Reading &amp; Writing subcategory, mixed difficulty. Answer honestly rather than carefully; this is what sets your starting point, not a score that follows you anywhere.
+                About 48 questions across Math and Reading &amp; Writing, mixed difficulty. Answer honestly — it just sets your starting point.
               </p>
               {diagnosticError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 20px" }}>{diagnosticError}</p>}
               <Button
@@ -603,7 +603,7 @@ export default function OnboardingPage() {
             <div>
               <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Here&apos;s where you stand</h2>
               <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 32px", lineHeight: 1.62, maxWidth: "50ch" }}>
-                For anything marked strong, you can reduce or skip it — everything else is built into the plan automatically.
+                Reduce or skip anything marked strong — everything else is automatic.
               </p>
 
               {resultsLoading && (
