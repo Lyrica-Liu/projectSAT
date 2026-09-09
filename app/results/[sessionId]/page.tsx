@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
-import { ScoreRing, SkillBar } from "@/components/ui/ds";
+import { ScoreRing, SkillBar, AnswerOption } from "@/components/ui/ds";
 import { getPlanDay, getCurrentPlanDay, calcStreak } from "@/lib/plan";
 import type { QuestionSkill, MathSkill, PlanDayRow } from "@/lib/types";
 
@@ -43,10 +43,14 @@ interface AnswerRow {
   id: string;
   is_correct: boolean;
   user_answer: string | null;
+  user_grid_answer: string | null;
   question: {
     passage: string | null;
     stem: string;
-    answer: string;
+    answer: "A" | "B" | "C" | "D" | null;
+    grid_answer: string | null;
+    question_type: "multiple_choice" | "grid_in";
+    options: { A: string; B: string; C: string; D: string } | null;
     explanation: string;
     skill: QuestionSkill;
     domain: string;
@@ -72,6 +76,13 @@ export default function ResultsPage() {
   // so this maps answer id -> its real subcategory (resolved server-side) wherever it's known —
   // see /api/resolve-command-of-evidence. Answers not in this map just show the generic skill.
   const [coeMap, setCoeMap] = useState<Record<string, string>>({});
+  // Correct answers start collapsed to a one-line summary (missed ones are the useful ones to
+  // dwell on, so they start expanded); either kind can be expanded on demand.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  // The passage + original answer choices aren't shown at all until asked for, independent of
+  // the expand state above — "Show question" reveals them (and expands the row if it wasn't
+  // already, since the passage needs that context to make sense).
+  const [passageShownIds, setPassageShownIds] = useState<Set<string>>(new Set());
   const [planDay, setPlanDay] = useState<PlanDayRow | null>(null);
   const [nextDay, setNextDay] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
@@ -90,11 +101,15 @@ export default function ResultsPage() {
 
       setSession(sessionData);
 
+      // Ordered by position (the actual sequence the questions were presented in) — id is a
+      // UUID and sorts effectively at random, which would make the "Q1/Q2/…" numbers below
+      // meaningless.
       const { data: answerRows } = await supabase
-        .from("answers").select("*, question:questions(*)").eq("session_id", sessionId).order("id");
+        .from("answers").select("*, question:questions(*)").eq("session_id", sessionId).order("position");
 
       const rows: AnswerRow[] = answerRows ?? [];
       setAnswers(rows);
+      setExpandedIds(new Set(rows.filter((r) => !r.is_correct).map((r) => r.id)));
 
       // Resolve which of the two Command of Evidence subcategories each such question actually
       // came from, so the breakdown below doesn't silently merge two different skills into one
@@ -169,6 +184,18 @@ export default function ResultsPage() {
   if (loading) return <LoadingScreen message="Loading results…" />;
   if (!session) return null;
 
+  function showQuestion(id: string) {
+    setExpandedIds((prev) => new Set(prev).add(id));
+    setPassageShownIds((prev) => new Set(prev).add(id));
+  }
+  function hidePassage(id: string) {
+    setPassageShownIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }
+
   const totalCount = answers.length;
   const correctCount = answers.filter((r) => r.is_correct).length;
   const score = session.score ?? (totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0);
@@ -234,31 +261,90 @@ export default function ResultsPage() {
 
         <div style={{ margin: "56px 0 0" }}>
           <p style={microLabel}>Question review</p>
-          {answers.map((row, i) => {
-            const q = row.question;
-            if (!q) return null;
-            return (
-              <div key={row.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 32, padding: "0 0 34px", margin: "0 0 34px", borderBottom: "1px solid var(--border)" }}>
-                <div>
-                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: 0, fontVariantNumeric: "tabular-nums" }}>Q{i + 1}</p>
-                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: row.is_correct ? "var(--success)" : "var(--danger)", margin: "8px 0 0" }}>
-                    {row.is_correct ? "Correct" : "Missed"}
-                  </p>
+          {answers
+            .map((row, i) => ({ row, originalIndex: i }))
+            // Missed questions first — they're the ones worth dwelling on; original numbering
+            // (the actual order presented) is preserved via originalIndex, not this position.
+            .sort((a, b) => Number(a.row.is_correct) - Number(b.row.is_correct))
+            .map(({ row, originalIndex }) => {
+              const q = row.question;
+              if (!q) return null;
+
+              const isGrid = q.question_type === "grid_in";
+              const userAnswerDisplay = isGrid ? (row.user_grid_answer ?? "Skipped") : (row.user_answer ?? "Skipped");
+              const correctAnswerDisplay = isGrid ? q.grid_answer : q.answer;
+              const isExpanded = expandedIds.has(row.id);
+              const passageShown = passageShownIds.has(row.id);
+
+              if (!isExpanded) {
+                return (
+                  <div key={row.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "15px 0", borderBottom: "1px solid var(--border)" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", fontVariantNumeric: "tabular-nums", width: 24 }}>Q{originalIndex + 1}</span>
+                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--success)" }}>Correct</span>
+                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)" }}>{skillLabel(coeMap[row.id] ?? q.skill)}</span>
+                    </span>
+                    <button
+                      onClick={() => showQuestion(row.id)}
+                      style={{ border: "1px solid var(--border)", background: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", padding: "6px 12px", borderRadius: "var(--radius-md)" }}
+                    >
+                      Show question
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={row.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 32, padding: "0 0 34px", margin: "0 0 34px", borderBottom: "1px solid var(--border)" }}>
+                  <div>
+                    <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: 0, fontVariantNumeric: "tabular-nums" }}>Q{originalIndex + 1}</p>
+                    <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: row.is_correct ? "var(--success)" : "var(--danger)", margin: "8px 0 0" }}>
+                      {row.is_correct ? "Correct" : "Missed"}
+                    </p>
+                  </div>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, margin: "0 0 14px" }}>
+                      <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: 0 }}>{skillLabel(coeMap[row.id] ?? q.skill)}</p>
+                      <button
+                        onClick={() => (passageShown ? hidePassage(row.id) : showQuestion(row.id))}
+                        style={{ border: "1px solid var(--border)", background: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", padding: "5px 11px", borderRadius: "var(--radius-md)" }}
+                      >
+                        {passageShown ? "Hide question" : "Show question"}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: 19, lineHeight: 1.5, color: "var(--text-strong)", margin: "0 0 16px", maxWidth: "52ch" }}>{q.stem}</p>
+                    <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: "0 0 18px" }}>
+                      Your answer <span style={{ color: row.is_correct ? "var(--success)" : "var(--danger)" }}>{userAnswerDisplay}</span>
+                      {!row.is_correct && <> · correct answer <span style={{ color: "var(--success)" }}>{correctAnswerDisplay}</span></>}
+                    </p>
+                    <p style={{ fontSize: 16, lineHeight: 1.68, color: "var(--text-muted)", margin: 0, maxWidth: "58ch", paddingLeft: 18, borderLeft: "1px solid var(--border)" }}>
+                      {q.explanation}
+                    </p>
+                    {passageShown && (
+                      <div style={{ margin: "24px 0 0", padding: 24, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface)" }}>
+                        {q.passage && (
+                          <>
+                            <p style={{ ...microLabel, margin: "0 0 14px" }}>Passage</p>
+                            <p style={{ fontSize: 16, lineHeight: 1.75, color: "var(--text-body)", whiteSpace: "pre-wrap", textWrap: "pretty", margin: q.options ? "0 0 22px" : 0, maxWidth: "56ch" }}>{q.passage}</p>
+                          </>
+                        )}
+                        {q.options && (
+                          <div>
+                            {(["A", "B", "C", "D"] as const).map((letter) => {
+                              const state = letter === q.answer ? "correct" : letter === row.user_answer && letter !== q.answer ? "incorrect" : "muted";
+                              return <AnswerOption key={letter} letter={letter} state={state} disabled>{q.options![letter]}</AnswerOption>;
+                            })}
+                          </div>
+                        )}
+                        {!q.passage && !q.options && (
+                          <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-faint)", margin: 0 }}>No additional passage for this question.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 14px" }}>{skillLabel(coeMap[row.id] ?? q.skill)}</p>
-                  <p style={{ fontSize: 19, lineHeight: 1.5, color: "var(--text-strong)", margin: "0 0 16px", maxWidth: "52ch" }}>{q.stem}</p>
-                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: "0 0 18px" }}>
-                    Your answer <span style={{ color: row.is_correct ? "var(--success)" : "var(--danger)" }}>{row.user_answer ?? "Skipped"}</span>
-                    {!row.is_correct && <> · correct answer <span style={{ color: "var(--success)" }}>{q.answer}</span></>}
-                  </p>
-                  <p style={{ fontSize: 16, lineHeight: 1.68, color: "var(--text-muted)", margin: 0, maxWidth: "58ch", paddingLeft: 18, borderLeft: "1px solid var(--border)" }}>
-                    {q.explanation}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
 
         {planDay && nextDay && nextPlanDay ? (

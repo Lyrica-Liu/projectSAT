@@ -181,6 +181,8 @@ export default function ActiveSessionPage() {
   const [questions, setQuestions] = useState<QuestionState[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const questionNavRef = useRef<HTMLSpanElement>(null);
+  const passageScrollRef = useRef<HTMLDivElement>(null);
+  const questionScrollRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [generatingNext, setGeneratingNext] = useState(false);
@@ -323,6 +325,15 @@ export default function ActiveSessionPage() {
     const container = questionNavRef.current;
     const active = container?.children[currentIndex] as HTMLElement | undefined;
     active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [currentIndex]);
+
+  // Both the passage and question panes scroll independently and can end up scrolled well down
+  // (a long passage, a long question, or after picking an answer near the bottom) — land back at
+  // the top of both whenever the visible question changes, so choice A is where you left it
+  // instead of making you scroll back up every time.
+  useEffect(() => {
+    passageScrollRef.current?.scrollTo({ top: 0 });
+    questionScrollRef.current?.scrollTo({ top: 0 });
   }, [currentIndex]);
 
   // Reload the draft input whenever navigation lands on a genuinely different question — done
@@ -717,7 +728,7 @@ export default function ActiveSessionPage() {
       <main style={{ maxWidth: 1360, margin: "0 auto", padding: "0 44px" }}>
         <div style={{ display: "grid", gridTemplateColumns: hasPassage ? "1fr 1fr" : "1fr" }}>
           {hasPassage && (
-            <div style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: "52px 56px 72px 0", borderRight: "1px solid var(--border)" }}>
+            <div ref={passageScrollRef} style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: "52px 56px 72px 0", borderRight: "1px solid var(--border)" }}>
               <p style={microLabel}>Passage</p>
               <HighlightText
                 text={current.question.passage ?? ""}
@@ -731,7 +742,7 @@ export default function ActiveSessionPage() {
               />
             </div>
           )}
-          <div style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: hasPassage ? "52px 0 72px 56px" : "52px 0 72px" }}>
+          <div ref={questionScrollRef} style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: hasPassage ? "52px 0 72px 56px" : "52px 0 72px" }}>
             <div style={{ maxWidth: "34rem", margin: hasPassage ? 0 : "0 auto" }}>
               <p style={microLabel}>{current.question.skill.replace(/_/g, " ")} · {current.question.difficulty}</p>
               <HighlightText

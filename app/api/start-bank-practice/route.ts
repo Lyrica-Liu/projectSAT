@@ -106,7 +106,11 @@ export async function POST(req: NextRequest) {
   }
 
   const domains = new Set(picked.map((q) => q.domain));
-  const domainFilter = domains.size > 1 ? "both" : (domains.values().next().value ?? "reading");
+  // sessions.domain_filter only allows 'reading' | 'writing' | 'both' — "math" (a valid value
+  // on the separate questions.domain column) isn't one of them, so a math-only selection here
+  // used to get rejected outright by the DB's check constraint. "both" is the closest fit,
+  // matching what every other math-linked session already uses.
+  const domainFilter = domains.size > 1 || domains.has("math") ? "both" : (domains.values().next().value ?? "reading");
 
   const { data: session, error: sErr } = await supabase
     .from("sessions")

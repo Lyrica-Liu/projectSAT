@@ -56,7 +56,12 @@ export async function POST(req: NextRequest) {
 
   const { data: session, error: sErr } = await supabase
     .from("sessions")
-    .insert({ user_id: user.id, question_count: count, domain_filter: "math" })
+    // sessions.domain_filter only allows 'reading' | 'writing' | 'both' (questions.domain is
+    // the separate column that allows 'math') — "both" is the closest fit for an all-math
+    // session and matches what every other math-linked session in the app already uses
+    // (start-plan-day, start-diagnostic, generate-plan). "math" here was rejected outright by
+    // the DB's check constraint, so every math extra-practice session failed to start.
+    .insert({ user_id: user.id, question_count: count, domain_filter: "both" })
     .select("id")
     .single();
 
