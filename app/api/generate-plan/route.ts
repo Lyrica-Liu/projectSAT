@@ -2,29 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getDiagnosticCategoryResults } from "@/lib/server/diagnostic";
 import { ENGLISH_CATEGORY_ORDER, MATH_CATEGORY_ORDER } from "@/lib/plan";
-import { withConfidence, type CategoryResult, type Tier } from "@/lib/diagnostic-scoring";
+import { withConfidence, type CategoryResult } from "@/lib/diagnostic-scoring";
 import { generatePlanDays, STARTING_DIFFICULTY, type CategoryOverride } from "@/lib/plan-generator";
+import type { Difficulty } from "@/lib/types";
 
-/** A reported 200-800 section score stands in for a tier when there's no diagnostic accuracy
- *  to classify from — the same rough cutoffs a diagnostic's own STRONG/WEAK thresholds imply. */
-function tierFromBaselineScore(score: number | null): Tier {
-  if (score == null) return "medium";
-  if (score >= 650) return "strong";
-  if (score < 450) return "weak";
-  return "medium";
+/**
+ * Every category on equal footing tier-wise, used when the diagnostic was skipped — a
+ * subject-level self-reported score says nothing about which specific categories within it
+ * need more days than others, so day-count weighting stays uniform (tier "medium" for
+ * everyone). The plan still gets generated (same spirit as the app's pre-diagnostic behavior)
+ * instead of leaving onboarding stuck on a step the user opted out of. That score still nudges
+ * confidence via withConfidence below (a subject-level tilt in day-count weighting only) —
+ * actual starting difficulty is handled separately below, by difficultyFromBaselineScore.
+ */
+function neutralResults(order: { subcategory: string }[], subject: "english" | "math"): CategoryResult[] {
+  return order.map((c) => ({ category: c.subcategory, subject, correct: 0, total: 0, accuracy: 0, tier: "medium", confidence: 50 }));
 }
 
 /**
- * Every category on equal footing, used when the diagnostic was skipped — the plan still gets
- * generated (evenly paced, same spirit as the app's pre-diagnostic behavior) instead of leaving
- * onboarding stuck on a step the user explicitly opted out of. Where a self-reported baseline
- * score exists, it stands in for the whole subject's tier (the only signal available at all
- * without a diagnostic) — withConfidence below then nudges confidence from that same score too,
- * same "primary signal decides tier, secondary nudges confidence" pattern the diagnostic path uses.
+ * Without a diagnostic, a self-reported 200-800 section score stands in for calibrating where
+ * that subject's questions should start — no score given defaults to medium-low, the same safe
+ * middle ground as if nothing at all were known.
  */
-function neutralResults(order: { subcategory: string }[], subject: "english" | "math", baselineScore: number | null): CategoryResult[] {
-  const tier = tierFromBaselineScore(baselineScore);
-  return order.map((c) => ({ category: c.subcategory, subject, correct: 0, total: 0, accuracy: 0, tier, confidence: 50 }));
+function difficultyFromBaselineScore(score: number | null): Difficulty {
+  if (score == null) return "medium-low";
+  if (score < 500) return "easy";
+  if (score < 630) return "medium-low";
+  if (score < 720) return "medium-high";
+  return "hard";
 }
 
 /**
@@ -44,13 +49,21 @@ export async function POST(req: NextRequest) {
   }
 
   let results: CategoryResult[];
+  // Only set when the diagnostic was skipped — overrides the tier-derived difficulty below
+  // with the direct score-based one instead, per subject. Real diagnostic results already have
+  // an assessed accuracy behind their tier, so this never applies there.
+  let baselineDifficultyBySubject: Record<"english" | "math", Difficulty> | null = null;
   if (user.user_metadata?.diagnostic_skipped) {
     const mathBaseline = (user.user_metadata?.math_baseline_score as number | null | undefined) ?? null;
     const englishBaseline = (user.user_metadata?.english_baseline_score as number | null | undefined) ?? null;
     results = withConfidence(
-      [...neutralResults(ENGLISH_CATEGORY_ORDER, "english", englishBaseline), ...neutralResults(MATH_CATEGORY_ORDER, "math", mathBaseline)],
+      [...neutralResults(ENGLISH_CATEGORY_ORDER, "english"), ...neutralResults(MATH_CATEGORY_ORDER, "math")],
       mathBaseline, englishBaseline
     );
+    baselineDifficultyBySubject = {
+      english: difficultyFromBaselineScore(englishBaseline),
+      math: difficultyFromBaselineScore(mathBaseline),
+    };
   } else {
     const outcome = await getDiagnosticCategoryResults(supabase, user);
     if (!outcome.ok) {
@@ -74,7 +87,8 @@ export async function POST(req: NextRequest) {
 
   const { error: pdErr } = await supabase.from("plan_days").upsert(
     assignments.map((a) => ({
-      user_id: user.id, day_number: a.day, subcategory: a.subcategory, difficulty: a.difficulty,
+      user_id: user.id, day_number: a.day, subcategory: a.subcategory,
+      difficulty: baselineDifficultyBySubject ? baselineDifficultyBySubject[a.subject] : a.difficulty,
     })),
     { onConflict: "user_id,day_number" }
   );
@@ -84,7 +98,8 @@ export async function POST(req: NextRequest) {
 
   const { error: cpErr } = await supabase.from("category_progress").upsert(
     results.map((r) => ({
-      user_id: user.id, subcategory: r.category, difficulty: STARTING_DIFFICULTY[r.tier],
+      user_id: user.id, subcategory: r.category,
+      difficulty: baselineDifficultyBySubject ? baselineDifficultyBySubject[r.subject] : STARTING_DIFFICULTY[r.tier],
       updated_at: new Date().toISOString(),
     })),
     { onConflict: "user_id,subcategory" }
