@@ -1,5 +1,4 @@
-import { ENGLISH_CATEGORY_ORDER, MATH_CATEGORY_ORDER, ENGLISH_DAYS, MATH_DAYS } from "./plan";
-import type { CategoryResult, Tier } from "./diagnostic-scoring";
+import type { Tier } from "./diagnostic-scoring";
 import type { Difficulty } from "./types";
 
 export const ENGLISH_BUDGET = 20, ENGLISH_FLOOR = 1, ENGLISH_CAP = 4;
@@ -127,61 +126,6 @@ export function buildCategorySequence(
   }
 
   return sequence;
-}
-
-export interface PlanDayAssignment {
-  day: number;
-  subject: "english" | "math";
-  subcategory: string;
-  difficulty: Difficulty;
-}
-
-export interface CategoryOverride {
-  category: string;
-  override: Override;
-}
-
-/**
- * Orchestrates the whole personalized 30-day allocation: given diagnostic results for all 14
- * categories (11 English + 3 math) plus any manual overrides, computes a day count per category
- * within each subject's fixed budget, sequences those into the existing 20-English/10-math
- * calendar slots, and attaches each day's starting difficulty from its category's diagnostic tier.
- */
-export function generatePlanDays(
-  englishResults: CategoryResult[],
-  mathResults: CategoryResult[],
-  overrides: CategoryOverride[]
-): PlanDayAssignment[] {
-  const overrideMap = new Map(overrides.map((o) => [o.category, o.override]));
-
-  const toAllocInput = (results: CategoryResult[]): AllocInput[] =>
-    results.map((r) => ({
-      category: r.category, tier: r.tier, confidence: r.confidence,
-      override: overrideMap.get(r.category) ?? "normal",
-    }));
-
-  const englishCounts = allocateDays(toAllocInput(englishResults), ENGLISH_BUDGET, ENGLISH_FLOOR, ENGLISH_CAP);
-  const mathCounts = allocateDays(toAllocInput(mathResults), MATH_BUDGET, MATH_FLOOR, MATH_CAP);
-
-  const tierByCategory: Record<string, Tier> = {};
-  for (const r of [...englishResults, ...mathResults]) tierByCategory[r.category] = r.tier;
-
-  const englishSeq = buildCategorySequence(englishCounts, ENGLISH_CATEGORY_ORDER.map((c) => c.subcategory), tierByCategory);
-  const mathSeq = buildCategorySequence(mathCounts, MATH_CATEGORY_ORDER.map((c) => c.subcategory), tierByCategory);
-
-  const assignments: PlanDayAssignment[] = [];
-  ENGLISH_DAYS.forEach((day, i) => {
-    const subcategory = englishSeq[i];
-    if (!subcategory) return;
-    assignments.push({ day, subject: "english", subcategory, difficulty: STARTING_DIFFICULTY[tierByCategory[subcategory]] });
-  });
-  MATH_DAYS.forEach((day, i) => {
-    const subcategory = mathSeq[i];
-    if (!subcategory) return;
-    assignments.push({ day, subject: "math", subcategory, difficulty: STARTING_DIFFICULTY[tierByCategory[subcategory]] });
-  });
-
-  return assignments.sort((a, b) => a.day - b.day);
 }
 
 /** A category's state for a reallocation scoped to some subset of days. `confidence` is

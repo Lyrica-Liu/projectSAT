@@ -3,14 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { buildDiagnosticPool } from "@/lib/questions/diagnostic";
 
 /**
- * Creates the one-time diagnostic session: ~48 questions across all 11 English subcategories
- * and all 3 math categories, mixed difficulty, no repeats. Structurally identical to
- * start-bank-practice's bulk insert (questions -> sessions -> answers), plus one extra step:
- * the session id and a question-id -> category map get stashed in user_metadata so later steps
- * (results scoring, plan generation) can identify this session and regroup its answers by
- * category without a schema change — `questions` has no free-form category column, and two
- * English subcategories ("Command of Evidence (Textual)"/"(Quantitative)") share the same
- * `skill` value, so skill alone can't be inverted back to a unique category.
+ * Creates the one-time diagnostic session: ~23 questions (7 English subcategories x2, all 3
+ * math categories x3), mixed difficulty, no repeats. Structurally identical to
+ * start-bank-practice's bulk insert (questions -> sessions -> answers). Scoring is subject-level
+ * only (see lib/diagnostic-scoring.ts) — every question's `questions.domain` column already
+ * says which subject it belongs to, so unlike the old per-category diagnostic, there's no need
+ * to stash a question-id -> category map in user_metadata to regroup answers later.
  */
 export async function POST() {
   const supabase = await createClient();
@@ -59,11 +57,8 @@ export async function POST() {
     return NextResponse.json({ error: `Could not link questions to session: ${aErr.message}` }, { status: 500 });
   }
 
-  const diagnosticCategories: Record<string, string> = {};
-  savedQuestions.forEach((q, i) => { diagnosticCategories[q.id] = pool[i].category; });
-
   const { error: updateErr } = await supabase.auth.updateUser({
-    data: { diagnostic_session_id: session.id, diagnostic_categories: diagnosticCategories },
+    data: { diagnostic_session_id: session.id },
   });
   if (updateErr) {
     return NextResponse.json({ error: `Could not save diagnostic metadata: ${updateErr.message}` }, { status: 500 });

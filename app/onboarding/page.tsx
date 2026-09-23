@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Badge } from "@/components/ui/ds";
 import { Wordmark } from "@/components/ui/nav";
-import type { CategoryResult } from "@/lib/diagnostic-scoring";
+import type { SubjectResult } from "@/lib/diagnostic-scoring";
 
 const STEPS = [
   { title: "Welcome aboard", sub: "Let's build your personal path to a higher score — it only takes a minute." },
   { title: "Where you stand", sub: "A recent score, if you have one, gives the diagnostic a head start." },
   { title: "Aim high", sub: "Your target score shapes every practice set we choose." },
   { title: "How it works", sub: "Every day follows the same shape — see it before you dive in." },
-  { title: "Quick diagnostic", sub: "About 48 questions, mixed difficulty, so the plan starts calibrated instead of guessing." },
+  { title: "Quick diagnostic", sub: "About 23 questions, mixed difficulty, so the plan starts calibrated instead of guessing." },
   { title: "Your results", sub: "Strong, medium, or weak — see exactly where you stand before anything's decided." },
   { title: "You're all set", sub: "Your 30-day path is built and Day 1 is waiting." },
 ];
@@ -59,14 +59,6 @@ function chipStyle(active: boolean): React.CSSProperties {
   };
 }
 
-function miniChipStyle(active: boolean): React.CSSProperties {
-  return {
-    padding: "5px 11px", border: `1px solid ${active ? "var(--text-strong)" : "var(--border-strong)"}`,
-    background: active ? "var(--surface-sunken)" : "transparent", borderRadius: "var(--radius-sm)",
-    fontFamily: "var(--font-sans)", fontSize: 11, color: active ? "var(--text-strong)" : "var(--text-faint)", cursor: "pointer",
-  };
-}
-
 function ActiveMark({ active }: { active: boolean }) {
   if (!active) return null;
   return <span style={{ position: "absolute", inset: -1, borderRadius: "var(--radius-md)", border: "1px solid var(--text-strong)", background: "var(--surface-sunken)" }} />;
@@ -101,11 +93,9 @@ export default function OnboardingPage() {
   const [diagnosticStarting, setDiagnosticStarting] = useState(false);
   const [diagnosticError, setDiagnosticError] = useState<string | null>(null);
 
-  const [results, setResults] = useState<CategoryResult[] | null>(null);
+  const [results, setResults] = useState<SubjectResult[] | null>(null);
   const [resultsLoading, setResultsLoading] = useState(false);
   const [resultsError, setResultsError] = useState<string | null>(null);
-  const [skipCategories, setSkipCategories] = useState<string[]>([]);
-  const [reduceCategories, setReduceCategories] = useState<string[]>([]);
 
   // A real plan (plan_days rows) only exists once onboarding has actually finished once before
   // — a true first-timer has none yet, so this is only ever true on a second-or-later pass
@@ -227,16 +217,6 @@ export default function OnboardingPage() {
   function next() { setStep((s) => Math.min(LAST_STEP, s + 1)); }
   function back() { setStep((s) => Math.max(0, s - 1)); }
 
-  function toggleOverride(category: string, kind: "skip" | "reduce") {
-    if (kind === "skip") {
-      setSkipCategories((prev) => (prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]));
-      setReduceCategories((prev) => prev.filter((c) => c !== category));
-    } else {
-      setReduceCategories((prev) => (prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]));
-      setSkipCategories((prev) => prev.filter((c) => c !== category));
-    }
-  }
-
   // No account exists yet at this point — the diagnostic needs *some* real identity to save
   // its questions/session against, so a quiet anonymous one is created here. It behaves
   // exactly like a normal signed-in user until it's turned into a real account later, from
@@ -322,7 +302,7 @@ export default function OnboardingPage() {
       const res = await fetch("/api/generate-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ skip: skipCategories, reduce: reduceCategories }),
+        body: JSON.stringify({ skip: [], reduce: [] }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Could not generate your plan.");
@@ -501,7 +481,7 @@ export default function OnboardingPage() {
             <div>
               <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Here&apos;s what a day looks like</h2>
               <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 32px", lineHeight: 1.62, maxWidth: "46ch" }}>
-                Every sitting follows the same shape, so there&apos;s nothing new to figure out once you begin. First, a quick diagnostic — about 48 questions across Math and Reading &amp; Writing — so the plan starts calibrated instead of guessing.
+                Every sitting follows the same shape, so there&apos;s nothing new to figure out once you begin. First, a quick diagnostic — about 23 questions across Math and Reading &amp; Writing — so the plan starts calibrated instead of guessing.
               </p>
 
               {/* Mini reading-desk mockup — timed, one question at a time */}
@@ -576,7 +556,7 @@ export default function OnboardingPage() {
             <div>
               <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Ready for the diagnostic?</h2>
               <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 40px", lineHeight: 1.62, maxWidth: "46ch" }}>
-                About 48 questions across Math and Reading &amp; Writing, mixed difficulty. Answer honestly — it just sets your starting point.
+                About 23 questions across Math and Reading &amp; Writing, mixed difficulty. Answer honestly — it just sets your starting point.
               </p>
               {diagnosticError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 20px" }}>{diagnosticError}</p>}
               <Button
@@ -598,12 +578,12 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 5: Results + manual override */}
+          {/* Step 5: Results */}
           {step === 5 && (
             <div>
               <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Here&apos;s where you stand</h2>
               <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 32px", lineHeight: 1.62, maxWidth: "50ch" }}>
-                Reduce or skip anything marked strong — everything else is automatic.
+                One score per section — it sets where your plan starts.
               </p>
 
               {resultsLoading && (
@@ -613,31 +593,23 @@ export default function OnboardingPage() {
                 <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)" }}>{resultsError}</p>
               )}
 
-              {results && (["english", "math"] as const).map((subject) => (
-                <div key={subject} style={{ marginBottom: 28 }}>
-                  <p style={eyebrow}>{subject === "english" ? "Reading & Writing" : "Math"}</p>
-                  <div style={{ borderTop: "1px solid var(--border)" }}>
-                    {results.filter((r) => r.subject === subject).map((r) => (
-                      <div key={r.category} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "13px 0", borderBottom: "1px solid var(--border)" }}>
-                        <span style={{ fontSize: 15, color: "var(--text-body)" }}>{r.category}</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+              {results && (
+                <div style={{ borderTop: "1px solid var(--border)" }}>
+                  {(["english", "math"] as const).map((subject) => {
+                    const r = results.find((res) => res.subject === subject);
+                    if (!r) return null;
+                    return (
+                      <div key={subject} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "20px 0", borderBottom: "1px solid var(--border)" }}>
+                        <span style={{ fontSize: 17, color: "var(--text-body)" }}>{subject === "english" ? "Reading & Writing" : "Math"}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.accuracy}%</span>
                           <Badge tone={TIER_TONE[r.tier]} size="sm">{r.tier}</Badge>
-                          {r.tier === "strong" && (
-                            <div style={{ display: "flex", gap: 6 }}>
-                              <button onClick={() => toggleOverride(r.category, "reduce")} style={miniChipStyle(reduceCategories.includes(r.category))}>
-                                {reduceCategories.includes(r.category) ? "Reducing" : "Reduce"}
-                              </button>
-                              <button onClick={() => toggleOverride(r.category, "skip")} style={miniChipStyle(skipCategories.includes(r.category))}>
-                                {skipCategories.includes(r.category) ? "Skipping" : "Skip"}
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
             </div>
           )}
 
