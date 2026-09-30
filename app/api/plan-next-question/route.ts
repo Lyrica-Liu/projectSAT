@@ -5,7 +5,8 @@ import { computeSessionState, pickNextTier, TIER_ORDER } from "@/lib/adaptive";
 import { getBankQuestions } from "@/lib/questions/parser";
 import { getMathBankQuestions } from "@/lib/questions/mathParser";
 import { gradeGridAnswer } from "@/lib/grading";
-import type { Difficulty } from "@/lib/types";
+import { toPublicQuestion } from "@/lib/types";
+import type { Difficulty, Question } from "@/lib/types";
 
 interface HistoryRow {
   position: number;
@@ -161,8 +162,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Could not link question: ${aErr?.message}` }, { status: 500 });
   }
 
+  // Strip the answer key — the session is graded server-side on submit (see grade-session).
+  const publicQuestion = toPublicQuestion(savedQuestion as Question);
   return NextResponse.json({
-    question: savedQuestion,
-    answer: { ...savedAnswer, question: savedQuestion },
+    question: publicQuestion,
+    answer: { ...savedAnswer, question: publicQuestion },
   });
 }

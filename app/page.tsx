@@ -25,6 +25,46 @@ const RING_ACCURACY = 78;
 
 const HERO_HEADLINE = "You don't have to grind the DSAT for a year.";
 
+const HOW_IT_WORKS = [
+  { n: "01", title: "Take the diagnostic", body: "26 questions across Reading & Writing and Math, about 40 minutes. It shows where you actually lose points." },
+  { n: "02", title: "Get your thirty-day plan", body: "A day-by-day sequence built around your weakest skills, laid out in full before you start." },
+  { n: "03", title: "Do one session a day", body: "About 30 minutes each. Difficulty adjusts as you go, and every answer comes with an explanation." },
+];
+
+type Choice = "A" | "B" | "C" | "D";
+
+/** A real Words in Context question from the bank, answerable right on the page — nothing is saved. */
+const SAMPLE_QUESTION: {
+  passage: string; stem: string; options: Record<Choice, string>; answer: Choice;
+  why: string; wrong: Partial<Record<Choice, string>>;
+} = {
+  passage: "Though praised by audiences, the film was dismissed by several prominent critics as a superficial spectacle — visually striking, they conceded, but ultimately hollow in its emotional and intellectual content. The director, undeterred by these assessments, argued that cinema need not always carry a weighty message to be valuable.",
+  stem: "As used in the text, what does the word \u201cconceded\u201d most nearly mean?",
+  options: { A: "Strongly denied", B: "Reluctantly acknowledged", C: "Enthusiastically celebrated", D: "Carefully analyzed" },
+  answer: "B",
+  why: "The critics dismiss the film overall, but grant one point in its favor — it is \u201cvisually striking.\u201d That grudging admission is what \u201cconceded\u201d means here.",
+  wrong: {
+    A: "The critics did acknowledge the film's visual quality; they didn't deny it.",
+    C: "The critics were dismissive overall — \u201cconceded\u201d signals a grudging admission, not enthusiasm.",
+    D: "\u201cConceded\u201d describes admitting a point, not analyzing it carefully.",
+  },
+};
+
+const FAQS = [
+  {
+    q: "How much does it cost?",
+    a: "Nothing, for now. 800Path is free during early access — the diagnostic, the thirty-day plan, and every practice session. You don't need an account to start.",
+  },
+  {
+    q: "How much time does it take each day?",
+    a: "About 30 minutes. Each daily session is 20 questions, timed at the Digital SAT's pace of roughly a minute and a half per question. The diagnostic at the start takes about 40 minutes.",
+  },
+  {
+    q: "Where do the questions come from?",
+    a: "Most come from a hand-built bank written to the Digital SAT's question types and four difficulty tiers, across all eleven Reading & Writing skills and the Math domains. AI-generated practice sets add extra reps on the skills you pick. They aren't official College Board questions.",
+  },
+];
+
 function useTypewriter(text: string, speed = 32) {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -42,8 +82,7 @@ function useTypewriter(text: string, speed = 32) {
   return count;
 }
 
-/** Types `text` out on mount. Give it a `key` that changes to make it retype from scratch (a fresh
- *  mount gets a fresh `count`, which is the idiomatic way to "reset" without setState-in-effect). */
+/** Types `text` out once, on mount. */
 function TypewriterHeadline({ text }: { text: string }) {
   const typedCount = useTypewriter(text);
   const typingDone = typedCount >= text.length;
@@ -66,12 +105,17 @@ const eyebrowLight: React.CSSProperties = {
 
 function CTAButton({ onClick }: { onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{
-      display: "inline-flex", alignItems: "center", background: "var(--brand)", color: "var(--text-on-brand)",
-      fontFamily: "var(--font-sans)", fontSize: 17, fontWeight: 600, padding: "19px 42px",
-      borderRadius: "var(--radius-lg)", border: "none", cursor: "pointer", transition: "background 0.16s",
-      boxShadow: "0 10px 26px rgba(32,31,28,.16)",
-    }}>Begin</button>
+    <div>
+      <button onClick={onClick} style={{
+        display: "inline-flex", alignItems: "center", background: "var(--brand)", color: "var(--text-on-brand)",
+        fontFamily: "var(--font-sans)", fontSize: 17, fontWeight: 600, padding: "19px 36px",
+        borderRadius: "var(--radius-lg)", border: "none", cursor: "pointer", transition: "background 0.16s",
+        boxShadow: "0 10px 26px rgba(32,31,28,.16)",
+      }}>Take the free diagnostic</button>
+      <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.5, color: "var(--text-muted)", margin: "12px 0 0", maxWidth: "44ch" }}>
+        About 40 minutes. See where you stand in Reading &amp; Writing and Math, and get a thirty-day plan built around your weak spots. No account needed.
+      </p>
+    </div>
   );
 }
 
@@ -187,6 +231,80 @@ function AnalysisMockup({ visible }: { visible: boolean }) {
   );
 }
 
+/** One real question, answerable before signing up. Picking a choice locks the answer and reveals why. */
+function SampleQuestion({ onBegin }: { onBegin: () => void }) {
+  const [picked, setPicked] = useState<Choice | null>(null);
+  const q = SAMPLE_QUESTION;
+  const answered = picked !== null;
+  const gotIt = picked === q.answer;
+
+  return (
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", overflow: "hidden", boxShadow: "var(--shadow-lg)" }}>
+      <div style={{ padding: "22px 26px 18px", borderBottom: "1px solid var(--border)" }}>
+        <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 10px" }}>
+          Reading &amp; Writing · Words in Context
+        </p>
+        <p style={{ fontSize: 16, lineHeight: 1.6, color: "var(--text-body)", margin: 0 }}>{q.passage}</p>
+      </div>
+      <div style={{ padding: "18px 26px 24px" }}>
+        <p style={{ fontSize: 16, lineHeight: 1.45, color: "var(--text-strong)", margin: "0 0 12px" }}>{q.stem}</p>
+        <div role="radiogroup" aria-label="Answer choices" style={{ display: "grid" }}>
+          {(Object.keys(q.options) as Choice[]).map((letter) => {
+            const isAnswer = letter === q.answer;
+            const isPicked = letter === picked;
+            const showCorrect = answered && isAnswer;
+            const showWrong = answered && isPicked && !isAnswer;
+            return (
+              <button
+                key={letter}
+                role="radio"
+                aria-checked={isPicked}
+                disabled={answered}
+                onClick={() => setPicked(letter)}
+                style={{
+                  display: "flex", gap: 12, alignItems: "baseline", textAlign: "left", width: "100%",
+                  padding: "11px 12px", border: "none", borderTop: "1px solid var(--border)",
+                  borderLeft: `2px solid ${showCorrect ? "var(--success)" : showWrong ? "var(--danger)" : "transparent"}`,
+                  background: showCorrect ? "var(--moss-50)" : "transparent",
+                  fontFamily: "var(--font-serif)", fontSize: 15, color: "var(--text-strong)",
+                  cursor: answered ? "default" : "pointer", opacity: answered && !isAnswer && !isPicked ? 0.55 : 1,
+                }}
+              >
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, width: 12, flexShrink: 0, color: showCorrect ? "var(--success)" : showWrong ? "var(--danger)" : "var(--text-faint)" }}>{letter}</span>
+                <span>{q.options[letter]}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {answered ? (
+          <div aria-live="polite" style={{ margin: "16px 0 0", paddingLeft: 12, borderLeft: `2px solid ${gotIt ? "var(--success)" : "var(--danger)"}` }}>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: gotIt ? "var(--success)" : "var(--danger)", margin: "0 0 6px" }}>
+              {gotIt ? "Correct" : `Not quite — the answer is ${q.answer}`}
+            </p>
+            {!gotIt && picked && q.wrong[picked] && (
+              <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text-muted)", margin: "0 0 8px" }}>{q.wrong[picked]}</p>
+            )}
+            <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text-body)", margin: 0 }}>{q.why}</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", margin: "18px 0 0" }}>
+              <button onClick={onBegin} style={{
+                background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600,
+                padding: "12px 22px", borderRadius: "var(--radius-md)", border: "none", cursor: "pointer",
+              }}>Take the free diagnostic</button>
+              <button onClick={() => setPicked(null)} style={{
+                background: "none", border: "none", padding: 0, cursor: "pointer",
+                fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", textDecoration: "underline",
+              }}>Try it again</button>
+            </div>
+          </div>
+        ) : (
+          <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "14px 0 0" }}>Pick an answer to see the explanation.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const router = useRouter();
   const goBegin = () => router.push("/onboarding");
@@ -195,11 +313,6 @@ export default function LandingPage() {
   const analysisRef = useRef<HTMLDivElement>(null);
   const [heroMockupVisible, setHeroMockupVisible] = useState(false);
   const heroMockupRef = useRef<HTMLDivElement>(null);
-
-  // The headline retypes itself every time it scrolls back into view (but not on its very first
-  // appearance — that one already plays once on mount via TypewriterHeadline's own effect).
-  const [heroReplayKey, setHeroReplayKey] = useState(0);
-  const heroRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     const el = analysisRef.current;
@@ -218,24 +331,6 @@ export default function LandingPage() {
     const observer = new IntersectionObserver(
       ([entry]) => setHeroMockupVisible(entry.isIntersecting),
       { threshold: 0.35 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const el = heroRef.current;
-    if (!el) return;
-    let isFirstCallback = true;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (isFirstCallback) {
-          isFirstCallback = false;
-          return;
-        }
-        if (entry.isIntersecting) setHeroReplayKey((k) => k + 1);
-      },
-      { threshold: 0.6 }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -263,8 +358,8 @@ export default function LandingPage() {
               <span style={{ width: 26, height: 1, background: "var(--line-strong)" }} />
               Digital SAT · Reading, Writing &amp; Math
             </p>
-            <h1 ref={heroRef} style={{ fontWeight: 400, fontSize: 58, lineHeight: 1.06, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0, minHeight: "2.12em" }}>
-              <TypewriterHeadline key={heroReplayKey} text={HERO_HEADLINE} />
+            <h1 style={{ fontWeight: 400, fontSize: 58, lineHeight: 1.06, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0, minHeight: "2.12em" }}>
+              <TypewriterHeadline text={HERO_HEADLINE} />
             </h1>
             <div style={{ margin: "26px 0 0" }}>
               <CTAButton onClick={goBegin} />
@@ -323,6 +418,37 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section id="how-it-works" style={{ maxWidth: 1220, margin: "0 auto", padding: "72px 40px 0" }}>
+        <p style={eyebrowLight}>How it works</p>
+        <h2 style={{ fontWeight: 400, fontSize: 30, lineHeight: 1.16, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 28px", maxWidth: "22ch", textWrap: "pretty" }}>
+          Diagnose, plan, then practice a little every day.
+        </h2>
+        <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32, borderTop: "1px solid var(--line-strong)" }}>
+          {HOW_IT_WORKS.map((step) => (
+            <li key={step.n} style={{ padding: "20px 0 0" }}>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.1em", color: "var(--text-faint)", fontVariantNumeric: "tabular-nums" }}>{step.n}</span>
+              <h3 style={{ fontWeight: 400, fontSize: 20, lineHeight: 1.25, color: "var(--text-strong)", margin: "8px 0 8px", letterSpacing: "-0.012em" }}>{step.title}</h3>
+              <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: 0, maxWidth: "34ch" }}>{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section id="try-one" style={{ maxWidth: 1220, margin: "0 auto", padding: "72px 40px 0" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: 48, alignItems: "start" }}>
+          <div>
+            <p style={eyebrowLight}>Try one</p>
+            <h2 style={{ fontWeight: 400, fontSize: 30, lineHeight: 1.18, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 14px", maxWidth: "18ch", textWrap: "pretty" }}>
+              A real question, before you sign up for anything.
+            </h2>
+            <p style={{ fontSize: 16, lineHeight: 1.6, color: "var(--text-muted)", margin: 0, maxWidth: "36ch" }}>
+              This is what a session looks like: a Digital SAT–style question, then a plain explanation of why each choice is right or wrong.
+            </p>
+          </div>
+          <SampleQuestion onBegin={goBegin} />
+        </div>
+      </section>
+
       <section id="method" style={{ maxWidth: 1220, margin: "0 auto", padding: "72px 40px 76px" }}>
         <div ref={analysisRef} style={{ display: "grid", gridTemplateColumns: "1.08fr 0.92fr", gap: 48, alignItems: "center" }}>
           <AnalysisMockup visible={analysisVisible} />
@@ -357,6 +483,24 @@ export default function LandingPage() {
         </div>
         <div style={{ display: "flex", gap: 22, margin: "12px 0 0", fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-faint)" }}>
           <span>E — Reading &amp; Writing</span><span>M — Math</span><span>R — Score report</span>
+        </div>
+      </section>
+
+      <section id="faq" style={{ maxWidth: 1220, margin: "0 auto", padding: "72px 40px 0" }}>
+        <p style={eyebrowLight}>Questions</p>
+        <h2 style={{ fontWeight: 400, fontSize: 30, lineHeight: 1.16, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 24px" }}>
+          Before you start
+        </h2>
+        <div style={{ borderTop: "1px solid var(--line-strong)", maxWidth: 760 }}>
+          {FAQS.map((f) => (
+            <details key={f.q} style={{ borderBottom: "1px solid var(--border)", padding: "16px 0" }}>
+              <summary style={{ cursor: "pointer", fontSize: 18, color: "var(--text-strong)", letterSpacing: "-0.01em" }}>{f.q}</summary>
+              <p style={{ fontSize: 15, lineHeight: 1.65, color: "var(--text-muted)", margin: "10px 0 0", maxWidth: "62ch" }}>{f.a}</p>
+            </details>
+          ))}
+        </div>
+        <div style={{ margin: "36px 0 0" }}>
+          <CTAButton onClick={goBegin} />
         </div>
       </section>
 

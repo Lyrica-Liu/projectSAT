@@ -1,5 +1,5 @@
 -- ============================================================
--- PrepWise — Supabase Schema
+-- 800Path — Supabase Schema
 -- Run this in the Supabase SQL editor to initialize the database.
 -- ============================================================
 
@@ -251,3 +251,57 @@ alter table public.questions add constraint questions_domain_check
   check (domain = any (array['reading', 'writing', 'math']));
 
 alter table public.answers add column if not exists user_grid_answer text;
+
+-- ───────────────────────────────────────────
+-- 9. AI generation usage (daily limit)
+-- ───────────────────────────────────────────
+-- Run this section independently if adding to an existing DB.
+-- One row per /api/generate-questions call. Select + insert only — no update/delete
+-- policy, so a user can't erase rows to reset their daily count.
+
+create table if not exists public.ai_generations (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null references auth.users (id) on delete cascade,
+  question_count int  not null,
+  created_at     timestamptz default now() not null
+);
+
+create index if not exists ai_generations_user_created_idx on public.ai_generations (user_id, created_at);
+
+alter table public.ai_generations enable row level security;
+
+create policy "ai_generations_select_own" on public.ai_generations
+  for select using (auth.uid() = user_id);
+
+create policy "ai_generations_insert_own" on public.ai_generations
+  for insert with check (auth.uid() = user_id);
+
+-- ───────────────────────────────────────────
+-- 10. Question reports ("Report a problem")
+-- ───────────────────────────────────────────
+-- Run this section independently if adding to an existing DB.
+-- Students flag broken questions; read them in the Table Editor (the dashboard bypasses RLS).
+-- `source` is 'bank' or 'ai' (worked out server-side); `question_snapshot` keeps the question and
+-- its answer key exactly as served, so a report stays useful even if the row later changes.
+
+create table if not exists public.question_reports (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null references auth.users (id) on delete cascade,
+  question_id       uuid not null references public.questions (id) on delete cascade,
+  reason            text not null check (reason in ('wrong_answer', 'multiple_answers', 'unclear', 'typo', 'other')),
+  note              text,
+  source            text not null check (source in ('bank', 'ai')),
+  question_snapshot jsonb not null,
+  created_at        timestamptz default now() not null,
+  unique (user_id, question_id)
+);
+
+create index if not exists question_reports_created_idx on public.question_reports (created_at desc);
+
+alter table public.question_reports enable row level security;
+
+create policy "question_reports_select_own" on public.question_reports
+  for select using (auth.uid() = user_id);
+
+create policy "question_reports_insert_own" on public.question_reports
+  for insert with check (auth.uid() = user_id);

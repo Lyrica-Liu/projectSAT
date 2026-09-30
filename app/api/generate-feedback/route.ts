@@ -82,12 +82,17 @@ export async function POST(req: NextRequest) {
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 300,
+      model: "claude-sonnet-5",
+      max_tokens: 1000,
+      // A 2-4 sentence note doesn't need reasoning; Sonnet 5 thinks by default otherwise.
+      thinking: { type: "disabled" },
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
     });
-    feedbackText = response.content[0].type === "text" ? response.content[0].text.trim() : "";
+    feedbackText = response.content
+      .map((b) => (b.type === "text" ? b.text : ""))
+      .join("")
+      .trim();
   } catch (err) {
     console.error("Anthropic API error:", err);
     return NextResponse.json({ error: "Failed to generate feedback." }, { status: 502 });

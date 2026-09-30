@@ -35,6 +35,18 @@ export interface Question {
   created_at: string;
 }
 
+/** A question as sent to the browser mid-session — no answer key until it's graded. */
+export type PublicQuestion = Omit<Question, "answer" | "grid_answer" | "explanation">;
+
+/** Column list for selecting a PublicQuestion from the questions table. */
+export const PUBLIC_QUESTION_COLUMNS =
+  "id, domain, skill, difficulty, passage, stem, question_type, options, created_at";
+
+export function toPublicQuestion(q: Question): PublicQuestion {
+  const { answer, grid_answer, explanation, ...rest } = q;
+  return rest;
+}
+
 export interface Profile {
   id: string;
   email: string;

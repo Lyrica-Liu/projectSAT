@@ -1,7 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/practice", "/results", "/history", "/plan"];
+// /onboarding is deliberately public: it's the landing page's entry point and signs the
+// visitor in anonymously itself.
+const PROTECTED_PREFIXES = ["/dashboard", "/practice", "/results", "/history", "/plan", "/for-you", "/account"];
 
 function getSupabaseEnv(name: string) {
   return process.env[name]?.trim();

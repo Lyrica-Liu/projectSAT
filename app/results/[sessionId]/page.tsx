@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
 import { ScoreRing, SkillBar, AnswerOption } from "@/components/ui/ds";
+import { ReportQuestionButton } from "@/components/practice/report-question";
 import { getPlanDay, getCurrentPlanDay, calcStreak } from "@/lib/plan";
 import type { QuestionSkill, MathSkill, PlanDayRow } from "@/lib/types";
 
@@ -41,6 +42,7 @@ const microLabel: React.CSSProperties = {
 
 interface AnswerRow {
   id: string;
+  question_id: string;
   is_correct: boolean;
   user_answer: string | null;
   user_grid_answer: string | null;
@@ -349,6 +351,9 @@ export default function ResultsPage() {
                         )}
                       </div>
                     )}
+                    <div style={{ margin: "16px 0 0" }}>
+                      <ReportQuestionButton questionId={row.question_id} />
+                    </div>
                   </div>
                 </div>
               );

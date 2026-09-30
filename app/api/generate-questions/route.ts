@@ -8,6 +8,9 @@ import type { QuestionDomain, QuestionSkill, Difficulty } from "@/lib/types";
 
 export const maxDuration = 120;
 
+const MAX_QUESTIONS_PER_REQUEST = 20;
+const DAILY_GENERATION_LIMIT = 6;
+
 const SUBCATEGORY_TO_SKILL: Record<string, QuestionSkill> = {
   "Central Ideas and Details":          "central_idea",
   "Command of Evidence (Textual)":      "command_of_evidence",
@@ -121,13 +124,54 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { subcategories, difficulty, count } = await req.json() as {
+  // Auth before anything that costs money — the Claude call below is billed per request.
+  const supabase = await createClient();
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
+    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  }
+
+  const body = await req.json() as {
     subcategories: string[];
     difficulty: Difficulty;
     count: number;
   };
-  if (!subcategories?.length) {
-    return NextResponse.json({ error: "No subcategories provided." }, { status: 400 });
+  const subcategories = (body.subcategories ?? []).filter((s) => s in SUBCATEGORY_TO_SKILL);
+  const difficulty = body.difficulty;
+  if (!subcategories.length) {
+    return NextResponse.json({ error: "No valid subcategories provided." }, { status: 400 });
+  }
+  const requested = Math.floor(Number(body.count));
+  if (!Number.isFinite(requested) || requested < 1) {
+    return NextResponse.json({ error: "count must be a positive number." }, { status: 400 });
+  }
+  const count = Math.min(requested, MAX_QUESTIONS_PER_REQUEST);
+
+  // Per-user daily cap on AI generations. Rows are insert/select-only under RLS, so a
+  // client can't delete its own usage to reset the counter.
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+  const { count: usedToday, error: usageErr } = await supabase
+    .from("ai_generations")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("created_at", startOfDay.toISOString());
+  if (usageErr) {
+    console.error("Supabase usage lookup error:", usageErr);
+    return NextResponse.json({ error: "Could not check your daily usage." }, { status: 500 });
+  }
+  if ((usedToday ?? 0) >= DAILY_GENERATION_LIMIT) {
+    return NextResponse.json(
+      { error: `You've reached today's limit of ${DAILY_GENERATION_LIMIT} AI-generated sets. Try again tomorrow, or practice from the question bank.` },
+      { status: 429 }
+    );
+  }
+  const { error: logErr } = await supabase
+    .from("ai_generations")
+    .insert({ user_id: user.id, question_count: count });
+  if (logErr) {
+    console.error("Supabase usage insert error:", logErr);
+    return NextResponse.json({ error: "Could not record usage." }, { status: 500 });
   }
 
   // Load examples if available
@@ -192,13 +236,23 @@ correct_answer_explanation is required for every question in JSON output.`;
 
   let responseText: string;
   try {
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 16000,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userMessage }],
-    });
-    responseText = response.content[0].type === "text" ? response.content[0].text : "";
+    // Streamed so a large max_tokens doesn't hit the SDK's non-streaming timeout.
+    const response = await client.messages
+      .stream({
+        model: "claude-sonnet-5",
+        max_tokens: 32000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+      })
+      .finalMessage();
+    // Sonnet 5 thinks by default, so the first block may be a thinking block — collect the text.
+    responseText = response.content
+      .map((b) => (b.type === "text" ? b.text : ""))
+      .join("");
+    if (response.stop_reason === "max_tokens") {
+      console.error("Claude response hit max_tokens");
+      return NextResponse.json({ error: "Question generation was cut off. Try fewer questions." }, { status: 502 });
+    }
   } catch (err) {
     console.error("Anthropic API error:", err);
     return NextResponse.json({ error: "Failed to call Claude API." }, { status: 502 });
@@ -212,17 +266,9 @@ correct_answer_explanation is required for every question in JSON output.`;
     return NextResponse.json({ error: "Claude returned malformed JSON." }, { status: 502 });
   }
 
-  // Do all DB writes server-side to avoid RLS issues with client-side inserts
-  const supabase = await createClient();
-
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) {
-    return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
-  }
-
   // Map generated questions to the app's Question shape (minus id/created_at — Supabase adds those)
    
-  const questions = (parsed.questions as any[]).map((q) => {
+  const questions = (parsed.questions as any[]).slice(0, count).map((q) => {
     const subcategory: string = q.subcategory ?? "Central Ideas and Details";
     return {
       user_id:     user.id,

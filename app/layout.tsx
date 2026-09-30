@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "800Path — SAT Reading & Writing",
+  title: "800Path — SAT Prep",
   description:
-    "AI-powered, personalized SAT Reading & Writing training. Practice smart, reflect deeper, improve faster.",
+    "AI-powered, personalized SAT Reading & Writing and Math training. Practice smart, reflect deeper, improve faster.",
 };
 
 export default function RootLayout({

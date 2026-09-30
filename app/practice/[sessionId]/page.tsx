@@ -4,10 +4,12 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AnswerOption, Input } from "@/components/ui/ds";
-import { LoadingScreen, Wordmark } from "@/components/ui/nav";
+import { LoadingScreen, Wordmark, useCloseOnOutsideClick } from "@/components/ui/nav";
+import { DesmosPanel, ReferenceSheetPanel } from "@/components/practice/math-tools";
+import { ReportQuestionButton } from "@/components/practice/report-question";
 import { Icon } from "@/components/ui/icon";
-import { gradeGridAnswer } from "@/lib/grading";
-import type { Question, Answer, Session } from "@/lib/types";
+import { PUBLIC_QUESTION_COLUMNS } from "@/lib/types";
+import type { PublicQuestion, Answer, Session } from "@/lib/types";
 
 type AnswerChoice = "A" | "B" | "C" | "D";
 
@@ -18,12 +20,13 @@ interface Highlight {
 }
 
 interface QuestionState {
-  question: Question;
-  answer: Answer | null;
+  question: PublicQuestion;
+  answer: Omit<Answer, "question"> | null;
   selected: AnswerChoice | null;
   gridValue: string | null;
   eliminated: AnswerChoice[];
   highlights: Record<string, Highlight[]>;
+  marked: boolean;
 }
 
 /** Text-size steps for the passage/question/answer content — stepped with "− A +", matching the real DSAT's "Aa" tool. */
@@ -66,8 +69,32 @@ function writeTimer(sessionId: string, seconds: number) {
 function clearTimer(sessionId: string) {
   try {
     window.localStorage.removeItem(timerStorageKey(sessionId));
+    window.localStorage.removeItem(markedStorageKey(sessionId));
   } catch {
     // ignore
+  }
+}
+
+/** "Mark for review" flags are a study aid, not part of the graded record, so they live locally like the timer. */
+function markedStorageKey(sessionId: string) {
+  return `practice-marked-${sessionId}`;
+}
+
+function readMarked(sessionId: string): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(markedStorageKey(sessionId));
+    const ids = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeMarked(sessionId: string, questionIds: string[]) {
+  try {
+    window.localStorage.setItem(markedStorageKey(sessionId), JSON.stringify(questionIds));
+  } catch {
+    // Storage unavailable — marks still work for this page view.
   }
 }
 
@@ -172,6 +199,37 @@ function HighlightText({
   );
 }
 
+function toolButtonStyle(active: boolean): React.CSSProperties {
+  return {
+    display: "inline-flex", alignItems: "center", gap: 6,
+    border: `1px solid ${active ? "var(--text-strong)" : "var(--border)"}`,
+    background: active ? "var(--surface-sunken)" : "transparent",
+    color: active ? "var(--text-strong)" : "var(--text-faint)",
+    borderRadius: "var(--radius-md)", fontFamily: "var(--font-sans)", fontSize: 11,
+    padding: "5px 12px", cursor: "pointer",
+  };
+}
+
+/** Small accent tab in a question button's top-right corner, meaning "marked for review". */
+function MarkedCorner() {
+  return (
+    <span aria-hidden style={{
+      position: "absolute", top: -1, right: -1, width: 0, height: 0,
+      borderTop: "8px solid var(--accent)", borderLeft: "8px solid transparent",
+      borderTopRightRadius: "var(--radius-sm)",
+    }} />
+  );
+}
+
+function LegendSwatch({ kind }: { kind: "current" | "unanswered" }) {
+  return (
+    <span aria-hidden style={{
+      display: "inline-block", width: 12, height: 12, borderRadius: 2,
+      border: kind === "current" ? "2px solid var(--text-strong)" : "1px dashed var(--line-strong)",
+    }} />
+  );
+}
+
 export default function ActiveSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const router = useRouter();
@@ -200,6 +258,11 @@ export default function ActiveSessionPage() {
   const suppressNextClickRef = useRef(false);
   const [activeHighlightColor, setActiveHighlightColor] = useState<string | null>(HIGHLIGHT_COLORS[0]);
   const [textSizeIndex, setTextSizeIndex] = useState(DEFAULT_TEXT_SIZE_INDEX);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [calculatorExpanded, setCalculatorExpanded] = useState(false);
+  const [referenceOpen, setReferenceOpen] = useState(false);
+  const [navigatorOpen, setNavigatorOpen] = useState(false);
+  useCloseOnOutsideClick(navigatorOpen, ".qa-navigator", () => setNavigatorOpen(false));
   const textMult = TEXT_SIZE_LEVELS[textSizeIndex];
 
   useEffect(() => {
@@ -255,7 +318,7 @@ export default function ActiveSessionPage() {
 
       const { data: answerRows } = await supabase
         .from("answers")
-        .select("*, question:questions(*)")
+        .select(`id, session_id, question_id, user_answer, user_grid_answer, is_correct, time_spent_seconds, position, question:questions(${PUBLIC_QUESTION_COLUMNS})`)
         .eq("session_id", sessionId)
         .order("position");
 
@@ -268,7 +331,7 @@ export default function ActiveSessionPage() {
       // Supabase can return a joined relation as a one-element array rather
       // than a bare object depending on how it infers the FK cardinality —
       // unwrap defensively (matches the pattern used on dashboard/for-you).
-      const rows = answerRows as unknown as (Answer & { question: Question | Question[] })[];
+      const rows = answerRows as unknown as (Omit<Answer, "question"> & { question: PublicQuestion | PublicQuestion[] })[];
       const normalized = rows
         .map((row) => ({ ...row, question: Array.isArray(row.question) ? row.question[0] : row.question }))
         .filter((row) => !!row.question);
@@ -279,6 +342,7 @@ export default function ActiveSessionPage() {
         return;
       }
 
+      const markedIds = readMarked(sessionId);
       setQuestions(
         normalized.map((row) => ({
           question: row.question,
@@ -287,6 +351,7 @@ export default function ActiveSessionPage() {
           gridValue: row.user_grid_answer,
           eliminated: [],
           highlights: {},
+          marked: markedIds.has(row.question.id),
         }))
       );
 
@@ -377,6 +442,20 @@ export default function ActiveSessionPage() {
       .eq("question_id", state.question.id);
   }
 
+  function toggleMarked() {
+    setQuestions((prev) => {
+      const next = prev.map((q, i) => (i === currentIndex ? { ...q, marked: !q.marked } : q));
+      writeMarked(sessionId, next.filter((q) => q.marked).map((q) => q.question.id));
+      return next;
+    });
+  }
+
+  async function jumpTo(index: number) {
+    await commitGridAnswer();
+    setCurrentIndex(index);
+    setNavigatorOpen(false);
+  }
+
   function toggleEliminate(letter: AnswerChoice) {
     setQuestions((prev) =>
       prev.map((q, i) => {
@@ -434,26 +513,16 @@ export default function ActiveSessionPage() {
     clearTimer(sessionId);
 
     // Nothing has been graded yet — like a real test, correctness is checked only once
-    // everything is submitted, not question by question along the way.
-    const graded = questions.map((q) => ({
-      question: q.question,
-      correct: q.question.question_type === "grid_in"
-        ? gradeGridAnswer(q.gridValue ?? "", q.question.grid_answer ?? "")
-        : q.selected === q.question.answer,
-    }));
-
-    const { error: gradeErr } = await Promise.all(
-      graded.map((g) =>
-        supabase
-          .from("answers")
-          .update({ is_correct: g.correct })
-          .eq("session_id", sessionId)
-          .eq("question_id", g.question.id)
-      )
-    ).then((results) => ({ error: results.find((r) => r.error)?.error ?? null }));
-
-    if (gradeErr) {
-      setActionError("Could not save your answers. Please try again.");
+    // everything is submitted, not question by question along the way. Grading happens on the
+    // server so the answer key never has to be sent to the browser.
+    const gradeRes = await fetch("/api/grade-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, complete: !planLinked }),
+    });
+    if (!gradeRes.ok) {
+      const body = await gradeRes.json().catch(() => ({}));
+      setActionError(body.error ?? "Could not save your answers. Please try again.");
       setSubmitting(false);
       return;
     }
@@ -472,13 +541,6 @@ export default function ActiveSessionPage() {
       }
       router.push(`/plan/${planDayNumber}`);
       return;
-    } else {
-      const correctCount = graded.filter((g) => g.correct).length;
-      const score = Math.round((correctCount / graded.length) * 100);
-      await supabase
-        .from("sessions")
-        .update({ completed_at: new Date().toISOString(), score })
-        .eq("id", sessionId);
     }
     router.push(diagnosticLinked ? "/onboarding" : `/results/${sessionId}`);
   }
@@ -522,7 +584,7 @@ export default function ActiveSessionPage() {
         if (body.question && body.answer) {
           setQuestions((prev) => [
             ...prev,
-            { question: body.question, answer: body.answer, selected: null, gridValue: null, eliminated: [], highlights: {} },
+            { question: body.question, answer: body.answer, selected: null, gridValue: null, eliminated: [], highlights: {}, marked: false },
           ]);
           setCurrentIndex((i) => i + 1);
         }
@@ -566,6 +628,11 @@ export default function ActiveSessionPage() {
   const atFrontier = currentIndex === questions.length - 1;
   const hasMoreToGenerate = questions.length < sessionTarget;
   const hasPassage = !!current.question.passage;
+  const hasMath = questions.some((q) => q.question.domain === "math");
+  const markedCount = questions.filter((q) => q.marked).length;
+  const isAnsweredAt = (i: number) => i === currentIndex
+    ? currentAnswered
+    : (questions[i].question.question_type === "grid_in" ? questions[i].gridValue !== null : questions[i].selected !== null);
 
   type AnswerState = "default" | "selected";
   function stateFor(letter: AnswerChoice): AnswerState {
@@ -602,9 +669,10 @@ export default function ActiveSessionPage() {
           >
             {questions.map((q, i) => {
               const isCur = i === currentIndex;
-              const answered = i === currentIndex ? currentAnswered : (q.question.question_type === "grid_in" ? q.gridValue !== null : q.selected !== null);
+              const answered = isAnsweredAt(i);
               return (
-                <button key={i} onClick={() => setCurrentIndex(i)} style={{
+                <button key={i} onClick={() => jumpTo(i)} aria-label={`Question ${i + 1}${q.marked ? ", marked for review" : ""}${answered ? "" : ", unanswered"}`} style={{
+                  position: "relative",
                   width: 26, height: 26, flexShrink: 0, border: `1px solid ${isCur ? "var(--text-strong)" : answered ? "var(--line-strong)" : "var(--border)"}`,
                   background: answered && !isCur ? "var(--surface-2)" : "transparent", borderRadius: "var(--radius-sm)",
                   fontFamily: "var(--font-sans)", fontSize: 11, fontVariantNumeric: "tabular-nums",
@@ -612,6 +680,7 @@ export default function ActiveSessionPage() {
                   fontWeight: isCur ? 600 : 400, cursor: "pointer",
                 }}>
                   {i + 1}
+                  {q.marked && <MarkedCorner />}
                 </button>
               );
             })}
@@ -721,8 +790,28 @@ export default function ActiveSessionPage() {
               </button>
             </div>
           )}
+          {hasMath && (
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={() => setCalculatorOpen((v) => !v)} aria-pressed={calculatorOpen} style={toolButtonStyle(calculatorOpen)}>
+                <Icon name="calculator" size={13} />
+                Calculator
+              </button>
+              <button onClick={() => setReferenceOpen((v) => !v)} aria-pressed={referenceOpen} style={toolButtonStyle(referenceOpen)}>
+                <Icon name="document" size={13} />
+                Reference
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      <DesmosPanel
+        open={calculatorOpen}
+        expanded={calculatorExpanded}
+        onToggleExpand={() => setCalculatorExpanded((v) => !v)}
+        onClose={() => setCalculatorOpen(false)}
+      />
+      <ReferenceSheetPanel open={referenceOpen} onClose={() => setReferenceOpen(false)} />
 
       {/* Reading desk */}
       <main style={{ maxWidth: 1360, margin: "0 auto", padding: "0 44px" }}>
@@ -744,7 +833,20 @@ export default function ActiveSessionPage() {
           )}
           <div ref={questionScrollRef} style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: hasPassage ? "52px 0 72px 56px" : "52px 0 72px" }}>
             <div style={{ maxWidth: "34rem", margin: hasPassage ? 0 : "0 auto" }}>
-              <p style={microLabel}>{current.question.skill.replace(/_/g, " ")} · {current.question.difficulty}</p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 20 }}>
+                <p style={{ ...microLabel, margin: 0 }}>{current.question.skill.replace(/_/g, " ")} · {current.question.difficulty}</p>
+                <button onClick={toggleMarked} aria-pressed={current.marked} style={{
+                  display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0,
+                  border: `1px solid ${current.marked ? "var(--text-strong)" : "var(--border)"}`,
+                  background: current.marked ? "var(--surface-sunken)" : "transparent",
+                  color: current.marked ? "var(--text-strong)" : "var(--text-faint)",
+                  borderRadius: "var(--radius-md)", fontFamily: "var(--font-sans)", fontSize: 11,
+                  padding: "5px 12px", cursor: "pointer",
+                }}>
+                  <Icon name="bookmark" size={13} />
+                  {current.marked ? "Marked for review" : "Mark for review"}
+                </button>
+              </div>
               <HighlightText
                 text={current.question.stem}
                 highlights={current.highlights.stem ?? []}
@@ -826,7 +928,54 @@ export default function ActiveSessionPage() {
                   </button>
                 )}
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 24 }}>
-                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>Question {currentIndex + 1} of {sessionTarget}</span>
+                  <span className="qa-navigator" style={{ position: "relative" }}>
+                    <button onClick={() => setNavigatorOpen((v) => !v)} aria-expanded={navigatorOpen} style={{
+                      display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--border)", background: "transparent",
+                      borderRadius: "var(--radius-md)", padding: "6px 10px", cursor: "pointer",
+                      fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)",
+                    }}>
+                      Question {currentIndex + 1} of {sessionTarget}
+                      <Icon name="chevron-down" size={12} />
+                    </button>
+                    {navigatorOpen && (
+                      <div role="dialog" aria-label="Question navigator" style={{
+                        position: "absolute", bottom: "calc(100% + 10px)", right: 0, zIndex: 25, width: 320,
+                        background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: "var(--radius-lg)",
+                        boxShadow: "0 18px 50px rgba(32,31,28,.18)", padding: "16px 16px 14px",
+                      }}>
+                        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 14, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><LegendSwatch kind="current" /> Current</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><LegendSwatch kind="unanswered" /> Unanswered</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="bookmark" size={12} color="var(--accent)" /> For review ({markedCount})</span>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(36px, 1fr))", gap: 6 }}>
+                          {Array.from({ length: sessionTarget }, (_, i) => {
+                            const loaded = i < questions.length;
+                            const isCur = i === currentIndex;
+                            const answered = loaded && isAnsweredAt(i);
+                            return (
+                              <button key={i} disabled={!loaded} onClick={() => jumpTo(i)} style={{
+                                position: "relative", height: 36, borderRadius: "var(--radius-sm)",
+                                border: isCur ? "2px solid var(--text-strong)" : answered ? "1px solid var(--line-strong)" : "1px dashed var(--line-strong)",
+                                background: answered ? "var(--surface-2)" : "transparent",
+                                fontFamily: "var(--font-sans)", fontSize: 12, fontVariantNumeric: "tabular-nums",
+                                color: loaded ? "var(--text-strong)" : "var(--text-faint)", cursor: loaded ? "pointer" : "default",
+                                opacity: loaded ? 1 : 0.4,
+                              }}>
+                                {i + 1}
+                                {loaded && questions[i].marked && <MarkedCorner />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {hasMoreToGenerate && (
+                          <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "12px 0 0" }}>
+                            Later questions appear as you reach them — they adapt to how you&apos;re doing.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </span>
                   {atFrontier && !hasMoreToGenerate ? (
                     <button onClick={finishSession} disabled={submitting || !allAnswered} style={{
                       border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
@@ -845,6 +994,10 @@ export default function ActiveSessionPage() {
                     </button>
                   )}
                 </div>
+              </div>
+
+              <div style={{ margin: "40px 0 0", paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+                <ReportQuestionButton questionId={current.question.id} />
               </div>
             </div>
           </div>

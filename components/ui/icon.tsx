@@ -7,6 +7,7 @@ import {
   Lightbulb, PenTool, MessageSquare, CheckCheck, ChevronRight,
   Calculator, BarChart3, Triangle, Ban,
   Calendar, FileText, Clock, CircleCheck, Highlighter, Eraser, ChevronDown,
+  Bookmark, Flag, X, LayoutGrid,
 } from "lucide-react";
 
 const ICONS = {
@@ -38,6 +39,10 @@ const ICONS = {
   "circle-check":          CircleCheck,
   highlighter:             Highlighter,
   eraser:                  Eraser,
+  bookmark:                Bookmark,
+  flag:                    Flag,
+  x:                       X,
+  "layout-grid":           LayoutGrid,
 } as const;
 
 type IconName = keyof typeof ICONS;
