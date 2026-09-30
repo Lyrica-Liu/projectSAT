@@ -4,8 +4,11 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AnswerOption, Input } from "@/components/ui/ds";
-import { LoadingScreen, Wordmark, useCloseOnOutsideClick } from "@/components/ui/nav";
-import { DesmosPanel, ReferenceSheetPanel } from "@/components/practice/math-tools";
+import { LoadingScreen, Wordmark } from "@/components/ui/nav";
+import {
+  DesmosPanel, ReferenceSheetPanel,
+  CALCULATOR_WIDTH, CALCULATOR_EXPANDED_WIDTH, REFERENCE_WIDTH, PANEL_INSET,
+} from "@/components/practice/math-tools";
 import { ReportQuestionButton } from "@/components/practice/report-question";
 import { Icon } from "@/components/ui/icon";
 import { PUBLIC_QUESTION_COLUMNS } from "@/lib/types";
@@ -31,7 +34,7 @@ interface QuestionState {
 
 /** Text-size steps for the passage/question/answer content — stepped with "− A +", matching the real DSAT's "Aa" tool. */
 const TEXT_SIZE_LEVELS = [0.85, 1.0, 1.15, 1.4, 1.7, 2.0];
-const DEFAULT_TEXT_SIZE_INDEX = 2;
+const DEFAULT_TEXT_SIZE_INDEX = 1;
 
 const HIGHLIGHT_COLORS = ["#fde68a", "#bbf7d0", "#bfdbfe", "#fbcfe8"];
 
@@ -221,15 +224,6 @@ function MarkedCorner() {
   );
 }
 
-function LegendSwatch({ kind }: { kind: "current" | "unanswered" }) {
-  return (
-    <span aria-hidden style={{
-      display: "inline-block", width: 12, height: 12, borderRadius: 2,
-      border: kind === "current" ? "2px solid var(--text-strong)" : "1px dashed var(--line-strong)",
-    }} />
-  );
-}
-
 export default function ActiveSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const router = useRouter();
@@ -261,8 +255,6 @@ export default function ActiveSessionPage() {
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   const [calculatorExpanded, setCalculatorExpanded] = useState(false);
   const [referenceOpen, setReferenceOpen] = useState(false);
-  const [navigatorOpen, setNavigatorOpen] = useState(false);
-  useCloseOnOutsideClick(navigatorOpen, ".qa-navigator", () => setNavigatorOpen(false));
   const textMult = TEXT_SIZE_LEVELS[textSizeIndex];
 
   useEffect(() => {
@@ -450,10 +442,40 @@ export default function ActiveSessionPage() {
     });
   }
 
+  /**
+   * Adaptive plan sessions create questions on demand, so a question the student jumps ahead to
+   * may not exist yet — ask the server to fill in everything up to it. Returns false on failure.
+   */
+  async function ensureLoaded(index: number): Promise<boolean> {
+    if (index < questions.length) return true;
+    setGeneratingNext(true);
+    setActionError(null);
+    try {
+      const res = await fetch("/api/plan-next-question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, upTo: index + 1 }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Could not load the next question.");
+      const added = (body.added ?? []) as { question: PublicQuestion; answer: Omit<Answer, "question"> }[];
+      setQuestions((prev) => [
+        ...prev,
+        ...added.map((a) => ({ question: a.question, answer: a.answer, selected: null, gridValue: null, eliminated: [], highlights: {}, marked: false })),
+      ]);
+      return questions.length + added.length > index;
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not load the next question.");
+      return false;
+    } finally {
+      setGeneratingNext(false);
+    }
+  }
+
   async function jumpTo(index: number) {
+    if (generatingNext) return;
     await commitGridAnswer();
-    setCurrentIndex(index);
-    setNavigatorOpen(false);
+    if (await ensureLoaded(index)) setCurrentIndex(index);
   }
 
   function toggleEliminate(letter: AnswerChoice) {
@@ -566,37 +588,8 @@ export default function ActiveSessionPage() {
   }
 
   async function goNext() {
-    await commitGridAnswer();
     const target = session?.question_count ?? questions.length;
-    const atFrontier = currentIndex === questions.length - 1;
-
-    if (atFrontier && questions.length < target) {
-      setGeneratingNext(true);
-      setActionError(null);
-      try {
-        const res = await fetch("/api/plan-next-question", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId }),
-        });
-        const body = await res.json();
-        if (!res.ok) throw new Error(body.error ?? "Could not load the next question.");
-        if (body.question && body.answer) {
-          setQuestions((prev) => [
-            ...prev,
-            { question: body.question, answer: body.answer, selected: null, gridValue: null, eliminated: [], highlights: {}, marked: false },
-          ]);
-          setCurrentIndex((i) => i + 1);
-        }
-      } catch (err) {
-        setActionError(err instanceof Error ? err.message : "Could not load the next question.");
-      } finally {
-        setGeneratingNext(false);
-      }
-      return;
-    }
-
-    setCurrentIndex((i) => Math.min(questions.length - 1, i + 1));
+    await jumpTo(Math.min(target - 1, currentIndex + 1));
   }
 
   if (loading) return <LoadingScreen message="Loading session…" />;
@@ -625,13 +618,12 @@ export default function ActiveSessionPage() {
     return q.question.question_type === "grid_in" ? q.gridValue !== null : q.selected !== null;
   }).length;
   const allAnswered = answeredCount === sessionTarget && questions.length === sessionTarget;
-  const atFrontier = currentIndex === questions.length - 1;
-  const hasMoreToGenerate = questions.length < sessionTarget;
+  const atLastQuestion = currentIndex === sessionTarget - 1;
   const hasPassage = !!current.question.passage;
   const hasMath = questions.some((q) => q.question.domain === "math");
-  const markedCount = questions.filter((q) => q.marked).length;
   const isAnsweredAt = (i: number) => i === currentIndex
     ? currentAnswered
+    : i >= questions.length ? false
     : (questions[i].question.question_type === "grid_in" ? questions[i].gridValue !== null : questions[i].selected !== null);
 
   type AnswerState = "default" | "selected";
@@ -667,11 +659,12 @@ export default function ActiveSessionPage() {
             className="qa-nav-scroll"
             style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "nowrap", overflowX: "auto", overflowY: "hidden", flex: "1 1 auto", minWidth: 0, padding: "2px 1px" }}
           >
-            {questions.map((q, i) => {
+            {Array.from({ length: sessionTarget }, (_, i) => {
               const isCur = i === currentIndex;
               const answered = isAnsweredAt(i);
+              const marked = questions[i]?.marked ?? false;
               return (
-                <button key={i} onClick={() => jumpTo(i)} aria-label={`Question ${i + 1}${q.marked ? ", marked for review" : ""}${answered ? "" : ", unanswered"}`} style={{
+                <button key={i} onClick={() => jumpTo(i)} disabled={generatingNext} aria-current={isCur ? "step" : undefined} aria-label={`Question ${i + 1}${marked ? ", marked for review" : ""}${answered ? "" : ", unanswered"}`} style={{
                   position: "relative",
                   width: 26, height: 26, flexShrink: 0, border: `1px solid ${isCur ? "var(--text-strong)" : answered ? "var(--line-strong)" : "var(--border)"}`,
                   background: answered && !isCur ? "var(--surface-2)" : "transparent", borderRadius: "var(--radius-sm)",
@@ -680,7 +673,7 @@ export default function ActiveSessionPage() {
                   fontWeight: isCur ? 600 : 400, cursor: "pointer",
                 }}>
                   {i + 1}
-                  {q.marked && <MarkedCorner />}
+                  {marked && <MarkedCorner />}
                 </button>
               );
             })}
@@ -814,7 +807,15 @@ export default function ActiveSessionPage() {
       <ReferenceSheetPanel open={referenceOpen} onClose={() => setReferenceOpen(false)} />
 
       {/* Reading desk */}
-      <main style={{ maxWidth: 1360, margin: "0 auto", padding: "0 44px" }}>
+      {/* While a tool panel is open, pad the reading desk out from under it so the question and the
+          Next button stay visible — the panels are fixed to the viewport edges, so drop the max
+          width and measure the padding from those edges instead. */}
+      <main style={{
+        maxWidth: calculatorOpen || referenceOpen ? "none" : 1360, margin: "0 auto",
+        paddingTop: 0, paddingBottom: 0,
+        paddingLeft: referenceOpen ? REFERENCE_WIDTH + PANEL_INSET * 2 : 44,
+        paddingRight: calculatorOpen ? (calculatorExpanded ? CALCULATOR_EXPANDED_WIDTH : CALCULATOR_WIDTH) + PANEL_INSET * 2 : 44,
+      }}>
         <div style={{ display: "grid", gridTemplateColumns: hasPassage ? "1fr 1fr" : "1fr" }}>
           {hasPassage && (
             <div ref={passageScrollRef} style={{ height: "calc(100vh - 66px)", overflowY: "auto", padding: "52px 56px 72px 0", borderRight: "1px solid var(--border)" }}>
@@ -928,55 +929,13 @@ export default function ActiveSessionPage() {
                   </button>
                 )}
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 24 }}>
-                  <span className="qa-navigator" style={{ position: "relative" }}>
-                    <button onClick={() => setNavigatorOpen((v) => !v)} aria-expanded={navigatorOpen} style={{
-                      display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--border)", background: "transparent",
-                      borderRadius: "var(--radius-md)", padding: "6px 10px", cursor: "pointer",
-                      fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)",
-                    }}>
-                      Question {currentIndex + 1} of {sessionTarget}
-                      <Icon name="chevron-down" size={12} />
-                    </button>
-                    {navigatorOpen && (
-                      <div role="dialog" aria-label="Question navigator" style={{
-                        position: "absolute", bottom: "calc(100% + 10px)", right: 0, zIndex: 25, width: 320,
-                        background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: "var(--radius-lg)",
-                        boxShadow: "0 18px 50px rgba(32,31,28,.18)", padding: "16px 16px 14px",
-                      }}>
-                        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 14, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><LegendSwatch kind="current" /> Current</span>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><LegendSwatch kind="unanswered" /> Unanswered</span>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="bookmark" size={12} color="var(--accent)" /> For review ({markedCount})</span>
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(36px, 1fr))", gap: 6 }}>
-                          {Array.from({ length: sessionTarget }, (_, i) => {
-                            const loaded = i < questions.length;
-                            const isCur = i === currentIndex;
-                            const answered = loaded && isAnsweredAt(i);
-                            return (
-                              <button key={i} disabled={!loaded} onClick={() => jumpTo(i)} style={{
-                                position: "relative", height: 36, borderRadius: "var(--radius-sm)",
-                                border: isCur ? "2px solid var(--text-strong)" : answered ? "1px solid var(--line-strong)" : "1px dashed var(--line-strong)",
-                                background: answered ? "var(--surface-2)" : "transparent",
-                                fontFamily: "var(--font-sans)", fontSize: 12, fontVariantNumeric: "tabular-nums",
-                                color: loaded ? "var(--text-strong)" : "var(--text-faint)", cursor: loaded ? "pointer" : "default",
-                                opacity: loaded ? 1 : 0.4,
-                              }}>
-                                {i + 1}
-                                {loaded && questions[i].marked && <MarkedCorner />}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {hasMoreToGenerate && (
-                          <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "12px 0 0" }}>
-                            Later questions appear as you reach them — they adapt to how you&apos;re doing.
-                          </p>
-                        )}
-                      </div>
+                  {atLastQuestion ? (
+                    <>
+                    {!allAnswered && (
+                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>
+                        {sessionTarget - answeredCount} unanswered
+                      </span>
                     )}
-                  </span>
-                  {atFrontier && !hasMoreToGenerate ? (
                     <button onClick={finishSession} disabled={submitting || !allAnswered} style={{
                       border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                       fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
@@ -984,13 +943,14 @@ export default function ActiveSessionPage() {
                     }}>
                       {submitting ? "Saving…" : "Finish session"}
                     </button>
+                    </>
                   ) : (
-                    <button onClick={goNext} disabled={generatingNext || (atFrontier && hasMoreToGenerate && !currentAnswered)} style={{
+                    <button onClick={goNext} disabled={generatingNext} style={{
                       border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                       fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
-                      cursor: "pointer", opacity: generatingNext || (atFrontier && hasMoreToGenerate && !currentAnswered) ? 0.5 : 1,
+                      cursor: generatingNext ? "default" : "pointer", opacity: generatingNext ? 0.5 : 1,
                     }}>
-                      {generatingNext ? "Loading…" : atFrontier ? "Next question" : "Next"}
+                      {generatingNext ? "Loading…" : "Next question"}
                     </button>
                   )}
                 </div>

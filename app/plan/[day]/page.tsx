@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingScreen, Wordmark } from "@/components/ui/nav";
@@ -42,6 +42,8 @@ export default function DailySessionPage() {
   });
   const [wrapStats, setWrapStats] = useState<WrapStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Guards the automatic start so a re-run effect (e.g. React's dev double-invoke) can't create two sessions. */
+  const startRequestedRef = useRef(false);
 
   const planDay = getPlanDay(dayNum);
   const displayFocus = rowInfo.subcategory ?? planDay?.focus ?? "";
@@ -118,7 +120,11 @@ export default function DailySessionPage() {
         return;
       }
 
-      setState("intro");
+      // "Begin Day N" goes straight into the module — no intro screen to click through. The
+      // intro only shows if starting fails, so there's a retry button and the error.
+      if (startRequestedRef.current) return;
+      startRequestedRef.current = true;
+      beginModule();
     }
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,7 +141,8 @@ export default function DailySessionPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to start session");
-      router.push(`/practice/${data.sessionId}`);
+      // replace, not push: Back from the session should return to wherever "Begin" was clicked.
+      router.replace(`/practice/${data.sessionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setState("intro");
@@ -154,6 +161,7 @@ export default function DailySessionPage() {
   );
 
   if (state === "loading") return <LoadingScreen />;
+  if (state === "starting") return <LoadingScreen message={`Starting Day ${dayNum}…`} />;
 
   if (state === "locked") {
     return (
@@ -251,12 +259,11 @@ export default function DailySessionPage() {
             </p>
             {error && <p style={{ fontSize: 14, color: "var(--danger)", margin: "20px 0 0" }}>{error}</p>}
             <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "40px 0 0" }}>
-              <button onClick={beginModule} disabled={state === "starting"} style={{
+              <button onClick={beginModule} style={{
                 border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
-                fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)",
-                cursor: state === "starting" ? "default" : "pointer", opacity: state === "starting" ? 0.7 : 1,
+                fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)", cursor: "pointer",
               }}>
-                {state === "starting" ? "Generating questions…" : "Begin the module"}
+                Try again
               </button>
               <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>The timer starts when you begin.</span>
             </div>

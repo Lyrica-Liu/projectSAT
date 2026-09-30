@@ -35,7 +35,7 @@ function isRowCorrect(h: HistoryRow): boolean | null {
 }
 
 export async function POST(req: NextRequest) {
-  const { sessionId } = await req.json() as { sessionId: string };
+  const { sessionId, upTo } = await req.json() as { sessionId: string; upTo?: number };
 
   const supabase = await createClient();
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
@@ -69,103 +69,111 @@ export async function POST(req: NextRequest) {
   }
 
   const history = historyRows as unknown as HistoryRow[];
-  const last = history[history.length - 1];
-  const lastCorrect = isRowCorrect(last);
-  if (lastCorrect === null) {
-    return NextResponse.json({ error: "Answer the current question first." }, { status: 400 });
-  }
-
-  if (history.length >= sessionLength) {
-    return NextResponse.json({ done: true });
-  }
-
-  const state = computeSessionState(
-    history.map((h) => ({ difficulty: h.question!.difficulty, isCorrect: isRowCorrect(h) ?? false })),
-    startDifficulty
-  );
+  // How many questions the session should have after this call. Navigating straight to, say,
+  // question 12 fills in everything up to it in one request.
+  const target = Math.min(Math.max(Math.floor(Number(upTo)) || history.length + 1, 1), sessionLength);
 
   const usedStems = new Set(history.map((h) => h.question!.stem));
+  const added: { question: ReturnType<typeof toPublicQuestion>; answer: Record<string, unknown> }[] = [];
 
-  const targetTier = pickNextTier(state.currentDifficulty);
+  while (history.length < target) {
+    // Only answered questions steer difficulty — a question the student skipped past (or hasn't
+    // reached yet) says nothing about how they're doing, so it neither raises nor lowers the tier.
+    const answered = history
+      .map((h) => ({ difficulty: h.question!.difficulty, isCorrect: isRowCorrect(h) }))
+      .filter((h): h is { difficulty: Difficulty; isCorrect: boolean } => h.isCorrect !== null);
+    const state = computeSessionState(answered, startDifficulty);
+    const targetTier = pickNextTier(state.currentDifficulty);
 
-  // If the target tier's pool is exhausted, fall back to the nearest tier to
-  // where the user actually is right now — not a fixed easy-first order,
-  // which would otherwise always cascade down to "easy" regardless of tier.
-  const currentRank = TIER_ORDER.indexOf(state.currentDifficulty);
-  const byDistance = TIER_ORDER.slice().sort(
-    (a, b) => Math.abs(TIER_ORDER.indexOf(a) - currentRank) - Math.abs(TIER_ORDER.indexOf(b) - currentRank)
-  );
-  const tryTiers = [targetTier, ...byDistance.filter((t) => t !== targetTier)];
+    // If the target tier's pool is exhausted, fall back to the nearest tier to
+    // where the user actually is right now — not a fixed easy-first order,
+    // which would otherwise always cascade down to "easy" regardless of tier.
+    const currentRank = TIER_ORDER.indexOf(state.currentDifficulty);
+    const byDistance = TIER_ORDER.slice().sort(
+      (a, b) => Math.abs(TIER_ORDER.indexOf(a) - currentRank) - Math.abs(TIER_ORDER.indexOf(b) - currentRank)
+    );
+    const tryTiers = [targetTier, ...byDistance.filter((t) => t !== targetTier)];
 
-  let candidate: {
-    skill: string; difficulty: Difficulty; passage: string | null; stem: string;
-    options: { A: string; B: string; C: string; D: string } | null;
-    answer: "A" | "B" | "C" | "D" | null;
-    gridAnswer?: string | null;
-    explanation: string;
-    questionType: "multiple_choice" | "grid_in";
-    domain: "reading" | "writing" | "math";
-  } | null = null;
+    let candidate: {
+      skill: string; difficulty: Difficulty; passage: string | null; stem: string;
+      options: { A: string; B: string; C: string; D: string } | null;
+      answer: "A" | "B" | "C" | "D" | null;
+      gridAnswer?: string | null;
+      explanation: string;
+      questionType: "multiple_choice" | "grid_in";
+      domain: "reading" | "writing" | "math";
+    } | null = null;
 
-  for (const tier of tryTiers) {
-    if (subject === "math") {
-      const pool = getMathBankQuestions(subcategory, tier).filter((q) => !usedStems.has(q.stem));
-      if (pool.length > 0) {
-        const picked = pool[Math.floor(Math.random() * pool.length)];
-        candidate = { ...picked, domain: "math" };
-        break;
-      }
-    } else {
-      const pool = getBankQuestions(subcategory, tier).filter((q) => !usedStems.has(q.stem));
-      if (pool.length > 0) {
-        const picked = pool[Math.floor(Math.random() * pool.length)];
-        candidate = { ...picked, gridAnswer: null, questionType: "multiple_choice" };
-        break;
+    for (const tier of tryTiers) {
+      if (subject === "math") {
+        const pool = getMathBankQuestions(subcategory, tier).filter((q) => !usedStems.has(q.stem));
+        if (pool.length > 0) {
+          const picked = pool[Math.floor(Math.random() * pool.length)];
+          candidate = { ...picked, domain: "math" };
+          break;
+        }
+      } else {
+        const pool = getBankQuestions(subcategory, tier).filter((q) => !usedStems.has(q.stem));
+        if (pool.length > 0) {
+          const picked = pool[Math.floor(Math.random() * pool.length)];
+          candidate = { ...picked, gridAnswer: null, questionType: "multiple_choice" };
+          break;
+        }
       }
     }
+
+    if (!candidate) {
+      return NextResponse.json({ error: "No unused questions remain for this category." }, { status: 500 });
+    }
+
+    const { data: savedQuestion, error: qErr } = await supabase
+      .from("questions")
+      .insert({
+        user_id:        user.id,
+        domain:         candidate.domain,
+        skill:          candidate.skill,
+        difficulty:     candidate.difficulty,
+        passage:        candidate.passage,
+        stem:           candidate.stem,
+        question_type:  candidate.questionType,
+        options:        candidate.options,
+        answer:         candidate.answer,
+        grid_answer:    candidate.gridAnswer ?? null,
+        explanation:    candidate.explanation,
+      })
+      .select("*")
+      .single();
+
+    if (qErr || !savedQuestion) {
+      return NextResponse.json({ error: `Could not save question: ${qErr?.message}` }, { status: 500 });
+    }
+
+    const position = history.length;
+    const { data: savedAnswer, error: aErr } = await supabase
+      .from("answers")
+      .insert({ session_id: sessionId, question_id: savedQuestion.id, position })
+      .select("*")
+      .single();
+
+    if (aErr || !savedAnswer) {
+      return NextResponse.json({ error: `Could not link question: ${aErr?.message}` }, { status: 500 });
+    }
+
+    usedStems.add(candidate.stem);
+    history.push({
+      position,
+      user_answer: null,
+      user_grid_answer: null,
+      question: {
+        difficulty: candidate.difficulty, stem: candidate.stem, question_type: candidate.questionType,
+        answer: candidate.answer, grid_answer: candidate.gridAnswer ?? null,
+      },
+    });
+
+    // Strip the answer key — the session is graded server-side on submit (see grade-session).
+    const publicQuestion = toPublicQuestion(savedQuestion as Question);
+    added.push({ question: publicQuestion, answer: { ...savedAnswer, question: publicQuestion } });
   }
 
-  if (!candidate) {
-    return NextResponse.json({ error: "No unused questions remain for this category." }, { status: 500 });
-  }
-
-  const { data: savedQuestion, error: qErr } = await supabase
-    .from("questions")
-    .insert({
-      user_id:        user.id,
-      domain:         candidate.domain,
-      skill:          candidate.skill,
-      difficulty:     candidate.difficulty,
-      passage:        candidate.passage,
-      stem:           candidate.stem,
-      question_type:  candidate.questionType,
-      options:        candidate.options,
-      answer:         candidate.answer,
-      grid_answer:    candidate.gridAnswer ?? null,
-      explanation:    candidate.explanation,
-    })
-    .select("*")
-    .single();
-
-  if (qErr || !savedQuestion) {
-    return NextResponse.json({ error: `Could not save question: ${qErr?.message}` }, { status: 500 });
-  }
-
-  const position = history.length;
-  const { data: savedAnswer, error: aErr } = await supabase
-    .from("answers")
-    .insert({ session_id: sessionId, question_id: savedQuestion.id, position })
-    .select("*")
-    .single();
-
-  if (aErr || !savedAnswer) {
-    return NextResponse.json({ error: `Could not link question: ${aErr?.message}` }, { status: 500 });
-  }
-
-  // Strip the answer key — the session is graded server-side on submit (see grade-session).
-  const publicQuestion = toPublicQuestion(savedQuestion as Question);
-  return NextResponse.json({
-    question: publicQuestion,
-    answer: { ...savedAnswer, question: publicQuestion },
-  });
+  return NextResponse.json({ added });
 }

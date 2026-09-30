@@ -8,6 +8,12 @@ import { Icon } from "@/components/ui/icon";
  */
 const DESMOS_SAT_URL = "https://www.desmos.com/testing/cb-digital-sat/graphing";
 
+/** Panel widths (px) and their inset from the viewport edge — exported so the page can make room for them. */
+export const CALCULATOR_WIDTH = 420;
+export const CALCULATOR_EXPANDED_WIDTH = 760;
+export const REFERENCE_WIDTH = 400;
+export const PANEL_INSET = 16;
+
 const panelHeader: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
   padding: "10px 12px 10px 16px", borderBottom: "1px solid var(--border)", background: "var(--surface)",
@@ -42,8 +48,8 @@ export function DesmosPanel({ open, expanded, onToggleExpand, onClose }: {
       aria-hidden={!open}
       style={{
         display: open ? "flex" : "none", flexDirection: "column",
-        position: "fixed", top: 108, right: 16, bottom: 16, zIndex: 30,
-        width: expanded ? "min(760px, calc(100vw - 32px))" : "min(420px, calc(100vw - 32px))",
+        position: "fixed", top: 108, right: PANEL_INSET, bottom: PANEL_INSET, zIndex: 30,
+        width: `min(${expanded ? CALCULATOR_EXPANDED_WIDTH : CALCULATOR_WIDTH}px, calc(100vw - ${PANEL_INSET * 2}px))`,
         background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: "var(--radius-lg)",
         boxShadow: "0 18px 50px rgba(32,31,28,.18)", overflow: "hidden",
       }}
@@ -97,8 +103,8 @@ export function ReferenceSheetPanel({ open, onClose }: { open: boolean; onClose:
       aria-label="Math reference sheet"
       style={{
         display: "flex", flexDirection: "column",
-        position: "fixed", top: 108, left: 16, bottom: 16, zIndex: 30,
-        width: "min(400px, calc(100vw - 32px))",
+        position: "fixed", top: 108, left: PANEL_INSET, bottom: PANEL_INSET, zIndex: 30,
+        width: `min(${REFERENCE_WIDTH}px, calc(100vw - ${PANEL_INSET * 2}px))`,
         background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: "var(--radius-lg)",
         boxShadow: "0 18px 50px rgba(32,31,28,.18)", overflow: "hidden",
       }}
