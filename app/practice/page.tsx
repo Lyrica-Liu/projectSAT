@@ -1,24 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sidebar, SIDEBAR_WIDTH } from "@/components/ui/nav";
+import { createClient } from "@/lib/supabase/client";
+import { ENGLISH_CATEGORY_ORDER, MATH_CATEGORY_ORDER } from "@/lib/plan";
+import { buildSkillInsight, byWeakness, tallyByTier, type SkillInsight } from "@/lib/insights";
 import type { Difficulty } from "@/lib/types";
 
-const CATEGORIES: { label: string; subcategories: string[] }[] = [
+/** Subject → (for Reading & Writing) the SAT's four content domains → skills. Math has no middle level. */
+const SUBJECTS: { label: string; groups: { label: string; subcategories: string[] }[] | null; subcategories: string[] }[] = [
   {
-    label: "Information and Ideas",
-    subcategories: ["Central Ideas and Details", "Command of Evidence (Textual)", "Command of Evidence (Quantitative)", "Inferences"],
+    label: "Reading & Writing",
+    groups: [
+      {
+        label: "Information and Ideas",
+        subcategories: ["Central Ideas and Details", "Command of Evidence (Textual)", "Command of Evidence (Quantitative)", "Inferences"],
+      },
+      { label: "Craft and Structure", subcategories: ["Words in Context", "Text Structure and Purpose", "Cross-Text Connections"] },
+      { label: "Expression of Ideas", subcategories: ["Transitions", "Rhetorical Synthesis"] },
+      { label: "Standard English Conventions", subcategories: ["Boundaries", "Form, Structure, and Sense"] },
+    ],
+    subcategories: [],
   },
-  {
-    label: "Craft and Structure",
-    subcategories: ["Words in Context", "Text Structure and Purpose", "Cross-Text Connections"],
-  },
-  { label: "Expression of Ideas", subcategories: ["Transitions", "Rhetorical Synthesis"] },
-  { label: "Standard English Conventions", subcategories: ["Boundaries", "Form, Structure, and Sense"] },
-  { label: "Math", subcategories: ["Algebra", "Data Analysis", "Geometry"] },
+  { label: "Math", groups: null, subcategories: MATH_CATEGORY_ORDER.map((c) => c.subcategory) },
 ];
+
+const subcategoriesOf = (subject: typeof SUBJECTS[number]) =>
+  subject.groups ? subject.groups.flatMap((g) => g.subcategories) : subject.subcategories;
+
+/** How many weak spots to recommend at most. */
+const MAX_RECOMMENDED = 3;
+
+interface Recommendation {
+  insight: SkillInsight;
+  subject: "Reading & Writing" | "Math";
+  subcategories: string[];
+}
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
   { value: "easy", label: "Easy" },
@@ -37,12 +56,56 @@ const microLabel: React.CSSProperties = {
 
 export default function PracticeSetupPage() {
   const router = useRouter();
+  const [recommended, setRecommended] = useState<Recommendation[] | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [difficulty, setDifficulty] = useState<Difficulty>("medium-high");
   const [count, setCount] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Recommendations use the same insight logic as For You: practiced skills, weakest first.
+  useEffect(() => {
+    const supabase = createClient();
+    (async () => {
+      const [answersRes, progressRes] = await Promise.all([
+        supabase.from("answers").select("is_correct, question:questions(skill, difficulty)").not("is_correct", "is", null),
+        supabase.from("category_progress").select("subcategory, difficulty"),
+      ]);
+      const byTier = tallyByTier(answersRes.data ?? []);
+      const progress = new Map((progressRes.data ?? []).map((r) => [r.subcategory as string, r.difficulty as Difficulty]));
+
+      const english: Recommendation[] = [...new Set(ENGLISH_CATEGORY_ORDER.map((c) => c.skill))].map((skill) => {
+        const subcategories = ENGLISH_CATEGORY_ORDER.filter((c) => c.skill === skill).map((c) => c.subcategory);
+        const label = subcategories.length > 1 ? subcategories[0].replace(/\s*\(.*\)$/, "") : subcategories[0];
+        return { subject: "Reading & Writing", subcategories, insight: buildSkillInsight(skill, label, "", subcategories, byTier, progress) };
+      });
+      const math: Recommendation[] = MATH_CATEGORY_ORDER.map((c) => ({
+        subject: "Math", subcategories: [c.subcategory],
+        insight: buildSkillInsight(c.skill, c.subcategory, "", [c.subcategory], byTier, progress),
+      }));
+
+      setRecommended(
+        [...english, ...math]
+          .filter((r) => r.insight.hasData)
+          .sort((a, b) => byWeakness(a.insight, b.insight))
+          .slice(0, MAX_RECOMMENDED)
+      );
+    })();
+  }, []);
+
+  const recommendedSubs = new Set((recommended ?? []).flatMap((r) => r.subcategories));
+
+  /** Picking a recommendation selects its skill(s) at the difficulty For You suggests for it. */
+  function toggleRecommendation(r: Recommendation) {
+    const allOn = r.subcategories.every((sub) => selected.has(sub));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      r.subcategories.forEach((sub) => (allOn ? next.delete(sub) : next.add(sub)));
+      return next;
+    });
+    if (!allOn) setDifficulty(r.insight.suggestedTier);
+  }
 
   function toggleCategory(cat: string) {
     setExpanded((prev) => {
@@ -105,42 +168,75 @@ export default function PracticeSetupPage() {
               <Link href="/for-you" style={{ color: "var(--accent)" }}>See what&apos;s picked for you →</Link>
             </p>
 
+            {recommended && recommended.length > 0 && (
+              <>
+                <p style={{ ...microLabel, color: "var(--accent)", borderBottomColor: "var(--accent)" }}>Recommended for you</p>
+                <div style={{ display: "grid", gap: 8, padding: "14px 0 0" }}>
+                  {recommended.map((r) => {
+                    const on = r.subcategories.every((sub) => selected.has(sub));
+                    return (
+                      <button key={r.insight.skill} onClick={() => toggleRecommendation(r)} aria-pressed={on} style={{
+                        display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", cursor: "pointer",
+                        padding: "14px 16px", borderRadius: "var(--radius-md)",
+                        border: `1px solid ${on ? "var(--accent)" : "var(--accent-soft)"}`,
+                        background: "var(--accent-soft)",
+                      }}>
+                        <Checkbox on={on} accent />
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: "block", fontFamily: "var(--font-serif)", fontSize: 17, color: "var(--text-strong)" }}>{r.insight.label}</span>
+                          <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
+                            {r.subject} · {r.insight.accuracy}% accuracy · try {r.insight.suggestedLabel}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            {recommended && recommended.length === 0 && (
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "28px 0 0" }}>
+                Finish a session and we&apos;ll recommend the skills worth extra practice.
+              </p>
+            )}
+
             <p style={microLabel}>Skills {selected.size > 0 && `· ${selected.size} selected`}</p>
             <div>
-              {CATEGORIES.map((cat) => {
-                const isOpen = expanded.has(cat.label);
-                const selectedCount = cat.subcategories.filter((s) => selected.has(s)).length;
+              {SUBJECTS.map((subject) => {
+                const subs = subcategoriesOf(subject);
                 return (
-                  <div key={cat.label}>
-                    <button onClick={() => toggleCategory(cat.label)} style={{
-                      width: "100%", display: "flex", alignItems: "baseline", justifyContent: "space-between",
-                      padding: "17px 4px", border: 0, borderBottom: "1px solid var(--border)", background: "transparent",
-                      fontFamily: "var(--font-serif)", fontSize: 17, color: "var(--text-body)", cursor: "pointer", textAlign: "left",
-                    }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        {cat.label}
-                        {selectedCount > 0 && <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--accent)" }}>({selectedCount})</span>}
-                      </span>
-                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", transform: isOpen ? "rotate(90deg)" : "none", transition: "transform 0.16s" }}>›</span>
-                    </button>
-                    {isOpen && (
-                      <div style={{ padding: "4px 0 12px" }}>
-                        {cat.subcategories.map((sub) => {
-                          const isSelected = selected.has(sub);
-                          return (
-                            <button key={sub} onClick={() => toggleSubcategory(sub)} style={{
-                              width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "9px 4px",
-                              border: 0, background: "transparent", cursor: "pointer", textAlign: "left",
-                            }}>
-                              <span style={{
-                                flexShrink: 0, width: 13, height: 13, borderRadius: 1,
-                                border: `1px solid ${isSelected ? "var(--text-strong)" : "var(--border-strong)"}`,
-                                background: isSelected ? "var(--text-strong)" : "transparent",
-                              }} />
-                              <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: isSelected ? "var(--text-strong)" : "var(--text-muted)" }}>{sub}</span>
-                            </button>
-                          );
-                        })}
+                  <div key={subject.label}>
+                    <TreeRow
+                      level={0} label={subject.label} open={expanded.has(subject.label)} onToggle={() => toggleCategory(subject.label)}
+                      selectedCount={subs.filter((x) => selected.has(x)).length}
+                      hasRecommended={subs.some((x) => recommendedSubs.has(x))}
+                    />
+                    {expanded.has(subject.label) && (
+                      <div style={{ paddingBottom: 6 }}>
+                        {subject.groups
+                          ? subject.groups.map((g) => (
+                            <div key={g.label}>
+                              <TreeRow
+                                level={1} label={g.label} open={expanded.has(g.label)} onToggle={() => toggleCategory(g.label)}
+                                selectedCount={g.subcategories.filter((x) => selected.has(x)).length}
+                                hasRecommended={g.subcategories.some((x) => recommendedSubs.has(x))}
+                              />
+                              {expanded.has(g.label) && (
+                                <div style={{ padding: "4px 0 10px" }}>
+                                  {g.subcategories.map((sub) => (
+                                    <SkillOption key={sub} level={2} label={sub} on={selected.has(sub)} recommended={recommendedSubs.has(sub)} onToggle={() => toggleSubcategory(sub)} />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                          : (
+                            <div style={{ padding: "4px 0 10px" }}>
+                              {subject.subcategories.map((sub) => (
+                                <SkillOption key={sub} level={1} label={sub} on={selected.has(sub)} recommended={recommendedSubs.has(sub)} onToggle={() => toggleSubcategory(sub)} />
+                              ))}
+                            </div>
+                          )}
                       </div>
                     )}
                   </div>
@@ -219,5 +315,56 @@ export default function PracticeSetupPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function Checkbox({ on, accent = false }: { on: boolean; accent?: boolean }) {
+  const color = accent ? "var(--accent)" : "var(--text-strong)";
+  return (
+    <span aria-hidden style={{
+      flexShrink: 0, width: 13, height: 13, borderRadius: 1,
+      border: `1px solid ${on ? color : accent ? "var(--accent)" : "var(--border-strong)"}`,
+      background: on ? color : "transparent",
+    }} />
+  );
+}
+
+/** An expandable subject (level 0) or Reading & Writing domain (level 1) row. */
+function TreeRow({ level, label, open, onToggle, selectedCount, hasRecommended }: {
+  level: 0 | 1; label: string; open: boolean; onToggle: () => void; selectedCount: number; hasRecommended: boolean;
+}) {
+  return (
+    <button onClick={onToggle} aria-expanded={open} style={{
+      width: "100%", display: "flex", alignItems: "baseline", justifyContent: "space-between",
+      padding: level === 0 ? "18px 4px" : "13px 4px 13px 22px", border: 0,
+      borderBottom: `1px solid ${level === 0 ? "var(--border)" : "var(--surface-2)"}`, background: "transparent",
+      fontFamily: "var(--font-serif)", fontSize: level === 0 ? 19 : 16,
+      color: level === 0 ? "var(--text-strong)" : "var(--text-body)", cursor: "pointer", textAlign: "left",
+    }}>
+      <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {label}
+        {hasRecommended && <span title="Contains a recommended skill" style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)" }} />}
+        {selectedCount > 0 && <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>({selectedCount})</span>}
+      </span>
+      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", transform: open ? "rotate(90deg)" : "none", transition: "transform 0.16s" }}>›</span>
+    </button>
+  );
+}
+
+function SkillOption({ level, label, on, recommended, onToggle }: {
+  level: 1 | 2; label: string; on: boolean; recommended: boolean; onToggle: () => void;
+}) {
+  return (
+    <button onClick={onToggle} aria-pressed={on} style={{
+      width: "100%", display: "flex", alignItems: "center", gap: 12,
+      padding: `9px 8px 9px ${level === 1 ? 26 : 44}px`, border: 0, borderRadius: "var(--radius-sm)",
+      background: recommended ? "var(--accent-soft)" : "transparent", cursor: "pointer", textAlign: "left",
+    }}>
+      <Checkbox on={on} accent={recommended} />
+      <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: recommended ? "var(--accent)" : on ? "var(--text-strong)" : "var(--text-muted)", fontWeight: recommended ? 500 : 400 }}>{label}</span>
+      {recommended && (
+        <span style={{ marginLeft: "auto", fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>Recommended</span>
+      )}
+    </button>
   );
 }

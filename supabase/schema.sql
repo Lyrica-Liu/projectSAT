@@ -305,3 +305,32 @@ create policy "question_reports_select_own" on public.question_reports
 
 create policy "question_reports_insert_own" on public.question_reports
   for insert with check (auth.uid() = user_id);
+
+-- ───────────────────────────────────────────
+-- 11. Mistake notebook (错题本)
+-- ───────────────────────────────────────────
+-- Run this section independently if adding to an existing DB.
+-- Students add questions from a results page; an entry is removed once they answer that same
+-- question correctly in any later session (see /api/grade-session), or by hand.
+
+create table if not exists public.notebook_entries (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null references auth.users (id) on delete cascade,
+  question_id       uuid not null references public.questions (id) on delete cascade,
+  source_session_id uuid references public.sessions (id) on delete set null,
+  added_at          timestamptz default now() not null,
+  unique (user_id, question_id)
+);
+
+create index if not exists notebook_entries_user_idx on public.notebook_entries (user_id, added_at desc);
+
+alter table public.notebook_entries enable row level security;
+
+create policy "notebook_entries_select_own" on public.notebook_entries
+  for select using (auth.uid() = user_id);
+
+create policy "notebook_entries_insert_own" on public.notebook_entries
+  for insert with check (auth.uid() = user_id);
+
+create policy "notebook_entries_delete_own" on public.notebook_entries
+  for delete using (auth.uid() = user_id);

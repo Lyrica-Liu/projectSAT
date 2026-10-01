@@ -4,6 +4,7 @@ import { gradeGridAnswer } from "@/lib/grading";
 
 interface AnswerRow {
   id: string;
+  question_id: string;
   user_answer: "A" | "B" | "C" | "D" | null;
   user_grid_answer: string | null;
   question: {
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   const { data: answerRows, error: loadErr } = await supabase
     .from("answers")
-    .select("id, user_answer, user_grid_answer, question:questions(question_type, answer, grid_answer)")
+    .select("id, question_id, user_answer, user_grid_answer, question:questions(question_type, answer, grid_answer)")
     .eq("session_id", sessionId);
 
   if (loadErr || !answerRows) {
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
 
   const graded = rows.map((r) => ({
     id: r.id,
+    questionId: r.question_id,
     correct: !r.question
       ? false
       : r.question.question_type === "grid_in"
@@ -70,6 +72,17 @@ export async function POST(req: NextRequest) {
   if (gradeErr) {
     console.error("Supabase grade update error:", gradeErr);
     return NextResponse.json({ error: "Could not save your answers. Please try again." }, { status: 500 });
+  }
+
+  // Mistake notebook: a question leaves it the first time it's answered correctly again.
+  const nowCorrect = graded.filter((g) => g.correct).map((g) => g.questionId);
+  if (nowCorrect.length > 0) {
+    const { error: nbErr } = await supabase
+      .from("notebook_entries")
+      .delete()
+      .eq("user_id", user.id)
+      .in("question_id", nowCorrect);
+    if (nbErr) console.error("Supabase notebook cleanup error:", nbErr);
   }
 
   const correctCount = graded.filter((g) => g.correct).length;

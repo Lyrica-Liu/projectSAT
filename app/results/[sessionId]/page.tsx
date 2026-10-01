@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
 import { ScoreRing, SkillBar, AnswerOption } from "@/components/ui/ds";
 import { ReportQuestionButton } from "@/components/practice/report-question";
+import { Icon } from "@/components/ui/icon";
+import Link from "next/link";
 import { getPlanDay, getCurrentPlanDay, calcStreak } from "@/lib/plan";
 import type { QuestionSkill, MathSkill, PlanDayRow } from "@/lib/types";
 
@@ -60,6 +62,13 @@ interface AnswerRow {
   } | null;
 }
 
+function notebookToggleStyle(inNotebook: boolean): React.CSSProperties {
+  return {
+    display: "inline-flex", alignItems: "center", gap: 6, border: 0, background: "none", padding: 0, cursor: "pointer",
+    fontFamily: "var(--font-sans)", fontSize: 12, color: inNotebook ? "var(--accent)" : "var(--text-muted)",
+  };
+}
+
 export default function ResultsPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const router = useRouter();
@@ -89,6 +98,11 @@ export default function ResultsPage() {
   const [nextDay, setNextDay] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  /** Question ids from this session that are currently in the student's mistake notebook. */
+  const [notebookIds, setNotebookIds] = useState<Set<string>>(new Set());
+  const [notebookBusy, setNotebookBusy] = useState(false);
+  const [notebookError, setNotebookError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -111,6 +125,11 @@ export default function ResultsPage() {
 
       const rows: AnswerRow[] = answerRows ?? [];
       setAnswers(rows);
+      setUserId(user.id);
+
+      const { data: inNotebook } = await supabase
+        .from("notebook_entries").select("question_id").in("question_id", rows.map((r) => r.question_id));
+      setNotebookIds(new Set((inNotebook ?? []).map((e) => e.question_id as string)));
       setExpandedIds(new Set(rows.filter((r) => !r.is_correct).map((r) => r.id)));
 
       // Resolve which of the two Command of Evidence subcategories each such question actually
@@ -198,6 +217,31 @@ export default function ResultsPage() {
     });
   }
 
+  async function addToNotebook(questionIds: string[]) {
+    if (!userId || questionIds.length === 0) return;
+    setNotebookBusy(true);
+    setNotebookError(null);
+    const { error } = await supabase.from("notebook_entries").upsert(
+      questionIds.map((question_id) => ({ user_id: userId, question_id, source_session_id: sessionId })),
+      { onConflict: "user_id,question_id", ignoreDuplicates: true },
+    );
+    setNotebookBusy(false);
+    if (error) { setNotebookError("Couldn't update your notebook. Please try again."); return; }
+    setNotebookIds((prev) => new Set([...prev, ...questionIds]));
+  }
+
+  async function removeFromNotebook(questionId: string) {
+    setNotebookBusy(true);
+    setNotebookError(null);
+    const { error } = await supabase.from("notebook_entries").delete().eq("question_id", questionId);
+    setNotebookBusy(false);
+    if (error) { setNotebookError("Couldn't update your notebook. Please try again."); return; }
+    setNotebookIds((prev) => { const next = new Set(prev); next.delete(questionId); return next; });
+  }
+
+  const wrongQuestionIds = answers.filter((r) => !r.is_correct).map((r) => r.question_id);
+  const wrongNotInNotebook = wrongQuestionIds.filter((id) => !notebookIds.has(id));
+
   const totalCount = answers.length;
   const correctCount = answers.filter((r) => r.is_correct).length;
   const score = session.score ?? (totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0);
@@ -271,6 +315,29 @@ export default function ResultsPage() {
 
         <div style={{ margin: "56px 0 0" }}>
           <p style={microLabel}>Question review</p>
+          {wrongQuestionIds.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", padding: "0 0 18px", margin: "0 0 8px", borderBottom: "1px solid var(--border)" }}>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>
+                {wrongNotInNotebook.length > 0
+                  ? "Save the ones you missed to your mistake notebook and practice them again later."
+                  : "Every question you missed is in your mistake notebook."}
+              </span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 16 }}>
+                {wrongNotInNotebook.length > 0 && (
+                  <button onClick={() => addToNotebook(wrongNotInNotebook)} disabled={notebookBusy} style={{
+                    display: "inline-flex", alignItems: "center", gap: 6, border: 0, background: "var(--brand)", color: "var(--text-on-brand)",
+                    fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500, padding: "10px 18px", borderRadius: "var(--radius-md)",
+                    cursor: notebookBusy ? "default" : "pointer", opacity: notebookBusy ? 0.6 : 1,
+                  }}>
+                    <Icon name="bookmark" size={13} />
+                    Add all {wrongNotInNotebook.length} wrong {wrongNotInNotebook.length === 1 ? "answer" : "answers"} to notebook
+                  </button>
+                )}
+                <Link href="/notebook" style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", textDecoration: "underline" }}>Open notebook</Link>
+              </span>
+            </div>
+          )}
+          {notebookError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 12px" }}>{notebookError}</p>}
           {answers
             .map((row, i) => ({ row, originalIndex: i }))
             // Missed questions first — they're the ones worth dwelling on; original numbering
@@ -351,7 +418,16 @@ export default function ResultsPage() {
                         )}
                       </div>
                     )}
-                    <div style={{ margin: "16px 0 0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 22, margin: "16px 0 0" }}>
+                      {notebookIds.has(row.question_id) ? (
+                        <button onClick={() => removeFromNotebook(row.question_id)} disabled={notebookBusy} style={notebookToggleStyle(true)}>
+                          <Icon name="bookmark" size={13} /> In notebook · remove
+                        </button>
+                      ) : (
+                        <button onClick={() => addToNotebook([row.question_id])} disabled={notebookBusy} style={notebookToggleStyle(false)}>
+                          <Icon name="bookmark" size={13} /> Add to notebook
+                        </button>
+                      )}
                       <ReportQuestionButton questionId={row.question_id} />
                     </div>
                   </div>

@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
 import { Badge, Button, ScoreRing, SkillBar } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
-import { nextTier } from "@/lib/adaptive";
-import { ENGLISH_CATEGORY_ORDER, MATH_CATEGORY_ORDER, DIFFICULTY_LABELS, DIFFICULTY_TONES } from "@/lib/plan";
+import { ENGLISH_CATEGORY_ORDER, MATH_CATEGORY_ORDER, DIFFICULTY_LABELS } from "@/lib/plan";
+import { buildSkillInsight, byWeakness, GRASP_LABEL_BY_N, type SkillInsight, type TierStats } from "@/lib/insights";
 import type { QuestionSkill, MathSkill, Difficulty } from "@/lib/types";
 
 type View = "english" | "math";
@@ -72,28 +72,6 @@ const MATH_SKILL_NOTES: Record<MathSkill, string> = {
   geometry: "Lines, angles, triangles, circles, trig",
 };
 
-const GRASP_LABEL_BY_N = ["", "Emerging", "Developing", "Proficient", "Strong"];
-const GRASP_N: Record<Difficulty, number> = { easy: 1, "medium-low": 2, "medium-high": 3, hard: 4 };
-const TIER_RANK: Record<Difficulty, number> = { easy: 0, "medium-low": 1, "medium-high": 2, hard: 3 };
-
-interface TierStats { correct: number; total: number }
-
-interface SkillInsight {
-  skill: QuestionSkill | MathSkill;
-  label: string;
-  note: string;
-  hasData: boolean;
-  currentTier: Difficulty;
-  graspN: number;
-  grasp: string;
-  accuracy: number;
-  totalAnswered: number;
-  suggestedTier: Difficulty;
-  suggestedLabel: string;
-  suggestedTone: string;
-  advice: string;
-}
-
 interface DomainCard {
   name: string;
   skills: SkillInsight[];
@@ -105,53 +83,6 @@ interface DomainCard {
 
 interface ChartPoint { date: Date; score: number }
 
-function buildSkillInsight(
-  skill: QuestionSkill | MathSkill,
-  label: string,
-  note: string,
-  subcats: string[],
-  byTier: Partial<Record<QuestionSkill | MathSkill, Partial<Record<Difficulty, TierStats>>>>,
-  progressBySubcategory: Map<string, Difficulty>
-): SkillInsight {
-  const tiers = byTier[skill] ?? {};
-  const totalAnswered = Object.values(tiers).reduce((a, t) => a + (t?.total ?? 0), 0);
-  const hasData = totalAnswered > 0;
-
-  const progressTiers = subcats.map((sc) => progressBySubcategory.get(sc)).filter((t): t is Difficulty => !!t);
-  let currentTier: Difficulty = "medium-low";
-  if (progressTiers.length > 0) {
-    currentTier = progressTiers.sort((a, b) => TIER_RANK[b] - TIER_RANK[a])[0];
-  } else if (hasData) {
-    currentTier = (Object.entries(tiers).sort((a, b) => (b[1]?.total ?? 0) - (a[1]?.total ?? 0))[0]?.[0] as Difficulty) ?? "medium-low";
-  }
-
-  const atTier = tiers[currentTier];
-  const overallCorrect = Object.values(tiers).reduce((a, t) => a + (t?.correct ?? 0), 0);
-  const accuracy = atTier && atTier.total > 0
-    ? Math.round((atTier.correct / atTier.total) * 100)
-    : hasData ? Math.round((overallCorrect / totalAnswered) * 100) : 0;
-
-  const suggestedTier: Difficulty = !hasData ? currentTier : accuracy > 83 ? nextTier(currentTier, "up") : accuracy < 50 ? nextTier(currentTier, "down") : currentTier;
-  const direction = suggestedTier === currentTier ? "hold" : accuracy > 83 ? "up" : "down";
-  const tierLabel = DIFFICULTY_LABELS[currentTier];
-  const advice = !hasData
-    ? "Not practiced yet — a quick session here will unlock suggestions."
-    : direction === "up"
-    ? `Acing ${tierLabel} at ${accuracy}% — moving you up to find your ceiling.`
-    : direction === "down"
-    ? `Under 50% at ${tierLabel} — dropping a notch to rebuild confidence.`
-    : `Steady at ${tierLabel} — ${accuracy}% and holding the sweet spot.`;
-
-  return {
-    skill, label, note, hasData,
-    currentTier, graspN: GRASP_N[currentTier], grasp: GRASP_LABEL_BY_N[GRASP_N[currentTier]],
-    accuracy, totalAnswered,
-    suggestedTier, suggestedLabel: DIFFICULTY_LABELS[suggestedTier], suggestedTone: DIFFICULTY_TONES[suggestedTier],
-    advice,
-  };
-}
-
-const byWeakness = (a: SkillInsight, b: SkillInsight) => a.graspN - b.graspN || a.accuracy - b.accuracy;
 
 function Pips({ n }: { n: number }) {
   return (

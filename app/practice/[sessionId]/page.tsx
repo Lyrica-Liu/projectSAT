@@ -579,7 +579,13 @@ export default function ActiveSessionPage() {
       router.push("/onboarding");
       return;
     }
-    router.push("/plan");
+    if (planLinked) {
+      router.push("/plan");
+      return;
+    }
+    // Extra practice has no resume path yet, so leaving simply ends the set unscored.
+    clearTimer(sessionId);
+    router.push("/practice");
   }
 
   async function goBack() {
@@ -688,9 +694,7 @@ export default function ActiveSessionPage() {
                 <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", marginTop: 5 }}>remaining</span>
               </span>
             )}
-            {(planLinked || diagnosticLinked) && (
-              <button onClick={() => setShowExit(true)} style={{ border: "1px solid var(--border)", background: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", padding: "7px 13px", borderRadius: "var(--radius-md)" }}>Exit</button>
-            )}
+            <button onClick={() => setShowExit(true)} style={{ border: "1px solid var(--border)", background: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", padding: "7px 13px", borderRadius: "var(--radius-md)" }}>Exit</button>
           </span>
         </div>
         <div style={{ height: 2, background: "var(--surface-2)" }}>
@@ -968,12 +972,14 @@ export default function ActiveSessionPage() {
         <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "40px 40px 34px", maxWidth: 420 }}>
             <h2 style={{ fontWeight: 400, fontSize: 27, lineHeight: 1.15, color: "var(--text-strong)", margin: "0 0 12px" }}>
-              {diagnosticLinked ? "Skip the diagnostic?" : "Leave the module?"}
+              {diagnosticLinked ? "Skip the diagnostic?" : planLinked ? "Leave the module?" : "Leave this practice set?"}
             </h2>
             <p style={{ fontSize: 16, lineHeight: 1.62, color: "var(--text-muted)", margin: "0 0 28px" }}>
               {diagnosticLinked
                 ? `It's the one thing that personalizes your 30-day plan — without it, every skill gets equal time instead of extra time where you actually need it. You've answered ${answeredCount} of ${sessionTarget}.`
-                : "Your answers so far are already saved, so you can pick up right where you left off — today's day just won't be marked complete yet."}
+                : planLinked
+                ? "Your answers so far are already saved, so you can pick up right where you left off — today's day just won't be marked complete yet."
+                : `You've answered ${answeredCount} of ${sessionTarget}. This set won't be scored, and you'll start a fresh one next time.`}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
               <button onClick={() => setShowExit(false)} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>

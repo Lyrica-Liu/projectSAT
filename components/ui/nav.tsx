@@ -112,6 +112,7 @@ const NAV_LINKS: { href: string; label: string; icon: string }[] = [
   { href: "/dashboard", label: "Dashboard",       icon: "bar-chart-3" },
   { href: "/practice",  label: "Extra practice",  icon: "document" },
   { href: "/for-you",   label: "For you",         icon: "compass" },
+  { href: "/notebook",  label: "Notebook",        icon: "bookmark" },
 ];
 
 /** Fixed 66px oat spine that widens to 218px on hover. See .pw-sidebar in globals.css. */
