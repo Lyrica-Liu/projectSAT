@@ -4,6 +4,7 @@
  *
  * Usage (each step waits for its batch):
  *   npx tsx scripts/repair-question-bank.ts fix [reports/question-audit/<date>.json]
+ *   npx tsx scripts/repair-question-bank.ts retry    # re-sends only repairs that errored
  *   npx tsx scripts/repair-question-bank.ts verify
  *   npx tsx scripts/repair-question-bank.ts apply
  *
@@ -122,15 +123,8 @@ function renderForRepair(r: AuditRow, why: string): string {
 
 interface Target extends AuditRow { why: string; originalKey: string }
 
-async function fix(auditPath?: string) {
-  const rows = JSON.parse(readFileSync(auditPath ?? latestAudit(), "utf8")) as AuditRow[];
-  const targets: Target[] = rows.flatMap((r) => {
-    const why = isTarget(r);
-    return why ? [{ ...r, why, originalKey: questionKey({ passage: r.passage, stem: r.stem, options: r.options }) }] : [];
-  });
-  console.log(`${targets.length} questions to repair.`);
-
-  const requests: BatchRequest[] = targets.map((t) => ({
+function repairRequests(targets: Target[]): BatchRequest[] {
+  return targets.map((t) => ({
     custom_id: t.id,
     params: {
       model: MODEL,
@@ -141,8 +135,17 @@ async function fix(auditPath?: string) {
       output_config: { format: { type: "json_schema", schema: REPAIR_SCHEMA } },
     },
   }) as BatchRequest);
+}
 
-  const batchId = await submitBatch(requests);
+async function fix(auditPath?: string) {
+  const rows = JSON.parse(readFileSync(auditPath ?? latestAudit(), "utf8")) as AuditRow[];
+  const targets: Target[] = rows.flatMap((r) => {
+    const why = isTarget(r);
+    return why ? [{ ...r, why, originalKey: questionKey({ passage: r.passage, stem: r.stem, options: r.options }) }] : [];
+  });
+  console.log(`${targets.length} questions to repair.`);
+
+  const batchId = await submitBatch(repairRequests(targets));
   saveJson("repair-state.json", { fixBatch: batchId });
   saveJson("repair-targets.json", targets);
   await waitForBatch(batchId);
@@ -155,6 +158,20 @@ async function fix(auditPath?: string) {
 }
 
 type Draft = { target: Target; repair: Repair | null };
+
+/** Re-sends only the repairs that errored (e.g. out of credit), keeping the ones already done. */
+async function retry() {
+  const drafts = loadJson<Draft[]>("repair-drafts.json");
+  const failed = drafts.filter((d) => d.repair === null).map((d) => d.target);
+  if (failed.length === 0) { console.log("No failed repairs to retry."); return; }
+  console.log(`Retrying ${failed.length} failed repairs.`);
+  const batchId = await submitBatch(repairRequests(failed));
+  await waitForBatch(batchId);
+  const outcomes = await readBatch<Repair>(batchId);
+  const merged = drafts.map((d) => d.repair ? d : { ...d, repair: outcomes.get(d.target.id)?.ok ? outcomes.get(d.target.id)!.parsed! : null });
+  saveJson("repair-drafts.json", merged);
+  console.log(`${merged.filter((d) => d.repair === null).length} still failed. Cost ≈ $${batchCostUSD([...outcomes.values()].map((o) => o.usage)).toFixed(2)}.`);
+}
 
 async function verify() {
   const state = loadJson<{ fixBatch: string }>("repair-state.json");
@@ -228,9 +245,10 @@ function apply() {
 async function main() {
   const [cmd, arg] = process.argv.slice(2);
   if (cmd === "fix") await fix(arg);
+  else if (cmd === "retry") await retry();
   else if (cmd === "verify") await verify();
   else if (cmd === "apply") apply();
-  else console.log("Usage: npx tsx scripts/repair-question-bank.ts fix [audit.json] | verify | apply");
+  else console.log("Usage: npx tsx scripts/repair-question-bank.ts fix [audit.json] | retry | verify | apply");
 }
 
 main().catch((err) => { console.error(err); process.exit(1); });
