@@ -21,3 +21,8 @@ next-env.d.ts
 
 # TypeScript
 *.tsbuildinfo
+
+# Question-bank AI scripts: batch ids and intermediate results
+scripts/.bank-ai/
+# Raw bank-audit data (large; the .md reports next to it are the readable record)
+reports/question-audit/*.json
