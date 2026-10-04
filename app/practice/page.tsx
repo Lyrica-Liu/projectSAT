@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sidebar, SIDEBAR_WIDTH } from "@/components/ui/nav";
+import { ResumeCard } from "@/components/practice/resume-card";
 import { createClient } from "@/lib/supabase/client";
 import { ENGLISH_CATEGORY_ORDER, MATH_CATEGORY_ORDER } from "@/lib/plan";
 import { buildSkillInsight, byWeakness, tallyByTier, type SkillInsight } from "@/lib/insights";
@@ -159,6 +160,8 @@ export default function PracticeSetupPage() {
           <span>Extra practice</span>
           <span>Outside the thirty-day plan</span>
         </div>
+
+        <ResumeCard style={{ margin: "24px 0 0" }} />
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 244px", gap: 64, alignItems: "start", padding: "52px 0 0" }}>
           <div>

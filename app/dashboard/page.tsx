@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Sidebar, LoadingScreen, SIDEBAR_WIDTH, useIntroReveal, useCloseOnOutsideClick } from "@/components/ui/nav";
 import { Input } from "@/components/ui/ds";
 import { Icon } from "@/components/ui/icon";
+import { ResumeCard } from "@/components/practice/resume-card";
 import {
   getPlanDay, getCurrentPlanDay, calcStreak,
   ENGLISH_SESSION_LENGTH, MATH_SESSION_LENGTH,
@@ -39,6 +40,7 @@ const SKILL_LABELS: Record<QuestionSkill, string> = {
 
 const MATH_SKILL_LABELS: Record<MathSkill, string> = {
   algebra: "Algebra",
+  advanced_math: "Advanced Math",
   data_analysis: "Data Analysis",
   geometry: "Geometry",
 };
@@ -267,6 +269,8 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
+
+        <ResumeCard style={{ margin: "24px 0 0" }} />
 
         {/* Briefing */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 236px", gap: 56, alignItems: "start", padding: "56px 0 0" }}>

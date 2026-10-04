@@ -28,6 +28,7 @@ const SKILL_LABELS: Record<QuestionSkill, string> = {
 
 const MATH_SKILL_LABELS: Record<MathSkill, string> = {
   algebra: "Algebra",
+  advanced_math: "Advanced Math",
   data_analysis: "Data Analysis",
   geometry: "Geometry",
 };

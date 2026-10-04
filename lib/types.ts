@@ -12,7 +12,7 @@ export type QuestionSkill =
   | "transitions"
   | "rhetorical_synthesis";
 
-export type MathSkill = "algebra" | "data_analysis" | "geometry";
+export type MathSkill = "algebra" | "advanced_math" | "data_analysis" | "geometry";
 
 export type Difficulty = "easy" | "medium-low" | "medium-high" | "hard";
 

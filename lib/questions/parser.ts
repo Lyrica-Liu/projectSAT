@@ -1,6 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import type { QuestionSkill, Difficulty } from "@/lib/types";
+import { applyOverrides } from "./overrides";
 
 export interface BankQuestion {
   passage: string | null;
@@ -91,15 +92,26 @@ function parseQuestion(block: string, subcategory: string, difficulty: Difficult
   if (!answerM) return null;
   const answer = answerM[1] as "A" | "B" | "C" | "D";
 
-  // False answer explanations → use as explanation field
+  // Why the right answer is right, then why each wrong one is wrong.
+  const flatten = (t: string) => t.replace(/^\s*\*\s*/gm, "").replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+  const correctM = block.match(/Correct Answer Explanation:\s*\n([\s\S]*?)(?=\n\s*False Answer Explanations:)/);
   const explM = block.match(/False Answer Explanations:\s*\n([\s\S]*?)(?=\n\s*-{10,}|$)/);
-  const rawExpl = explM ? explM[1].trim() : "";
-  // Format: "Correct: B. [false answer notes]"
-  const explanation = `Correct answer: ${answer}. ${rawExpl.replace(/^\s*\*\s*/gm, "").replace(/\n+/g, " ").trim()}`;
+  const explanation = [`Correct answer: ${answer}.`, correctM ? flatten(correctM[1]) : "", explM ? flatten(explM[1]) : ""]
+    .filter(Boolean).join(" ");
 
   if (!stem || !answer || !options.A) return null;
 
   return { passage, stem, options, answer, explanation, skill, difficulty, domain };
+}
+
+/**
+ * Cross-Text Connections passages are captured starting after the "Passage 1:" label (the
+ * "Passage 2:" label stays inside the text), so restore the first label for display. Done after
+ * overrides are applied so override keys, which hash the passage as parsed, stay stable.
+ */
+function labelFirstPassage(q: BankQuestion): BankQuestion {
+  if (!q.passage || !/^Passage 2:/m.test(q.passage) || /^Passage 1:/.test(q.passage)) return q;
+  return { ...q, passage: `Passage 1:\n${q.passage}` };
 }
 
 function buildBank(): QuestionBank {
@@ -156,7 +168,9 @@ function buildBank(): QuestionBank {
       }
 
       if (!bank[subcategory]) bank[subcategory] = {};
-      bank[subcategory][diff] = questions;
+      bank[subcategory][diff] = applyOverrides(questions, (q, fix) => ({
+        ...q, passage: fix.passage, stem: fix.stem, options: fix.options!, answer: fix.answer!, explanation: fix.explanation,
+      })).map(labelFirstPassage);
     }
   }
 

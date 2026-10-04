@@ -21,6 +21,7 @@ export interface PlanDay {
 /** The 3 DSAT math categories, cycled repeatedly across the 10 math plan-days. */
 export const MATH_CATEGORY_ORDER: { subcategory: string; skill: MathSkill; focus: string }[] = [
   { subcategory: "Algebra",       skill: "algebra",       focus: "Algebra" },
+  { subcategory: "Advanced Math", skill: "advanced_math", focus: "Advanced Math" },
   { subcategory: "Data Analysis", skill: "data_analysis", focus: "Data Analysis" },
   { subcategory: "Geometry",      skill: "geometry",       focus: "Geometry" },
 ];

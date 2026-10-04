@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // /onboarding is deliberately public: it's the landing page's entry point and signs the
 // visitor in anonymously itself.
-const PROTECTED_PREFIXES = ["/dashboard", "/practice", "/results", "/history", "/plan", "/for-you", "/account", "/notebook"];
+const PROTECTED_PREFIXES = ["/dashboard", "/practice", "/results", "/plan", "/for-you", "/account", "/notebook"];
 
 function getSupabaseEnv(name: string) {
   return process.env[name]?.trim();

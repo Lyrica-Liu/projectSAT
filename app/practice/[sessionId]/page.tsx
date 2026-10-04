@@ -243,6 +243,8 @@ export default function ActiveSessionPage() {
   const [diagnosticLinked, setDiagnosticLinked] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [showExit, setShowExit] = useState(false);
+  /** Question numbers (1-based) still blank when the student asked to finish — drives the confirm dialog. */
+  const [blankOnFinish, setBlankOnFinish] = useState<number[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [gridDraft, setGridDraft] = useState("");
@@ -529,6 +531,14 @@ export default function ActiveSessionPage() {
     );
   }
 
+  /** Like Bluebook: finishing with blanks is allowed, but the student sees which ones first. */
+  async function requestFinish() {
+    await commitGridAnswer();
+    const blanks = Array.from({ length: sessionTarget }, (_, i) => i).filter((i) => !isAnsweredAt(i)).map((i) => i + 1);
+    if (blanks.length > 0) { setBlankOnFinish(blanks); return; }
+    finishSession();
+  }
+
   async function finishSession() {
     await commitGridAnswer();
     setSubmitting(true);
@@ -583,8 +593,8 @@ export default function ActiveSessionPage() {
       router.push("/plan");
       return;
     }
-    // Extra practice has no resume path yet, so leaving simply ends the set unscored.
-    clearTimer(sessionId);
+    // Extra practice resumes from the "Continue where you left off" card (Extra practice page
+    // and dashboard), so the timer and answers are kept.
     router.push("/practice");
   }
 
@@ -940,10 +950,10 @@ export default function ActiveSessionPage() {
                         {sessionTarget - answeredCount} unanswered
                       </span>
                     )}
-                    <button onClick={finishSession} disabled={submitting || !allAnswered} style={{
+                    <button onClick={requestFinish} disabled={submitting} style={{
                       border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                       fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
-                      cursor: submitting || !allAnswered ? "default" : "pointer", opacity: submitting || !allAnswered ? 0.5 : 1,
+                      cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.5 : 1,
                     }}>
                       {submitting ? "Saving…" : "Finish session"}
                     </button>
@@ -968,6 +978,36 @@ export default function ActiveSessionPage() {
         </div>
       </main>
 
+      {blankOnFinish && (
+        <div role="dialog" aria-modal="true" aria-labelledby="blank-title" style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "40px 40px 34px", maxWidth: 440 }}>
+            <h2 id="blank-title" style={{ fontWeight: 400, fontSize: 27, lineHeight: 1.15, color: "var(--text-strong)", margin: "0 0 12px" }}>
+              {blankOnFinish.length === 1 ? "1 question is unanswered" : `${blankOnFinish.length} questions are unanswered`}
+            </h2>
+            <p style={{ fontSize: 16, lineHeight: 1.62, color: "var(--text-muted)", margin: "0 0 18px" }}>
+              Blank answers count as wrong, just like on the real test — a guess can&apos;t hurt you.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "0 0 28px" }}>
+              {blankOnFinish.map((n) => (
+                <button key={n} onClick={() => { setBlankOnFinish(null); jumpTo(n - 1); }} aria-label={`Go to question ${n}`} style={{
+                  minWidth: 32, height: 32, padding: "0 6px", border: "1px dashed var(--line-strong)", background: "transparent",
+                  borderRadius: "var(--radius-sm)", fontFamily: "var(--font-sans)", fontSize: 12, fontVariantNumeric: "tabular-nums",
+                  color: "var(--text-strong)", cursor: "pointer",
+                }}>{n}</button>
+              ))}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+              <button onClick={() => { const first = blankOnFinish[0]; setBlankOnFinish(null); jumpTo(first - 1); }} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+                Go to question {blankOnFinish[0]}
+              </button>
+              <button onClick={() => { setBlankOnFinish(null); finishSession(); }} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-faint)", cursor: "pointer", padding: 0 }}>
+                Submit anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showExit && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "40px 40px 34px", maxWidth: 420 }}>
@@ -979,7 +1019,7 @@ export default function ActiveSessionPage() {
                 ? `It's the one thing that personalizes your 30-day plan — without it, every skill gets equal time instead of extra time where you actually need it. You've answered ${answeredCount} of ${sessionTarget}.`
                 : planLinked
                 ? "Your answers so far are already saved, so you can pick up right where you left off — today's day just won't be marked complete yet."
-                : `You've answered ${answeredCount} of ${sessionTarget}. This set won't be scored, and you'll start a fresh one next time.`}
+                : `You've answered ${answeredCount} of ${sessionTarget}, and your answers are saved. Pick it up again from "Continue where you left off" on the Extra practice page.`}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
               <button onClick={() => setShowExit(false)} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>

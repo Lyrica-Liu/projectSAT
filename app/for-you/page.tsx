@@ -56,18 +56,21 @@ const SKILL_NOTES: Record<QuestionSkill, string> = {
 
 const MATH_CATEGORY_ICON: Record<string, string> = {
   "Algebra": "calculator",
+  "Advanced Math": "trending-up",
   "Data Analysis": "bar-chart-3",
   "Geometry": "triangle",
 };
 
 const MATH_SKILL_LABELS: Record<MathSkill, string> = {
   algebra: "Algebra",
+  advanced_math: "Advanced Math",
   data_analysis: "Data Analysis",
   geometry: "Geometry",
 };
 
 const MATH_SKILL_NOTES: Record<MathSkill, string> = {
   algebra: "Linear equations, systems, inequalities",
+  advanced_math: "Quadratics, exponentials, nonlinear functions",
   data_analysis: "Ratios, percentages, statistics, models",
   geometry: "Lines, angles, triangles, circles, trig",
 };

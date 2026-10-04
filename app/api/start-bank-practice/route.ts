@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getBankQuestions } from "@/lib/questions/parser";
 import { getMathBankQuestions } from "@/lib/questions/mathParser";
+import { MATH_CATEGORY_ORDER } from "@/lib/plan";
 import type { Difficulty } from "@/lib/types";
 
-const MATH_SUBCATEGORIES = new Set(["Algebra", "Data Analysis", "Geometry"]);
+const MATH_SUBCATEGORIES = new Set(MATH_CATEGORY_ORDER.map((c) => c.subcategory));
 
 const SUBCATEGORY_TO_DOMAIN: Record<string, "reading" | "writing"> = {
   "Central Ideas and Details":          "reading",

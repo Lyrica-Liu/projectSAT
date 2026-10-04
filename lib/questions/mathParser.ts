@@ -1,10 +1,11 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import type { Difficulty, MathSkill } from "@/lib/types";
+import { applyOverrides } from "./overrides";
 
 export interface MathBankQuestion {
   questionType: "multiple_choice" | "grid_in";
-  category: string; // "Algebra" | "Data Analysis" | "Geometry"
+  category: string; // "Algebra" | "Advanced Math" | "Data Analysis" | "Geometry"
   skill: MathSkill;
   difficulty: Difficulty;
   passage: string | null; // table markdown, if any
@@ -21,6 +22,7 @@ export type MathBank = Record<string, Record<string, MathBankQuestion[]>>;
 
 const CATEGORY_TO_SKILL: Record<string, MathSkill> = {
   "Algebra": "algebra",
+  "Advanced Math": "advanced_math",
   "Data Analysis": "data_analysis",
   "Geometry": "geometry",
 };
@@ -163,7 +165,10 @@ function buildBank(): MathBank {
     }
 
     if (!bank[category]) bank[category] = {};
-    bank[category][difficulty] = questions;
+    bank[category][difficulty] = applyOverrides(questions, (q, fix) => ({
+      ...q, passage: fix.passage, stem: fix.stem, options: fix.options, answer: fix.answer, gridAnswer: fix.gridAnswer,
+      explanation: fix.explanation, questionType: fix.options ? "multiple_choice" : "grid_in",
+    }));
   }
 
   return bank;
