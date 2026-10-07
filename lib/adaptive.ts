@@ -64,3 +64,20 @@ export function pickNextTier(currentDifficulty: Difficulty): Difficulty {
   if (neighbors.length === 0 || Math.random() < 0.8) return currentDifficulty;
   return neighbors[Math.floor(Math.random() * neighbors.length)];
 }
+
+/**
+ * A category's stored tier after a fixed-difficulty practice set (plan days adapt question by
+ * question instead — see computeSessionState). Uses the same thresholds as "Next up":
+ *   ≥ 80% at or above the stored tier → one tier above the set
+ *   < 40% at or below the stored tier → one tier below the stored tier (never a freefall)
+ *   ≥ 40% on a set harder than the stored tier → the set's tier (they've shown they can handle it)
+ *   anything else → unchanged (an easy warm-up shouldn't drag a strong student down)
+ */
+export function tierAfterPracticeSet(stored: Difficulty | null, setTier: Difficulty, score: number): Difficulty {
+  const current = stored ?? setTier;
+  const rank = (d: Difficulty) => TIER_ORDER.indexOf(d);
+  if (score >= 80 && rank(setTier) >= rank(current)) return nextTier(setTier, "up");
+  if (score < 40 && rank(setTier) <= rank(current)) return nextTier(current, "down");
+  if (score >= 40 && rank(setTier) > rank(current)) return setTier;
+  return current;
+}

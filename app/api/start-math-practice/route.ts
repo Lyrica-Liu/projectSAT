@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
   const questions = picked.map((q) => ({
     user_id:       user.id,
     domain:        "math",
+    subcategory:   q.category,
     skill:         q.skill,
     difficulty:    q.difficulty,
     passage:       q.passage,

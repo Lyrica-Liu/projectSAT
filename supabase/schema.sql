@@ -334,3 +334,72 @@ create policy "notebook_entries_insert_own" on public.notebook_entries
 
 create policy "notebook_entries_delete_own" on public.notebook_entries
   for delete using (auth.uid() = user_id);
+
+-- ───────────────────────────────────────────
+-- 12. Skill map + sprints
+-- ───────────────────────────────────────────
+-- Run this section independently if adding to an existing DB. Additive only.
+
+-- The real category of a saved question. Command of Evidence (Textual) and (Quantitative)
+-- share one `skill`, so the skill map needs this to tell them apart. Older rows stay null and
+-- are resolved in code (lib/server/mastery.ts).
+alter table public.questions add column if not exists subcategory text;
+
+-- One row per sprint a student starts. At most one active sprint per student.
+create table if not exists public.user_sprints (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  sprint_key  text not null,          -- see lib/sprints.ts; 'full-30' is the original 30-day plan
+  status      text not null default 'active' check (status in ('active', 'completed', 'quit')),
+  started_at  timestamptz default now() not null,
+  ended_at    timestamptz
+);
+
+create unique index if not exists user_sprints_one_active_idx
+  on public.user_sprints (user_id) where status = 'active';
+
+alter table public.user_sprints enable row level security;
+
+create policy "user_sprints_select_own" on public.user_sprints
+  for select using (auth.uid() = user_id);
+create policy "user_sprints_insert_own" on public.user_sprints
+  for insert with check (auth.uid() = user_id);
+create policy "user_sprints_update_own" on public.user_sprints
+  for update using (auth.uid() = user_id);
+
+-- The days of a short sprint. ('full-30' keeps using plan_days.)
+create table if not exists public.sprint_days (
+  id              uuid primary key default gen_random_uuid(),
+  user_sprint_id  uuid not null references public.user_sprints (id) on delete cascade,
+  user_id         uuid not null references auth.users (id) on delete cascade,
+  day_number      int  not null,
+  subcategory     text not null,
+  difficulty      text not null,
+  question_count  int  not null,
+  session_id      uuid references public.sessions (id) on delete set null,
+  score           int,
+  completed_at    timestamptz,
+  unique (user_sprint_id, day_number)
+);
+
+create index if not exists sprint_days_user_idx on public.sprint_days (user_id);
+
+alter table public.sprint_days enable row level security;
+
+create policy "sprint_days_select_own" on public.sprint_days
+  for select using (auth.uid() = user_id);
+create policy "sprint_days_insert_own" on public.sprint_days
+  for insert with check (auth.uid() = user_id);
+create policy "sprint_days_update_own" on public.sprint_days
+  for update using (auth.uid() = user_id);
+
+-- Existing 30-day plans become a 'full-30' sprint so nothing disappears: active if any day is
+-- left, completed if all 30 are done. Students who already have a sprint row are skipped.
+insert into public.user_sprints (user_id, sprint_key, status, started_at, ended_at)
+select p.user_id, 'full-30',
+       case when count(p.completed_at) >= 30 then 'completed' else 'active' end,
+       min(p.started_at),
+       case when count(p.completed_at) >= 30 then max(p.completed_at) end
+from public.plan_days p
+where not exists (select 1 from public.user_sprints s where s.user_id = p.user_id)
+group by p.user_id;

@@ -273,6 +273,7 @@ correct_answer_explanation is required for every question in JSON output.`;
     return {
       user_id:     user.id,
       domain:      SUBCATEGORY_TO_DOMAIN[subcategory] ?? "reading",
+      subcategory,
       skill:       SUBCATEGORY_TO_SKILL[subcategory]  ?? "central_idea",
       difficulty:  mapDifficulty(skillDifficulty),
       passage:     buildPassage(q),

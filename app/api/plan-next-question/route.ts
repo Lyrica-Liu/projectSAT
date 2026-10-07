@@ -131,6 +131,7 @@ export async function POST(req: NextRequest) {
       .insert({
         user_id:        user.id,
         domain:         candidate.domain,
+        subcategory,
         skill:          candidate.skill,
         difficulty:     candidate.difficulty,
         passage:        candidate.passage,

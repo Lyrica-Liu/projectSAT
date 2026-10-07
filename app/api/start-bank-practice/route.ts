@@ -22,6 +22,7 @@ const SUBCATEGORY_TO_DOMAIN: Record<string, "reading" | "writing"> = {
 };
 
 interface PoolItem {
+  subcategory: string;
   domain: "reading" | "writing" | "math";
   skill: string;
   difficulty: Difficulty;
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     if (MATH_SUBCATEGORIES.has(subcategory)) {
       for (const q of getMathBankQuestions(subcategory, difficulty)) {
         pool.push({
-          domain: "math", skill: q.skill, difficulty: q.difficulty, passage: q.passage, stem: q.stem,
+          subcategory, domain: "math", skill: q.skill, difficulty: q.difficulty, passage: q.passage, stem: q.stem,
           question_type: q.questionType, options: q.options, answer: q.answer,
           grid_answer: q.gridAnswer, explanation: q.explanation,
         });
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     } else {
       for (const q of getBankQuestions(subcategory, difficulty)) {
         pool.push({
-          domain: SUBCATEGORY_TO_DOMAIN[subcategory] ?? "reading", skill: q.skill, difficulty: q.difficulty,
+          subcategory, domain: SUBCATEGORY_TO_DOMAIN[subcategory] ?? "reading", skill: q.skill, difficulty: q.difficulty,
           passage: q.passage, stem: q.stem, question_type: "multiple_choice", options: q.options,
           answer: q.answer, grid_answer: null, explanation: q.explanation,
         });
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
   const questions = picked.map((q) => ({
     user_id:       user.id,
     domain:        q.domain,
+    subcategory:   q.subcategory,
     skill:         q.skill,
     difficulty:    q.difficulty,
     passage:       q.passage,

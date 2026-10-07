@@ -106,6 +106,7 @@ export async function POST(req: NextRequest) {
     .insert({
       user_id:        user.id,
       domain,
+      subcategory,
       skill:          firstQuestion.skill,
       difficulty:     firstQuestion.difficulty,
       passage:        firstQuestion.passage,
