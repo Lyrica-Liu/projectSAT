@@ -1,16 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildDiagnosticPool } from "@/lib/questions/diagnostic";
 
 /**
- * Creates the one-time diagnostic session: ~23 questions (7 English subcategories x2, all 3
- * math categories x3), mixed difficulty, no repeats. Structurally identical to
+ * Creates the one-time diagnostic session: 2 questions per category (see buildDiagnosticPool),
+ * mixed difficulty, no repeats. `{ from: "home" }` marks the skill-map quick start, which
+ * returns to home when done instead of to the onboarding wizard. Structurally identical to
  * start-bank-practice's bulk insert (questions -> sessions -> answers). Scoring is subject-level
  * only (see lib/diagnostic-scoring.ts) — every question's `questions.domain` column already
  * says which subject it belongs to, so unlike the old per-category diagnostic, there's no need
  * to stash a question-id -> category map in user_metadata to regroup answers later.
  */
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const { from } = await req.json().catch(() => ({})) as { from?: string };
   const supabase = await createClient();
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) {
@@ -25,6 +27,7 @@ export async function POST() {
   const questions = pool.map((q) => ({
     user_id:       user.id,
     domain:        q.domain,
+    subcategory:   q.subcategory,
     skill:         q.skill,
     difficulty:    q.difficulty,
     passage:       q.passage,
@@ -58,7 +61,7 @@ export async function POST() {
   }
 
   const { error: updateErr } = await supabase.auth.updateUser({
-    data: { diagnostic_session_id: session.id },
+    data: { diagnostic_session_id: session.id, diagnostic_from: from === "home" ? "home" : "onboarding" },
   });
   if (updateErr) {
     return NextResponse.json({ error: `Could not save diagnostic metadata: ${updateErr.message}` }, { status: 500 });

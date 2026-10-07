@@ -109,7 +109,7 @@ export function Wordmark({ href = "/", dark = false }: { href?: string; dark?: b
 
 const NAV_LINKS: { href: string; label: string; icon: string }[] = [
   { href: "/plan",      label: "My plan",        icon: "calendar" },
-  { href: "/dashboard", label: "Dashboard",       icon: "bar-chart-3" },
+  { href: "/dashboard", label: "Home",            icon: "bar-chart-3" },
   { href: "/practice",  label: "Extra practice",  icon: "document" },
   { href: "/for-you",   label: "For you",         icon: "compass" },
   { href: "/notebook",  label: "Notebook",        icon: "bookmark" },

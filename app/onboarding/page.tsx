@@ -12,7 +12,7 @@ const STEPS = [
   { title: "Where you stand", sub: "A recent score, if you have one, gives the diagnostic a head start." },
   { title: "Aim high", sub: "Your target score shapes every practice set we choose." },
   { title: "How it works", sub: "Every day follows the same shape — see it before you dive in." },
-  { title: "Quick diagnostic", sub: "About 23 questions, mixed difficulty, so the plan starts calibrated instead of guessing." },
+  { title: "Quick diagnostic", sub: "About 30 questions, two from every skill, so the plan starts calibrated instead of guessing." },
   { title: "Your results", sub: "Strong, medium, or weak — see exactly where you stand before anything's decided." },
   { title: "You're all set", sub: "Your 30-day path is built and Day 1 is waiting." },
 ];
@@ -481,7 +481,7 @@ export default function OnboardingPage() {
             <div>
               <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Here&apos;s what a day looks like</h2>
               <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 32px", lineHeight: 1.62, maxWidth: "46ch" }}>
-                Every sitting follows the same shape, so there&apos;s nothing new to figure out once you begin. First, a quick diagnostic — about 23 questions across Math and Reading &amp; Writing — so the plan starts calibrated instead of guessing.
+                Every sitting follows the same shape, so there&apos;s nothing new to figure out once you begin. First, a quick diagnostic — about 30 questions, two from every skill — so the plan starts calibrated instead of guessing.
               </p>
 
               {/* Mini reading-desk mockup — timed, one question at a time */}
@@ -556,7 +556,7 @@ export default function OnboardingPage() {
             <div>
               <h2 style={{ fontWeight: 400, fontSize: 40, lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 16px" }}>Ready for the diagnostic?</h2>
               <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 40px", lineHeight: 1.62, maxWidth: "46ch" }}>
-                About 23 questions across Math and Reading &amp; Writing, mixed difficulty. Answer honestly — it just sets your starting point.
+                About 30 questions, two from every Math and Reading &amp; Writing skill, mixed difficulty. Answer honestly — it just sets your starting point.
               </p>
               {diagnosticError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 20px" }}>{diagnosticError}</p>}
               <Button

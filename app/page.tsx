@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mark } from "@/components/ui/mark";
+import { createClient } from "@/lib/supabase/client";
 
 const STUDY_MECHANICS = ["Adaptive difficulty", "Real test timing", "Full explanations"];
 
@@ -26,7 +27,7 @@ const RING_ACCURACY = 78;
 const HERO_HEADLINE = "You don't have to grind the DSAT for a year.";
 
 const HOW_IT_WORKS = [
-  { n: "01", title: "Take the diagnostic", body: "26 questions across Reading & Writing and Math, about 40 minutes. It shows where you actually lose points." },
+  { n: "01", title: "Take the diagnostic", body: "Optional: about 30 questions, two from every skill, around 45 minutes. It shows where you actually lose points." },
   { n: "02", title: "Get your thirty-day plan", body: "A day-by-day sequence built around your weakest skills, laid out in full before you start." },
   { n: "03", title: "Do one session a day", body: "About 30 minutes each. Difficulty adjusts as you go, and every answer comes with an explanation." },
 ];
@@ -57,7 +58,7 @@ const FAQS = [
   },
   {
     q: "How much time does it take each day?",
-    a: "About 30 minutes. Each daily session is 20 questions, timed at the Digital SAT's pace of roughly a minute and a half per question. The diagnostic at the start takes about 40 minutes.",
+    a: "About 30 minutes. Each daily session is 20 questions, timed at the Digital SAT's pace of roughly a minute and a half per question. The optional diagnostic takes about 45 minutes.",
   },
   {
     q: "Where do the questions come from?",
@@ -103,17 +104,18 @@ const eyebrowLight: React.CSSProperties = {
   textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 14px",
 };
 
-function CTAButton({ onClick }: { onClick: () => void }) {
+function CTAButton({ onClick, busy = false }: { onClick: () => void; busy?: boolean }) {
   return (
     <div>
-      <button onClick={onClick} style={{
+      <button onClick={onClick} disabled={busy} style={{
         display: "inline-flex", alignItems: "center", background: "var(--brand)", color: "var(--text-on-brand)",
         fontFamily: "var(--font-sans)", fontSize: 17, fontWeight: 600, padding: "19px 36px",
         borderRadius: "var(--radius-lg)", border: "none", cursor: "pointer", transition: "background 0.16s",
-        boxShadow: "0 10px 26px rgba(32,31,28,.16)",
-      }}>Take the free diagnostic</button>
+        boxShadow: "0 10px 26px rgba(32,31,28,.16)", opacity: busy ? 0.7 : 1,
+      }}>{busy ? "Getting your first questions…" : "Start practicing"}</button>
       <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.5, color: "var(--text-muted)", margin: "12px 0 0", maxWidth: "44ch" }}>
-        About 40 minutes. See where you stand in Reading &amp; Writing and Math, and get a thirty-day plan built around your weak spots. No account needed.
+        Free, no account and no setup — pick a skill and answer your first question in seconds.{" "}
+        <Link href="/onboarding" style={{ color: "var(--text-muted)", textDecoration: "underline" }}>Or take the full diagnostic</Link>.
       </p>
     </div>
   );
@@ -290,7 +292,7 @@ function SampleQuestion({ onBegin }: { onBegin: () => void }) {
               <button onClick={onBegin} style={{
                 background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600,
                 padding: "12px 22px", borderRadius: "var(--radius-md)", border: "none", cursor: "pointer",
-              }}>Take the free diagnostic</button>
+              }}>Start practicing</button>
               <button onClick={() => setPicked(null)} style={{
                 background: "none", border: "none", padding: 0, cursor: "pointer",
                 fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", textDecoration: "underline",
@@ -307,7 +309,20 @@ function SampleQuestion({ onBegin }: { onBegin: () => void }) {
 
 export default function LandingPage() {
   const router = useRouter();
-  const goBegin = () => router.push("/onboarding");
+  // No onboarding in the way: sign in quietly (an anonymous account, upgradeable later) and go
+  // straight to the skill map.
+  const [starting, setStarting] = useState(false);
+  async function goBegin() {
+    if (starting) return;
+    setStarting(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const { error } = await supabase.auth.signInAnonymously();
+      if (error) { setStarting(false); router.push("/auth"); return; }
+    }
+    router.push("/dashboard");
+  }
 
   const [analysisVisible, setAnalysisVisible] = useState(false);
   const analysisRef = useRef<HTMLDivElement>(null);
@@ -362,7 +377,7 @@ export default function LandingPage() {
               <TypewriterHeadline text={HERO_HEADLINE} />
             </h1>
             <div style={{ margin: "26px 0 0" }}>
-              <CTAButton onClick={goBegin} />
+              <CTAButton onClick={goBegin} busy={starting} />
             </div>
           </div>
 
@@ -500,7 +515,7 @@ export default function LandingPage() {
           ))}
         </div>
         <div style={{ margin: "36px 0 0" }}>
-          <CTAButton onClick={goBegin} />
+          <CTAButton onClick={goBegin} busy={starting} />
         </div>
       </section>
 

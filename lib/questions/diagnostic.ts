@@ -4,19 +4,10 @@ import { ENGLISH_CATEGORY_ORDER, MATH_CATEGORY_ORDER } from "@/lib/plan";
 import type { Difficulty } from "@/lib/types";
 
 /**
- * A trimmed slice of ENGLISH_CATEGORY_ORDER (7 of 11) — one subcategory kept from each of the
- * SAT's 4 real domains (Information & Ideas, Craft & Structure, Expression of Ideas, Standard
- * English Conventions) so the English average still draws from every domain, just not every
- * subcategory. The diagnostic no longer scores per-category (see diagnostic-scoring.ts), so
- * breadth here is about a representative sample for one English average, not per-subcategory
- * coverage.
+ * Every English subcategory is in the diagnostic, so the quick start can color in every tile
+ * on the skill map (two questions each — enough for an "estimate", not a verdict).
  */
-const DIAGNOSTIC_ENGLISH_SUBCATEGORIES = new Set([
-  "Central Ideas and Details", "Command of Evidence (Textual)", "Inferences", // Information & Ideas
-  "Words in Context", "Text Structure and Purpose",                          // Craft & Structure
-  "Transitions",                                                             // Expression of Ideas
-  "Boundaries",                                                              // Standard English Conventions
-]);
+const DIAGNOSTIC_ENGLISH_SUBCATEGORIES = new Set(ENGLISH_CATEGORY_ORDER.map((c) => c.subcategory));
 
 /**
  * Two questions per English subcategory, alternating between two tier-pairs by position so the
@@ -26,12 +17,12 @@ const DIAGNOSTIC_ENGLISH_SUBCATEGORIES = new Set([
  */
 const ENGLISH_TIER_PAIRS: Difficulty[][] = [["easy", "hard"], ["medium-low", "medium-high"]];
 
-/** Three questions per math category — all 3 categories are kept (there are only 3 to begin
- *  with), spread across the same 3-tier shape the trimmed English side uses. */
-const MATH_TIERS: Difficulty[] = ["easy", "medium-high", "hard"];
+/** Two questions per math category, alternating tier pairs the same way the English side does. */
+const MATH_TIER_PAIRS: Difficulty[][] = [["easy", "hard"], ["medium-low", "medium-high"]];
 
 export interface DiagnosticPoolItem {
   subject: "english" | "math";
+  subcategory: string;
   domain: "reading" | "writing" | "math";
   skill: string;
   difficulty: Difficulty;
@@ -45,8 +36,8 @@ export interface DiagnosticPoolItem {
 }
 
 /**
- * Builds the ~23-question diagnostic pool: 7 English subcategories at 2 questions each (14) and
- * all 3 math categories at 3 questions each (9). Scoring is subject-level only now (see
+ * Builds the diagnostic pool: every English subcategory and every math category with bank
+ * questions, 2 questions each (28 with 3 math categories, 30 once Advanced Math is in). Scoring is subject-level only now (see
  * diagnostic-scoring.ts) — there's no per-category tracking at all, so a question only needs to
  * know which subject it belongs to, not which subcategory. Every bank cell has 30-40 questions,
  * so — unlike the modulo-wrap pooling used by start-bank-practice/start-math-practice — this
@@ -81,7 +72,7 @@ export function buildDiagnosticPool(): DiagnosticPoolItem[] {
       const picked = pickOne(getBankQuestions(subcategory, tier));
       if (!picked) continue; // bank cell exhausted (shouldn't happen at these sizes, but don't crash the diagnostic over it)
       pool.push({
-        subject: "english", domain: picked.domain, skill,
+        subject: "english", subcategory, domain: picked.domain, skill,
         difficulty: picked.difficulty, passage: picked.passage, stem: picked.stem,
         options: picked.options, answer: picked.answer, gridAnswer: null,
         explanation: picked.explanation, questionType: "multiple_choice",
@@ -89,18 +80,18 @@ export function buildDiagnosticPool(): DiagnosticPoolItem[] {
     }
   });
 
-  for (const { subcategory, skill } of MATH_CATEGORY_ORDER) {
-    for (const tier of MATH_TIERS) {
+  MATH_CATEGORY_ORDER.forEach(({ subcategory, skill }, i) => {
+    for (const tier of MATH_TIER_PAIRS[i % 2]) {
       const picked = pickOne(getMathBankQuestions(subcategory, tier));
       if (!picked) continue;
       pool.push({
-        subject: "math", domain: "math", skill,
+        subject: "math", subcategory, domain: "math", skill,
         difficulty: picked.difficulty, passage: picked.passage, stem: picked.stem,
         options: picked.options, answer: picked.answer, gridAnswer: picked.gridAnswer,
         explanation: picked.explanation, questionType: picked.questionType,
       });
     }
-  }
+  });
 
   // Shuffle so the diagnostic doesn't march through subjects in a predictable block order.
   return pool

@@ -96,7 +96,8 @@ function AuthForm() {
         if (error) {
           setError(error.message);
         } else if (data.session) {
-          window.location.href = "/onboarding";
+          // Straight to the skill map — goal-setting and the diagnostic are optional now.
+          window.location.href = "/dashboard";
           return;
         } else {
           setSuccessMsg("Check your email to confirm your account, then sign in.");

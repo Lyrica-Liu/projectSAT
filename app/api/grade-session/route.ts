@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { gradeGridAnswer } from "@/lib/grading";
+import { tierAfterPracticeSet } from "@/lib/adaptive";
+import { subcategoryForSkill } from "@/lib/categories";
+import type { Difficulty } from "@/lib/types";
 
 interface AnswerRow {
   id: string;
@@ -11,6 +14,9 @@ interface AnswerRow {
     question_type: string;
     answer: "A" | "B" | "C" | "D" | null;
     grid_answer: string | null;
+    difficulty: Difficulty;
+    skill: string;
+    subcategory: string | null;
   } | null;
 }
 
@@ -44,7 +50,7 @@ export async function POST(req: NextRequest) {
 
   const { data: answerRows, error: loadErr } = await supabase
     .from("answers")
-    .select("id, question_id, user_answer, user_grid_answer, question:questions(question_type, answer, grid_answer)")
+    .select("id, question_id, user_answer, user_grid_answer, question:questions(question_type, answer, grid_answer, difficulty, skill, subcategory)")
     .eq("session_id", sessionId);
 
   if (loadErr || !answerRows) {
@@ -95,6 +101,50 @@ export async function POST(req: NextRequest) {
       .eq("id", sessionId);
     if (completeErr) {
       return NextResponse.json({ error: "Could not finish session." }, { status: 500 });
+    }
+
+    // The quick start (the diagnostic) seeds a starting tier for every category it covered that
+    // doesn't have one yet: 2/2 right → medium-high, 1/2 → medium-low, 0/2 → easy.
+    if (user.user_metadata?.diagnostic_session_id === sessionId) {
+      const perCategory = new Map<string, { right: number; total: number }>();
+      rows.forEach((r, i) => {
+        const sub = r.question && (r.question.subcategory ?? subcategoryForSkill(r.question.skill));
+        if (!sub) return;
+        const t = perCategory.get(sub) ?? { right: 0, total: 0 };
+        t.total++;
+        if (graded[i].correct) t.right++;
+        perCategory.set(sub, t);
+      });
+      const { data: existing } = await supabase.from("category_progress").select("subcategory").eq("user_id", user.id);
+      const have = new Set((existing ?? []).map((e) => e.subcategory as string));
+      const seeds = [...perCategory.entries()]
+        .filter(([sub]) => !have.has(sub))
+        .map(([subcategory, t]) => ({
+          user_id: user.id, subcategory, updated_at: new Date().toISOString(),
+          difficulty: (t.right / t.total >= 1 ? "medium-high" : t.right > 0 ? "medium-low" : "easy") as Difficulty,
+        }));
+      if (seeds.length > 0) {
+        const { error: seedErr } = await supabase.from("category_progress").insert(seeds);
+        if (seedErr) console.error("Supabase tier seeding error:", seedErr);
+      }
+    }
+
+    // A finished single-category practice set moves that category's tier (plan days do this in
+    // finish-plan-day; mixed sets like the diagnostic don't map to one category).
+    const subs = new Set(rows.map((r) => r.question && (r.question.subcategory ?? subcategoryForSkill(r.question.skill))));
+    const [subcategory] = [...subs];
+    if (subs.size === 1 && subcategory) {
+      const tierCounts = new Map<Difficulty, number>();
+      rows.forEach((r) => r.question && tierCounts.set(r.question.difficulty, (tierCounts.get(r.question.difficulty) ?? 0) + 1));
+      const setTier = [...tierCounts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+      const { data: progress } = await supabase
+        .from("category_progress").select("difficulty").eq("user_id", user.id).eq("subcategory", subcategory).maybeSingle();
+      const tier = tierAfterPracticeSet((progress?.difficulty as Difficulty | undefined) ?? null, setTier, score);
+      const { error: tierErr } = await supabase.from("category_progress").upsert(
+        { user_id: user.id, subcategory, difficulty: tier, updated_at: new Date().toISOString() },
+        { onConflict: "user_id,subcategory" },
+      );
+      if (tierErr) console.error("Supabase category_progress update error:", tierErr);
     }
   }
 

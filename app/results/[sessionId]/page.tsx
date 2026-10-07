@@ -9,6 +9,8 @@ import { ReportQuestionButton } from "@/components/practice/report-question";
 import { Icon } from "@/components/ui/icon";
 import Link from "next/link";
 import { getPlanDay, getCurrentPlanDay, calcStreak } from "@/lib/plan";
+import { NextUpCard } from "@/components/home/next-up";
+import { LEVEL_LABEL, LEVEL_STYLE, type SkillMapResponse } from "@/components/home/practice";
 import type { QuestionSkill, MathSkill, PlanDayRow } from "@/lib/types";
 
 const MILESTONE_LABELS: Record<number, string> = { 10: "Foundations", 20: "Momentum", 30: "Summit" };
@@ -70,6 +72,15 @@ function notebookToggleStyle(inNotebook: boolean): React.CSSProperties {
   };
 }
 
+function LevelChip({ level }: { level: keyof typeof LEVEL_LABEL }) {
+  const look = LEVEL_STYLE[level];
+  return (
+    <span style={{ padding: "3px 10px", borderRadius: 999, background: look.background, border: look.border, color: look.sub, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+      {LEVEL_LABEL[level]}
+    </span>
+  );
+}
+
 export default function ResultsPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const router = useRouter();
@@ -99,6 +110,18 @@ export default function ResultsPage() {
   const [nextDay, setNextDay] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  /** "Next up" and this set's effect on its skill tile, from the skill map API. */
+  const [mapInfo, setMapInfo] = useState<Pick<SkillMapResponse, "suggestion" | "change"> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/skill-map?after=${sessionId}`).then(async (res) => {
+      if (!res.ok || cancelled) return;
+      const body = (await res.json()) as SkillMapResponse;
+      if (!cancelled) setMapInfo({ suggestion: body.suggestion, change: body.change });
+    }).catch(() => { /* non-critical */ });
+    return () => { cancelled = true; };
+  }, [sessionId]);
   const [userId, setUserId] = useState<string | null>(null);
   /** Question ids from this session that are currently in the student's mistake notebook. */
   const [notebookIds, setNotebookIds] = useState<Set<string>>(new Set());
@@ -291,6 +314,24 @@ export default function ResultsPage() {
           </div>
           <ScoreRing score={score} size={148} caption={`${correctCount} of ${totalCount} correct`} />
         </div>
+
+        {mapInfo?.change && (() => {
+          const { before, after } = mapInfo.change;
+          const moved = before.level !== after.level;
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", margin: "32px 0 0", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)" }}>
+              <span style={{ color: "var(--text-strong)" }}>{after.subcategory}</span>
+              {moved && <LevelChip level={before.level} />}
+              {moved && <span aria-hidden>→</span>}
+              <LevelChip level={after.level} />
+              <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                {moved ? "on your skill map" : `${before.level === "not_started" ? "" : `${before.score} → `}${after.score} mastery`}
+              </span>
+            </div>
+          );
+        })()}
+
+        {mapInfo?.suggestion && <NextUpCard suggestion={mapInfo.suggestion} style={{ margin: "28px 0 0" }} />}
 
         {(session.feedback_text || feedbackLoading) && (
           <div style={{ margin: "56px 0 0", borderTop: "1px solid var(--line-strong)", paddingTop: 32 }}>

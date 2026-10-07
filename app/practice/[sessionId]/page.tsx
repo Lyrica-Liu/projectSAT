@@ -241,7 +241,19 @@ export default function ActiveSessionPage() {
   const [planLinked, setPlanLinked] = useState(false);
   const [planDayNumber, setPlanDayNumber] = useState<number | null>(null);
   const [diagnosticLinked, setDiagnosticLinked] = useState(false);
+  /** The diagnostic started as the skill map's quick start (vs. the onboarding wizard): it returns home. */
+  const [quickStart, setQuickStart] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  /** Practice sets hide the countdown unless the student turns it on (remembered per browser). */
+  const [timerPref, setTimerPref] = useState(() => {
+    try { return typeof window !== "undefined" && window.localStorage.getItem("practice-show-timer") === "1"; } catch { return false; }
+  });
+  function toggleTimer() {
+    setTimerPref((on) => {
+      try { window.localStorage.setItem("practice-show-timer", on ? "0" : "1"); } catch { /* storage unavailable */ }
+      return !on;
+    });
+  }
   const [showExit, setShowExit] = useState(false);
   /** Question numbers (1-based) still blank when the student asked to finish — drives the confirm dialog. */
   const [blankOnFinish, setBlankOnFinish] = useState<number[] | null>(null);
@@ -283,11 +295,13 @@ export default function ActiveSessionPage() {
       const isDiagnostic = user.user_metadata?.diagnostic_session_id === sessionId;
 
       if (sessionData.completed_at) {
-        router.replace(isDiagnostic ? "/onboarding" : `/results/${sessionId}`);
+        const fromHome = user.user_metadata?.diagnostic_from === "home";
+        router.replace(isDiagnostic ? (fromHome ? "/dashboard" : "/onboarding") : `/results/${sessionId}`);
         return;
       }
 
       setDiagnosticLinked(isDiagnostic);
+      setQuickStart(isDiagnostic && user.user_metadata?.diagnostic_from === "home");
       setSession(sessionData);
       const storedSeconds = readTimer(sessionId);
       if (storedSeconds !== null) {
@@ -574,7 +588,7 @@ export default function ActiveSessionPage() {
       router.push(`/plan/${planDayNumber}`);
       return;
     }
-    router.push(diagnosticLinked ? "/onboarding" : `/results/${sessionId}`);
+    router.push(diagnosticLinked ? (quickStart ? "/dashboard" : "/onboarding") : `/results/${sessionId}`);
   }
 
   // For a plan day, leaving just pauses — the session and its answers are already saved, so
@@ -584,6 +598,11 @@ export default function ActiveSessionPage() {
   // drag the user back into "resume the diagnostic") and hand off to onboarding's own skip
   // handling, which still generates a plan — just evenly paced instead of personalized.
   async function leaveSession() {
+    if (quickStart) {
+      // The quick start is optional and resumable from the skill map — leaving isn't skipping.
+      router.push("/dashboard");
+      return;
+    }
     if (diagnosticLinked) {
       await supabase.auth.updateUser({ data: { diagnostic_skipped: true } });
       router.push("/onboarding");
@@ -593,9 +612,9 @@ export default function ActiveSessionPage() {
       router.push("/plan");
       return;
     }
-    // Extra practice resumes from the "Continue where you left off" card (Extra practice page
-    // and dashboard), so the timer and answers are kept.
-    router.push("/practice");
+    // Extra practice resumes from home ("Next up") or the Extra practice page's resume card, so
+    // the timer and answers are kept.
+    router.push("/dashboard");
   }
 
   async function goBack() {
@@ -696,7 +715,7 @@ export default function ActiveSessionPage() {
           </span>
 
           <span style={{ display: "inline-flex", alignItems: "center", gap: 24, flexShrink: 0 }}>
-            {secondsLeft != null && (
+            {secondsLeft != null && (planLinked || diagnosticLinked || timerPref) && (
               <span style={{ textAlign: "right" }}>
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums", lineHeight: 1, letterSpacing: "-0.01em" }}>
                   {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
@@ -796,6 +815,12 @@ export default function ActiveSessionPage() {
                 <Icon name="eraser" size={12} />
               </button>
             </div>
+          )}
+          {!planLinked && !diagnosticLinked && (
+            <button onClick={toggleTimer} aria-pressed={timerPref} style={toolButtonStyle(timerPref)}>
+              <Icon name="clock" size={13} />
+              Timer
+            </button>
           )}
           {hasMath && (
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
@@ -1012,21 +1037,23 @@ export default function ActiveSessionPage() {
         <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "40px 40px 34px", maxWidth: 420 }}>
             <h2 style={{ fontWeight: 400, fontSize: 27, lineHeight: 1.15, color: "var(--text-strong)", margin: "0 0 12px" }}>
-              {diagnosticLinked ? "Skip the diagnostic?" : planLinked ? "Leave the module?" : "Leave this practice set?"}
+              {quickStart ? "Leave the quick start?" : diagnosticLinked ? "Skip the diagnostic?" : planLinked ? "Leave the module?" : "Leave this practice set?"}
             </h2>
             <p style={{ fontSize: 16, lineHeight: 1.62, color: "var(--text-muted)", margin: "0 0 28px" }}>
-              {diagnosticLinked
+              {quickStart
+                ? `You've answered ${answeredCount} of ${sessionTarget}, and your answers are saved. Resume it from your skill map anytime.`
+                : diagnosticLinked
                 ? `It's the one thing that personalizes your 30-day plan — without it, every skill gets equal time instead of extra time where you actually need it. You've answered ${answeredCount} of ${sessionTarget}.`
                 : planLinked
                 ? "Your answers so far are already saved, so you can pick up right where you left off — today's day just won't be marked complete yet."
-                : `You've answered ${answeredCount} of ${sessionTarget}, and your answers are saved. Pick it up again from "Continue where you left off" on the Extra practice page.`}
+                : `You've answered ${answeredCount} of ${sessionTarget}, and your answers are saved. You can pick it up again from your home screen.`}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
               <button onClick={() => setShowExit(false)} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
                 Keep going
               </button>
               <button onClick={leaveSession} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-faint)", cursor: "pointer", padding: 0 }}>
-                {diagnosticLinked ? "Skip anyway" : "Leave anyway"}
+                {diagnosticLinked && !quickStart ? "Skip anyway" : "Leave anyway"}
               </button>
             </div>
           </div>

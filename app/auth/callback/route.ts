@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const { data: { user } } = await supabase.auth.getUser();
-      const destination = user?.user_metadata?.onboarding_complete ? next : "/onboarding";
-      return NextResponse.redirect(`${origin}${destination}`);
+      // No forced onboarding: signing in goes straight in. Setting a goal and the diagnostic
+      // are optional and reachable from home.
+      return NextResponse.redirect(`${origin}${next}`);
     }
   }
 

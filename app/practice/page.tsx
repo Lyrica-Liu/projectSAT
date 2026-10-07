@@ -47,7 +47,8 @@ const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
   { value: "hard", label: "Hard" },
 ];
 
-const COUNT_OPTIONS = [5, 10, 15, 20];
+/** Short sets on purpose — quick to finish, results right away. */
+const COUNT_OPTIONS = [5, 10];
 
 const microLabel: React.CSSProperties = {
   fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500,
@@ -149,7 +150,7 @@ export default function PracticeSetupPage() {
   }
 
   const selectedLabel = selected.size === 0 ? "Nothing chosen" : Array.from(selected).slice(0, 2).join(", ") + (selected.size > 2 ? `, +${selected.size - 2}` : "");
-  const estimate = `~${Math.round(count * 0.85)} min estimated · untimed`;
+  const estimate = `About ${Math.round(count * 1.5)} minutes`;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
@@ -167,7 +168,7 @@ export default function PracticeSetupPage() {
           <div>
             <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0 }}>Practice as you like</h1>
             <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "20px 0 0", maxWidth: "50ch", textWrap: "pretty" }}>
-              Extra sessions sharpen skills but do not advance the plan or the streak.{" "}
+              Short sets of 5 or 10, with your score and every explanation as soon as you finish.{" "}
               <Link href="/for-you" style={{ color: "var(--accent)" }}>See what&apos;s picked for you →</Link>
             </p>
 
@@ -309,10 +310,10 @@ export default function PracticeSetupPage() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 18 }}>
               <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Counts toward</span>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>Nothing</span>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)" }}>Your skill levels</span>
             </div>
             <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, lineHeight: 1.66, color: "var(--text-faint)", margin: 0 }}>
-              Untimed and unrecorded by design. If you want the clock and the record, open today&apos;s plan day instead.
+              Every set updates how strong you are in each skill. The countdown timer is off unless you turn it on.
             </p>
           </div>
         </div>
