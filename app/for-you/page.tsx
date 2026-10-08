@@ -336,9 +336,9 @@ export default function ForYouPage() {
         <Sidebar />
         <main className="pw-main-content" style={{ maxWidth: 1060 + SIDEBAR_WIDTH, marginRight: "auto", padding: "88px 56px", textAlign: "center" }}>
           <h1 style={{ fontWeight: 400, fontSize: 40, letterSpacing: "-0.024em", color: "var(--text-strong)", margin: "0 0 12px" }}>No insights yet</h1>
-          <p style={{ fontSize: 16, color: "var(--text-muted)", margin: "0 0 28px" }}>Complete a plan day or a practice session and we&apos;ll show you exactly where to focus next.</p>
-          <button onClick={() => router.push("/plan")} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
-            Go to my plan
+          <p style={{ fontSize: 16, color: "var(--text-muted)", margin: "0 0 28px" }}>Finish a practice set from your skill map and we&apos;ll show you exactly where to focus next.</p>
+          <button onClick={() => router.push("/dashboard")} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+            Go to your skill map
           </button>
         </main>
       </div>
@@ -394,7 +394,7 @@ export default function ForYouPage() {
         <div style={{ padding: "52px 0 0", marginBottom: 36 }}>
           <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, color: "var(--text-strong)", margin: 0, letterSpacing: "-0.026em" }}>Picked for you</h1>
           <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "18px 0 0", maxWidth: "52ch" }}>
-            Extra practice tuned to your results — good for sharpening, though only plan days advance the thirty.
+            Practice tuned to your results — every set also updates your skill map.
           </p>
         </div>
 
@@ -415,9 +415,9 @@ export default function ForYouPage() {
         {activeWithData.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 0" }}>
             <p style={{ fontSize: 19, color: "var(--text-strong)", margin: "0 0 8px" }}>No {view === "english" ? "English" : "Math"} insights yet</p>
-            <p style={{ fontSize: 15, color: "var(--text-muted)", margin: "0 0 24px" }}>Complete a {view === "english" ? "English" : "Math"} plan day or practice session and we&apos;ll show you exactly where to focus next.</p>
-            <button onClick={() => router.push("/plan")} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
-              Go to my plan
+            <p style={{ fontSize: 15, color: "var(--text-muted)", margin: "0 0 24px" }}>Finish a {view === "english" ? "Reading & Writing" : "Math"} practice set and we&apos;ll show you exactly where to focus next.</p>
+            <button onClick={() => router.push("/dashboard")} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+              Go to your skill map
             </button>
           </div>
         ) : (

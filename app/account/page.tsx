@@ -199,7 +199,7 @@ export default function AccountPage() {
 
         <div style={{ padding: "52px 0 0", marginBottom: 32 }}>
           <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, color: "var(--text-strong)", margin: 0, letterSpacing: "-0.026em" }}>Account center</h1>
-          <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "18px 0 0", maxWidth: "50ch" }}>Update your details and tune the answers that shape your plan.</p>
+          <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "18px 0 0", maxWidth: "50ch" }}>Update your details and the goals that shape your suggestions.</p>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 20, padding: "0 0 24px", marginBottom: 28, borderBottom: "1px solid var(--line-strong)" }}>

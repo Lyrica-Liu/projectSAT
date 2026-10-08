@@ -159,7 +159,7 @@ export default function PracticeSetupPage() {
       <main className="pw-main-content" style={{ maxWidth: 960 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
           <span>Extra practice</span>
-          <span>Outside the thirty-day plan</span>
+          <span>Any skill, any time</span>
         </div>
 
         <ResumeCard style={{ margin: "24px 0 0" }} />
