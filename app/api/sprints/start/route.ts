@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generatePlan } from "@/lib/server/generate-plan";
-import { ensureFullPrepSprint } from "@/lib/server/sprints";
+import { startSprint } from "@/lib/server/sprints";
 
-/** Builds (or rebuilds) the 30-Day Full Prep plan — see lib/server/generate-plan.ts. */
 export async function POST(req: NextRequest) {
-  const { skip, reduce } = await req.json() as { skip?: string[]; reduce?: string[] };
-
+  const { key } = await req.json().catch(() => ({})) as { key?: string };
   const supabase = await createClient();
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
-
-  const result = await generatePlan(supabase, user, { skip, reduce });
+  const result = await startSprint(supabase, user, key ?? "");
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
-
-  // The onboarding wizard's plan is the 30-Day Full Prep sprint (unless another sprint is active).
-  await ensureFullPrepSprint(supabase, user.id);
   return NextResponse.json({ ok: true });
 }

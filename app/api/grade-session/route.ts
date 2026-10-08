@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { gradeGridAnswer } from "@/lib/grading";
 import { tierAfterPracticeSet } from "@/lib/adaptive";
 import { subcategoryForSkill } from "@/lib/categories";
+import { recordSprintProgress } from "@/lib/server/sprints";
 import type { Difficulty } from "@/lib/types";
 
 interface AnswerRow {
@@ -148,5 +149,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ score });
+  // A short sprint's day is done when its set is; the last day completes the sprint.
+  const sprintCompleted = complete ? await recordSprintProgress(supabase, sessionId, score) : null;
+
+  return NextResponse.json({ score, sprintCompleted });
 }

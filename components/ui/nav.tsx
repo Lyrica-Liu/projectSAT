@@ -108,8 +108,8 @@ export function Wordmark({ href = "/", dark = false }: { href?: string; dark?: b
 }
 
 const NAV_LINKS: { href: string; label: string; icon: string }[] = [
-  { href: "/plan",      label: "My plan",        icon: "calendar" },
   { href: "/dashboard", label: "Home",            icon: "bar-chart-3" },
+  { href: "/sprints",   label: "Sprints",        icon: "calendar" },
   { href: "/practice",  label: "Extra practice",  icon: "document" },
   { href: "/for-you",   label: "For you",         icon: "compass" },
   { href: "/notebook",  label: "Notebook",        icon: "bookmark" },
@@ -121,6 +121,8 @@ export function Sidebar() {
   const [displayName, setDisplayName] = useState("");
   const [planDay, setPlanDay] = useState(1);
   const [streak, setStreak] = useState(0);
+  /** The 30-day progress footer only means something for students with that plan. */
+  const [hasPlan, setHasPlan] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
 
   // Collapsed to a 66px icon strip by default (expands on hover — see .pw-sidebar in
@@ -146,13 +148,16 @@ export function Sidebar() {
         .select("day_number, completed_at")
         .eq("user_id", user.id);
       const rows = planRows ?? [];
+      setHasPlan(rows.length > 0);
       setPlanDay(getCurrentPlanDay(rows.filter((r) => r.completed_at).map((r) => r.day_number)));
       setStreak(calcStreak(rows));
     })();
   }, []);
 
   const isActive = (href: string) =>
-    href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+    href === "/dashboard" ? pathname === "/dashboard"
+    : href === "/sprints" ? pathname.startsWith("/sprints") || pathname.startsWith("/plan")
+    : pathname.startsWith(href);
 
   const clampedDay = Math.min(30, Math.max(1, planDay));
 
@@ -195,7 +200,7 @@ export function Sidebar() {
       </nav>
 
       <div style={{ padding: "16px 9px", borderTop: "1px solid var(--sidebar-line)", flexShrink: 0 }}>
-        <div style={{ padding: "0 12px 14px" }}>
+        {hasPlan && <div style={{ padding: "0 12px 14px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 2, width: 34 }}>
             {Array.from({ length: 30 }, (_, i) => {
               const d = i + 1;
@@ -206,7 +211,7 @@ export function Sidebar() {
           <p className="pw-lbl" style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--sidebar-ink-faint)", margin: "10px 0 0" }}>
             Day {clampedDay} of thirty · {streak}-day streak
           </p>
-        </div>
+        </div>}
         <Link href="/account" onMouseEnter={() => setHovered("/account")} onMouseLeave={() => setHovered(null)} style={{
           display: "flex", alignItems: "center", gap: 14, padding: "10px 12px",
           borderRadius: "var(--radius-md)", color: hovered === "/account" ? "var(--sidebar-ink)" : "var(--sidebar-ink-muted)",

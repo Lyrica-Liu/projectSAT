@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { computeSessionState } from "@/lib/adaptive";
+import { recordFullPrepProgress } from "@/lib/server/sprints";
 import type { Difficulty } from "@/lib/types";
 
 interface HistoryRow {
@@ -75,5 +76,6 @@ export async function POST(req: NextRequest) {
       );
   }
 
+  await recordFullPrepProgress(supabase, user.id);
   return NextResponse.json({ score });
 }

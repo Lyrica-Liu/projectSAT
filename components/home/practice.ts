@@ -13,6 +13,9 @@ export interface SkillMapResponse {
   recentSessions: { id: string; completed_at: string; score: number | null }[];
   isAnonymous: boolean;
   quickStart: { status: "none" | "in_progress" | "done"; sessionId: string | null; questions: number };
+  activeSprint: { title: string; completed: number; total: number; nextDay: number | null; href: string } | null;
+  /** Set on a results page whose set just finished a sprint. */
+  sprintReward: { title: string; tiles: CategoryMastery[] } | null;
 }
 
 /** Starts a bank practice set in one category and returns its session id. */

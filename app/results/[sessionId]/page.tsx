@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/icon";
 import Link from "next/link";
 import { getPlanDay, getCurrentPlanDay, calcStreak } from "@/lib/plan";
 import { NextUpCard } from "@/components/home/next-up";
+import { SprintReward } from "@/components/home/sprint-reward";
 import { LEVEL_LABEL, LEVEL_STYLE, type SkillMapResponse } from "@/components/home/practice";
 import type { QuestionSkill, MathSkill, PlanDayRow } from "@/lib/types";
 
@@ -111,14 +112,14 @@ export default function ResultsPage() {
   const [streak, setStreak] = useState(0);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   /** "Next up" and this set's effect on its skill tile, from the skill map API. */
-  const [mapInfo, setMapInfo] = useState<Pick<SkillMapResponse, "suggestion" | "change"> | null>(null);
+  const [mapInfo, setMapInfo] = useState<Pick<SkillMapResponse, "suggestion" | "change" | "sprintReward"> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/skill-map?after=${sessionId}`).then(async (res) => {
       if (!res.ok || cancelled) return;
       const body = (await res.json()) as SkillMapResponse;
-      if (!cancelled) setMapInfo({ suggestion: body.suggestion, change: body.change });
+      if (!cancelled) setMapInfo({ suggestion: body.suggestion, change: body.change, sprintReward: body.sprintReward });
     }).catch(() => { /* non-critical */ });
     return () => { cancelled = true; };
   }, [sessionId]);
@@ -276,7 +277,16 @@ export default function ResultsPage() {
   // default, so falling back to it unconditionally here would show the wrong topic for any day
   // whose subcategory has since diverged from that default (the common case under the
   // diagnostic-driven plan, same fallback pattern already used on /plan and /plan/[day]).
-  const title = planDay ? `${getPlanDay(planDay.day_number)?.subject === "math" ? "Math" : "English"} — ${planDay.subcategory ?? getPlanDay(planDay.day_number)?.focus}` : (session.domain_filter === "both" ? "Reading & Writing" : session.domain_filter);
+  // Off-plan sets are titled by what's actually in them: one skill → its name; all Math → "Math".
+  // (domain_filter is "both" for Math sets too, so it can't tell them apart on its own.)
+  const skillsInSet = new Set(answers.map((r) => (r.question ? coeMap[r.id] ?? skillLabel(r.question.skill) : null)));
+  const domainsInSet = new Set(answers.map((r) => r.question?.domain));
+  const setTitle = skillsInSet.size === 1 && [...skillsInSet][0]
+    ? [...skillsInSet][0]!
+    : domainsInSet.size === 1 && domainsInSet.has("math") ? "Math"
+    : [...domainsInSet].every((d) => d === "reading" || d === "writing") ? "Reading & Writing"
+    : "Mixed practice";
+  const title = planDay ? `${getPlanDay(planDay.day_number)?.subject === "math" ? "Math" : "English"} — ${planDay.subcategory ?? getPlanDay(planDay.day_number)?.focus}` : setTitle;
   const nextPlanDay = nextDay ? getPlanDay(nextDay) : null;
 
   return (
@@ -314,6 +324,8 @@ export default function ResultsPage() {
           </div>
           <ScoreRing score={score} size={148} caption={`${correctCount} of ${totalCount} correct`} />
         </div>
+
+        {mapInfo?.sprintReward && <SprintReward title={mapInfo.sprintReward.title} tiles={mapInfo.sprintReward.tiles} style={{ margin: "36px 0 0" }} />}
 
         {mapInfo?.change && (() => {
           const { before, after } = mapInfo.change;

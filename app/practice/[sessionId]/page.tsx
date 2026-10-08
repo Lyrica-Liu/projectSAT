@@ -239,6 +239,8 @@ export default function ActiveSessionPage() {
   const [submitting, setSubmitting] = useState(false);
   const [generatingNext, setGeneratingNext] = useState(false);
   const [planLinked, setPlanLinked] = useState(false);
+  /** Set when this is a short sprint's day: "Sprint · Day 2 of 7". */
+  const [sprintDay, setSprintDay] = useState<{ day: number; total: number } | null>(null);
   const [planDayNumber, setPlanDayNumber] = useState<number | null>(null);
   const [diagnosticLinked, setDiagnosticLinked] = useState(false);
   /** The diagnostic started as the skill map's quick start (vs. the onboarding wizard): it returns home. */
@@ -322,6 +324,13 @@ export default function ActiveSessionPage() {
       setPlanLinked(!!planDayRow);
       if (planDayRow) {
         setPlanDayNumber(planDayRow.day_number);
+      }
+
+      const { data: sprintDayRow } = await supabase
+        .from("sprint_days").select("day_number, user_sprint_id").eq("session_id", sessionId).maybeSingle();
+      if (sprintDayRow) {
+        const { count } = await supabase.from("sprint_days").select("id", { count: "exact", head: true }).eq("user_sprint_id", sprintDayRow.user_sprint_id);
+        setSprintDay({ day: sprintDayRow.day_number, total: count ?? sprintDayRow.day_number });
       }
 
       const { data: answerRows } = await supabase
@@ -685,7 +694,7 @@ export default function ActiveSessionPage() {
             <Wordmark href="/dashboard" />
             <span style={{ width: 1, height: 16, background: "var(--line-strong)" }} />
             <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-              {diagnosticLinked ? "Diagnostic" : planLinked ? `Day ${planDayNumber}` : "Extra practice"}
+              {diagnosticLinked ? "Diagnostic" : planLinked ? `Day ${planDayNumber}` : sprintDay ? `Sprint · Day ${sprintDay.day} of ${sprintDay.total}` : "Extra practice"}
             </span>
           </span>
 
@@ -715,7 +724,7 @@ export default function ActiveSessionPage() {
           </span>
 
           <span style={{ display: "inline-flex", alignItems: "center", gap: 24, flexShrink: 0 }}>
-            {secondsLeft != null && (planLinked || diagnosticLinked || timerPref) && (
+            {secondsLeft != null && (planLinked || diagnosticLinked || sprintDay || timerPref) && (
               <span style={{ textAlign: "right" }}>
                 <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums", lineHeight: 1, letterSpacing: "-0.01em" }}>
                   {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
@@ -816,7 +825,7 @@ export default function ActiveSessionPage() {
               </button>
             </div>
           )}
-          {!planLinked && !diagnosticLinked && (
+          {!planLinked && !diagnosticLinked && !sprintDay && (
             <button onClick={toggleTimer} aria-pressed={timerPref} style={toolButtonStyle(timerPref)}>
               <Icon name="clock" size={13} />
               Timer
@@ -1037,13 +1046,15 @@ export default function ActiveSessionPage() {
         <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--overlay)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "40px 40px 34px", maxWidth: 420 }}>
             <h2 style={{ fontWeight: 400, fontSize: 27, lineHeight: 1.15, color: "var(--text-strong)", margin: "0 0 12px" }}>
-              {quickStart ? "Leave the quick start?" : diagnosticLinked ? "Skip the diagnostic?" : planLinked ? "Leave the module?" : "Leave this practice set?"}
+              {quickStart ? "Leave the quick start?" : diagnosticLinked ? "Skip the diagnostic?" : planLinked ? "Leave the module?" : sprintDay ? "Leave today's sprint set?" : "Leave this practice set?"}
             </h2>
             <p style={{ fontSize: 16, lineHeight: 1.62, color: "var(--text-muted)", margin: "0 0 28px" }}>
               {quickStart
                 ? `You've answered ${answeredCount} of ${sessionTarget}, and your answers are saved. Resume it from your skill map anytime.`
                 : diagnosticLinked
                 ? `It's the one thing that personalizes your 30-day plan — without it, every skill gets equal time instead of extra time where you actually need it. You've answered ${answeredCount} of ${sessionTarget}.`
+                : sprintDay
+                ? `You've answered ${answeredCount} of ${sessionTarget}, and your answers are saved. Continue it from your home screen — the day counts once you finish.`
                 : planLinked
                 ? "Your answers so far are already saved, so you can pick up right where you left off — today's day just won't be marked complete yet."
                 : `You've answered ${answeredCount} of ${sessionTarget}, and your answers are saved. You can pick it up again from your home screen.`}

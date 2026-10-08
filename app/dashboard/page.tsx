@@ -101,7 +101,19 @@ export default function HomePage() {
           </p>
         </div>
 
-        {data.suggestion && <NextUpCard suggestion={data.suggestion} style={{ margin: "32px 0 0" }} />}
+        {data.activeSprint && (
+          <Link href="/sprints" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", margin: "28px 0 0", fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>
+            <span style={{ color: "var(--text-strong)" }}>{data.activeSprint.title}</span>
+            <span aria-hidden style={{ display: "inline-flex", gap: 3 }}>
+              {Array.from({ length: data.activeSprint.total }, (_, i) => (
+                <span key={i} style={{ width: data.activeSprint!.total > 10 ? 5 : 14, height: 6, borderRadius: 2, background: i < data.activeSprint!.completed ? "var(--moss-500)" : "var(--surface-2)" }} />
+              ))}
+            </span>
+            <span>{data.activeSprint.completed} of {data.activeSprint.total} days · Sprint details →</span>
+          </Link>
+        )}
+
+        {data.suggestion && <NextUpCard suggestion={data.suggestion} style={{ margin: data.activeSprint ? "14px 0 0" : "32px 0 0" }} />}
 
         {/* Offered until it's done — or until half the map is filled in anyway. */}
         {data.quickStart.status !== "done" && started < data.mastery.length / 2 && (
