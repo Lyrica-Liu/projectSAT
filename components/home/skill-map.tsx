@@ -12,6 +12,52 @@ import { LEVEL_LABEL, LEVEL_STYLE, startPracticeSet } from "./practice";
 const FIRST_SET = 5;
 const SET = 10;
 
+export type Tiers = Record<string, Difficulty>;
+
+/** Starting a set from a skill (tile or mind-map node): one at a time, then into practice. */
+export function useStartSet(tiers: Tiers) {
+  const router = useRouter();
+  const [starting, setStarting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function start(m: CategoryMastery) {
+    if (starting) return;
+    setStarting(m.subcategory);
+    setError(null);
+    try {
+      const id = await startPracticeSet(m.subcategory, tiers[m.subcategory] ?? "medium-low", m.level === "not_started" ? FIRST_SET : SET);
+      router.push(`/practice/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start the set.");
+      setStarting(null);
+    }
+  }
+  return { starting, error, start };
+}
+
+export const skillAriaLabel = (m: CategoryMastery) =>
+  `${m.subcategory}: ${LEVEL_LABEL[m.level]}${m.estimate ? " (estimate)" : ""}. Start ${m.level === "not_started" ? FIRST_SET : SET} questions.`;
+
+export function ErrorLine({ error }: { error: string | null }) {
+  return error ? <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 14px" }}>{error}</p> : null;
+}
+
+export function MapLegend({ note }: { note: string }) {
+  return (
+    <div style={{ display: "flex", gap: 18, flexWrap: "wrap", margin: "22px 0 0", fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>
+      {(["not_started", "weak", "strong", "mastered"] as const).map((l) => (
+        <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <span aria-hidden style={{ width: 12, height: 12, borderRadius: 3, background: LEVEL_STYLE[l].background, border: LEVEL_STYLE[l].border }} />
+          {LEVEL_LABEL[l]}
+        </span>
+      ))}
+      <span>· {note}</span>
+    </div>
+  );
+}
+
+// ── Tile grid (narrow screens) ───────────────────────────────────────────────
+
 function Tile({ m, tier, busy, onStart }: { m: CategoryMastery; tier: Difficulty | undefined; busy: boolean; onStart: () => void }) {
   const look = LEVEL_STYLE[m.level];
   const started = m.level !== "not_started";
@@ -19,7 +65,7 @@ function Tile({ m, tier, busy, onStart }: { m: CategoryMastery; tier: Difficulty
     <button
       onClick={onStart}
       disabled={busy}
-      aria-label={`${m.subcategory}: ${LEVEL_LABEL[m.level]}${m.estimate ? " (estimate)" : ""}. Start ${started ? SET : FIRST_SET} questions.`}
+      aria-label={skillAriaLabel(m)}
       style={{
         display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 14, minHeight: 104,
         padding: "14px 16px", textAlign: "left", cursor: busy ? "default" : "pointer",
@@ -39,29 +85,13 @@ function Tile({ m, tier, busy, onStart }: { m: CategoryMastery; tier: Difficulty
 }
 
 /** Every category as a tile, grouped by SAT domain. Clicking a tile starts a set there. */
-export function SkillMap({ mastery, tiers }: { mastery: CategoryMastery[]; tiers: Record<string, Difficulty> }) {
-  const router = useRouter();
-  const [starting, setStarting] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export function SkillMap({ mastery, tiers }: { mastery: CategoryMastery[]; tiers: Tiers }) {
+  const { starting, error, start } = useStartSet(tiers);
   const bySub = new Map(mastery.map((m) => [m.subcategory, m]));
-
-  async function start(m: CategoryMastery) {
-    if (starting) return;
-    setStarting(m.subcategory);
-    setError(null);
-    const started = m.level !== "not_started";
-    try {
-      const id = await startPracticeSet(m.subcategory, tiers[m.subcategory] ?? "medium-low", started ? SET : FIRST_SET);
-      router.push(`/practice/${id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start the set.");
-      setStarting(null);
-    }
-  }
 
   return (
     <div>
-      {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 14px" }}>{error}</p>}
+      <ErrorLine error={error} />
       {DOMAINS.map((d, i) => {
         const tiles = d.categories.map((c) => bySub.get(c.subcategory)).filter((m): m is CategoryMastery => !!m);
         if (tiles.length === 0) return null;
@@ -82,15 +112,7 @@ export function SkillMap({ mastery, tiers }: { mastery: CategoryMastery[]; tiers
           </div>
         );
       })}
-      <div style={{ display: "flex", gap: 18, flexWrap: "wrap", margin: "22px 0 0", fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>
-        {(["not_started", "weak", "strong", "mastered"] as const).map((l) => (
-          <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <span aria-hidden style={{ width: 12, height: 12, borderRadius: 3, background: LEVEL_STYLE[l].background, border: LEVEL_STYLE[l].border }} />
-            {LEVEL_LABEL[l]}
-          </span>
-        ))}
-        <span>· Faded tiles are early estimates</span>
-      </div>
+      <MapLegend note="Faded tiles are early estimates" />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar, LoadingScreen, SIDEBAR_WIDTH } from "@/components/ui/nav";
 import { NextUpCard } from "@/components/home/next-up";
-import { SkillMap } from "@/components/home/skill-map";
+import { SkillMapView } from "@/components/home/mind-map";
 import { SaveProgressPrompt } from "@/components/home/save-progress";
 import { QuickStartCard } from "@/components/home/quick-start";
 import type { SkillMapResponse } from "@/components/home/practice";
@@ -121,7 +121,7 @@ export default function HomePage() {
         )}
 
         <section aria-label="Skill map" style={{ margin: "44px 0 0" }}>
-          <SkillMap mastery={data.mastery} tiers={data.tiers} />
+          <SkillMapView mastery={data.mastery} tiers={data.tiers} />
         </section>
 
         {data.recentSessions.length > 0 && (
