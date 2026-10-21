@@ -4,7 +4,7 @@ import { planSprintDays, sprintDef } from "./sprints";
 import type { CategoryMastery } from "./mastery";
 
 const m = (subcategory: string, score: number): CategoryMastery =>
-  ({ subcategory, score, level: score === 0 ? "not_started" : score < 50 ? "weak" : "strong", answered: score ? 10 : 0, hardAnswered: 0, estimate: false });
+  ({ subcategory, score, level: score === 0 ? "not_started" : score < 50 ? "weak" : "strong", answered: score ? 10 : 0, hardAnswered: 0, estimate: false, ability: 0, uncertainty: 0.5 });
 
 const map = [
   m("Algebra", 70), m("Data Analysis", 30), m("Geometry", 55),

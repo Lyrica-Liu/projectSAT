@@ -1,11 +1,13 @@
 import type { CategoryMastery } from "@/lib/mastery";
 import type { Suggestion } from "@/lib/suggestions";
 import type { Difficulty } from "@/lib/types";
+import type { SkillHistory } from "@/lib/server/mastery";
 
 /** Response of GET /api/skill-map. */
 export interface SkillMapResponse {
   mastery: CategoryMastery[];
   tiers: Record<string, Difficulty>;
+  history: Record<string, SkillHistory>;
   testDate: string | null;
   daysToTest: number | null;
   suggestion: Suggestion | null;

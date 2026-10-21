@@ -17,6 +17,15 @@ export interface SkillMapData {
   change: { before: CategoryMastery; after: CategoryMastery } | null;
   /** True when `compareSession` is the newest finished single-category set. */
   compareIsLatest: boolean;
+  /** Per category: the raw record behind its mastery, for the map's detail card. */
+  history: Record<string, SkillHistory>;
+}
+
+export interface SkillHistory {
+  /** Answers and right answers at each tier. */
+  byTier: Partial<Record<Difficulty, { answered: number; correct: number }>>;
+  /** This category's slice of each finished session, newest first (at most 5). */
+  sets: { difficulty: Difficulty; answered: number; correct: number; at: number }[];
 }
 
 interface AnswerRow {
@@ -76,6 +85,7 @@ export async function loadSkillMapData(supabase: SupabaseClient, opts: { compare
       correct: r.is_correct,
       // Newest last: session finish time, then position within the set.
       order: new Date(r.session.completed_at).getTime() + r.position,
+      setId: r.session_id,
       sessionId: r.session_id,
     });
   }
@@ -113,8 +123,33 @@ export async function loadSkillMapData(supabase: SupabaseClient, opts: { compare
     };
   }
 
+  const history: Record<string, SkillHistory> = {};
+  for (const sub of available) history[sub] = { byTier: {}, sets: [] };
+  const slices = new Map<string, typeof graded>();
+  for (const g of graded) {
+    const h = history[g.subcategory];
+    if (!h) continue;
+    const t = (h.byTier[g.difficulty] ??= { answered: 0, correct: 0 });
+    t.answered++;
+    if (g.correct) t.correct++;
+    const key = `${g.subcategory}\u0000${g.sessionId}`;
+    slices.set(key, [...(slices.get(key) ?? []), g]);
+  }
+  for (const list of slices.values()) {
+    const tierCounts = new Map<Difficulty, number>();
+    list.forEach((g) => tierCounts.set(g.difficulty, (tierCounts.get(g.difficulty) ?? 0) + 1));
+    history[list[0].subcategory].sets.push({
+      difficulty: [...tierCounts.entries()].sort((a, b) => b[1] - a[1])[0][0],
+      answered: list.length,
+      correct: list.filter((g) => g.correct).length,
+      at: Math.max(...list.map((g) => g.order)),
+    });
+  }
+  for (const h of Object.values(history)) h.sets = h.sets.sort((a, b) => b.at - a.at).slice(0, 5);
+
   return {
     change,
+    history,
     compareIsLatest: !!compared && recentSets[0]?.sessionId === compared.sessionId,
     mastery: available.map((s) => byCategory[s]),
     tiers: Object.fromEntries((progressRes.data ?? []).map((p) => [p.subcategory as string, p.difficulty as Difficulty])),

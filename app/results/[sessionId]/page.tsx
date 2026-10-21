@@ -337,7 +337,7 @@ export default function ResultsPage() {
               {moved && <span aria-hidden>→</span>}
               <LevelChip level={after.level} />
               <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                {moved ? "on your skill map" : `${before.level === "not_started" ? "" : `${before.score} → `}${after.score} mastery`}
+                {moved ? "on your skill map" : `est. ${before.level === "not_started" ? "" : `${before.score}% → `}${after.score}% on Medium+ questions`}
               </span>
             </div>
           );

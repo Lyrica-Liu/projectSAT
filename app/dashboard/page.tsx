@@ -121,7 +121,7 @@ export default function HomePage() {
         )}
 
         <section aria-label="Skill map" style={{ margin: "44px 0 0" }}>
-          <SkillMapView mastery={data.mastery} tiers={data.tiers} />
+          <SkillMapView mastery={data.mastery} tiers={data.tiers} history={data.history} />
         </section>
 
         {data.recentSessions.length > 0 && (

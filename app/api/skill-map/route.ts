@@ -76,6 +76,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     mastery: data.mastery,
     tiers: data.tiers,
+    history: data.history,
     testDate,
     daysToTest,
     suggestion,

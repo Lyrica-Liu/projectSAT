@@ -5,7 +5,7 @@ import type { CategoryMastery, MasteryLevel } from "./mastery";
 
 function m(subcategory: string, score: number, level?: MasteryLevel): CategoryMastery {
   const lvl = level ?? (score === 0 ? "not_started" : score < 50 ? "weak" : score < 85 ? "strong" : "mastered");
-  return { subcategory, score, level: lvl, answered: lvl === "not_started" ? 0 : 10, hardAnswered: 4, estimate: false };
+  return { subcategory, score, level: lvl, answered: lvl === "not_started" ? 0 : 10, hardAnswered: 4, estimate: false, ability: 0, uncertainty: 0.5 };
 }
 
 const base: SuggestionInput = {
