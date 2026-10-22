@@ -335,7 +335,7 @@ export default function LandingPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      const { error } = await supabase.auth.signInAnonymously();
+      const { error } = await supabase.auth.signInAnonymously({ options: { data: { signup_source: "landing" } } });
       if (error) { setStarting(false); router.push("/auth"); return; }
     }
     router.push("/dashboard");

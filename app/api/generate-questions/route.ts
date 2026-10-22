@@ -130,6 +130,14 @@ export async function POST(req: NextRequest) {
   if (authErr || !user) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
+  // Guest accounts cost one click to create, so a per-user daily cap means nothing for them:
+  // AI sets are for saved accounts only. Callers fall back to the question bank on this code.
+  if (user.is_anonymous) {
+    return NextResponse.json(
+      { error: "AI-generated sets are for saved accounts.", code: "guest_ai_blocked" },
+      { status: 403 }
+    );
+  }
 
   const body = await req.json() as {
     subcategories: string[];

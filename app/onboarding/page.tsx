@@ -227,7 +227,7 @@ export default function OnboardingPage() {
 
     let { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      const { data, error } = await supabase.auth.signInAnonymously();
+      const { data, error } = await supabase.auth.signInAnonymously({ options: { data: { signup_source: "onboarding" } } });
       if (error) {
         setSaving(false);
         setSaveError("Couldn't get started just now. Please try again.");

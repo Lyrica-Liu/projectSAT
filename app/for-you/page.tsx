@@ -307,12 +307,14 @@ export default function ForYouPage() {
         router.push(`/practice/${body.sessionId}`);
       } else {
         const subcategories = ENGLISH_CATEGORY_ORDER.filter((c) => c.skill === skill.skill).map((c) => c.subcategory);
-        const res = await fetch("/api/generate-questions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subcategories, difficulty: skill.suggestedTier, count: 10 }),
-        });
-        const body = await res.json();
+        const request = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subcategories, difficulty: skill.suggestedTier, count: 10 }) };
+        let res = await fetch("/api/generate-questions", request);
+        let body = await res.json();
+        // Guests can't use AI generation; same skill and tier from the question bank instead.
+        if (res.status === 403 && body.code === "guest_ai_blocked") {
+          res = await fetch("/api/start-bank-practice", request);
+          body = await res.json();
+        }
         if (!res.ok) throw new Error(body.error ?? "Could not generate questions");
         router.push(`/practice/${body.sessionId}`);
       }

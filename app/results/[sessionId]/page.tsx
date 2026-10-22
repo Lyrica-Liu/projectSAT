@@ -11,6 +11,7 @@ import Link from "next/link";
 import { getPlanDay, getCurrentPlanDay, calcStreak } from "@/lib/plan";
 import { NextUpCard } from "@/components/home/next-up";
 import { SprintReward } from "@/components/home/sprint-reward";
+import { SaveProgressPrompt } from "@/components/home/save-progress";
 import { LEVEL_LABEL, LEVEL_STYLE, type SkillMapResponse } from "@/components/home/practice";
 import type { QuestionSkill, MathSkill, PlanDayRow } from "@/lib/types";
 
@@ -124,6 +125,7 @@ export default function ResultsPage() {
     return () => { cancelled = true; };
   }, [sessionId]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   /** Question ids from this session that are currently in the student's mistake notebook. */
   const [notebookIds, setNotebookIds] = useState<Set<string>>(new Set());
   const [notebookBusy, setNotebookBusy] = useState(false);
@@ -151,6 +153,7 @@ export default function ResultsPage() {
       const rows: AnswerRow[] = answerRows ?? [];
       setAnswers(rows);
       setUserId(user.id);
+      setIsAnonymous(user.is_anonymous ?? false);
 
       const { data: inNotebook } = await supabase
         .from("notebook_entries").select("question_id").in("question_id", rows.map((r) => r.question_id));
@@ -326,6 +329,9 @@ export default function ResultsPage() {
         </div>
 
         {mapInfo?.sprintReward && <SprintReward title={mapInfo.sprintReward.title} tiles={mapInfo.sprintReward.tiles} style={{ margin: "36px 0 0" }} />}
+
+        {/* Right after finishing a set is when a guest has the most to lose, so ask here too, not just on the dashboard. */}
+        {isAnonymous && <SaveProgressPrompt headline="Nice work. Save it so this set isn't lost." style={{ margin: "36px 0 0" }} />}
 
         {mapInfo?.change && (() => {
           const { before, after } = mapInfo.change;

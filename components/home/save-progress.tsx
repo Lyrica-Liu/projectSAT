@@ -19,7 +19,10 @@ function GoogleIcon() {
  * The "your progress isn't saved yet" banner and its modal, for anonymous students. Upgrading
  * keeps the same user id, so every set, answer and skill level stays put.
  */
-export function SaveProgressPrompt({ style }: { style?: React.CSSProperties }) {
+export function SaveProgressPrompt({
+  style,
+  headline = "Your progress isn't saved to an account yet.",
+}: { style?: React.CSSProperties; headline?: string }) {
   const supabase = createClient();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -57,7 +60,7 @@ export function SaveProgressPrompt({ style }: { style?: React.CSSProperties }) {
         borderRadius: "0 var(--radius-md) var(--radius-md) 0", ...style,
       }}>
         <div>
-          <p style={{ fontSize: 16, color: "var(--text-strong)", margin: "0 0 4px" }}>Your progress isn&apos;t saved to an account yet.</p>
+          <p style={{ fontSize: 16, color: "var(--text-strong)", margin: "0 0 4px" }}>{headline}</p>
           <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
             It lives only in this browser — clear it or switch devices and your skill map is gone.
           </p>

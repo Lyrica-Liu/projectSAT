@@ -1,6 +1,7 @@
 -- ============================================================
 -- 800Path — Supabase Schema
--- Run this in the Supabase SQL editor to initialize the database.
+-- Run this in the Supabase SQL editor to initialize the database,
+-- then run admin-views.sql for the admin user views.
 -- ============================================================
 
 -- ───────────────────────────────────────────
@@ -8,13 +9,15 @@
 -- ───────────────────────────────────────────
 create table if not exists public.profiles (
   id            uuid primary key references auth.users (id) on delete cascade,
-  email         text not null,
+  email         text,  -- null for guest (anonymous) accounts until they save their progress
   display_name  text,
   avatar_url    text,
   created_at    timestamptz default now() not null
 );
+alter table public.profiles alter column email drop not null;
 
--- Auto-create a profile row when a user signs up
+-- Auto-create a profile row when a user signs up (guests included: email and the
+-- email-derived display name are both null for them)
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
@@ -32,6 +35,24 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Keep the profile's email in step when a guest saves their progress (or anyone changes email)
+create or replace function public.handle_user_email_change()
+returns trigger as $$
+begin
+  update public.profiles
+     set email = new.email,
+         display_name = coalesce(display_name, split_part(new.email, '@', 1))
+   where id = new.id;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_auth_user_email_changed on auth.users;
+create trigger on_auth_user_email_changed
+  after update of email on auth.users
+  for each row when (new.email is distinct from old.email)
+  execute function public.handle_user_email_change();
 
 -- ───────────────────────────────────────────
 -- 2. Questions
