@@ -64,8 +64,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect logged-in users away from /auth
-  if (pathname === "/auth" && user) {
+  // Redirect logged-in users away from /auth. Guests stay: it's where they sign in to an
+  // existing account or save their progress (and where a failed Google link lands).
+  if (pathname === "/auth" && user && !user.is_anonymous) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

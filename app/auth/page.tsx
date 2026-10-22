@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { saveGuestWithEmail } from "@/lib/auth";
 import { Input } from "@/components/ui/ds";
 import { Wordmark } from "@/components/ui/nav";
 
@@ -29,20 +30,36 @@ function AuthForm() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    params.get("error") === "oauth_failed" ? "Google sign-in didn't go through. Please try again." : null
+  );
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const supabase = createClient();
   const isUp = mode === "signup";
 
-  async function signInWithGoogle() {
+  // A guest tried to link a Google account that already has its own 800Path account: just
+  // sign in to that account. Supabase reports this in the URL fragment (#error_code=...),
+  // which the server-side callback can't see but the browser carries through its redirect.
+  // No loop: signing in (not linking) can't hit this error again.
+  useEffect(() => {
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    if (params.get("error") === "google_taken" || fragment.get("error_code") === "identity_already_exists") {
+      history.replaceState(null, "", "/auth");
+      signInWithGoogle(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** `intoExisting` skips linking and signs in to the Google account's own user. */
+  async function signInWithGoogle(intoExisting = false) {
     setLoading(true);
     setError(null);
     // An anonymous session (started from onboarding, before any account existed) already has
     // real progress attached to it — link Google to that same user instead of starting a
     // separate one, so nothing gets orphaned.
     const { data: { user } } = await supabase.auth.getUser();
-    if (user?.is_anonymous) {
+    if (user?.is_anonymous && !intoExisting) {
       const { error } = await supabase.auth.linkIdentity({
         provider: "google",
         options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -76,15 +93,10 @@ function AuthForm() {
         // in place rather than creating an unrelated new account and losing its progress.
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (currentUser?.is_anonymous) {
-          const { error } = await supabase.auth.updateUser({
-            email, password,
-            data: displayName ? { display_name: displayName } : undefined,
-          });
-          if (error) {
-            setError(error.message);
-          } else {
-            setSuccessMsg("Check your email to confirm your account — everything you've already done is saved.");
-          }
+          const result = await saveGuestWithEmail(supabase, email, password, displayName ? { display_name: displayName } : undefined);
+          if (result.kind === "signed_in") { window.location.href = "/dashboard"; return; }
+          if (result.kind === "error") setError(result.message);
+          else setSuccessMsg("Check your email to confirm your account — everything you've already done is saved.");
           return;
         }
 
@@ -168,7 +180,7 @@ function AuthForm() {
           </p>
 
           <button
-            type="button" onClick={signInWithGoogle} disabled={loading}
+            type="button" onClick={() => signInWithGoogle()} disabled={loading}
             style={{
               width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
               padding: "12px 0", marginBottom: 22, background: "transparent", border: "1px solid var(--border-strong)",
@@ -180,6 +192,7 @@ function AuthForm() {
             <GoogleIcon />
             Continue with Google
           </button>
+
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
             <div style={{ flex: 1, height: 1, background: "var(--border)" }} />

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { saveGuestWithEmail } from "@/lib/auth";
 import { Input } from "@/components/ui/ds";
 
 function GoogleIcon() {
@@ -35,9 +36,10 @@ export function SaveProgressPrompt({
     setError(null);
     if (!email.trim() || !password) { setError("Enter an email and password to continue."); return; }
     setLoading(true);
-    const { error: err } = await supabase.auth.updateUser({ email, password });
+    const result = await saveGuestWithEmail(supabase, email, password);
+    if (result.kind === "signed_in") { window.location.href = "/dashboard"; return; }
     setLoading(false);
-    if (err) { setError(err.message); return; }
+    if (result.kind === "error") { setError(result.message); return; }
     setAwaitingConfirm(true);
   }
 

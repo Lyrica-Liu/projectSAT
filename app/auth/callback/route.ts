@@ -16,5 +16,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth?error=oauth_failed`);
+  // A guest linking a Google account that already belongs to another user comes back with
+  // this code instead of a `code` — the auth page then signs in to that account instead.
+  const reason = searchParams.get("error_code") === "identity_already_exists" ? "google_taken" : "oauth_failed";
+  return NextResponse.redirect(`${origin}/auth?error=${reason}`);
 }
