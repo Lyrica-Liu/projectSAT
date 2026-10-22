@@ -49,6 +49,7 @@ To see who's using the site, run these in the SQL editor:
 select * from admin.users;     -- one row per user who did something; guests show as Guest-XXXXXX
 select * from admin.all_users; -- also includes guests who never answered a question
 select * from admin.summary;   -- headline counts
+select * from admin.likely_same_device; -- ids that are probably one computer (same IP + browser)
 ```
 
 `Guest-XXXXXX` is the first 6 characters of the user id, the same id shown as `actor_id` in Authentication → Logs.

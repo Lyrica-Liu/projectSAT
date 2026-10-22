@@ -1,5 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+/**
+ * Set while a guest is being moved into the Google account they already had; holds how many
+ * sets they finished as a guest. The auth callback sends them to /auth/confirm when it's there.
+ */
+export const SWITCH_COOKIE = "pw_switched_account";
+
 export type SaveGuestResult = { kind: "confirm_email" } | { kind: "signed_in" } | { kind: "error"; message: string };
 
 /**

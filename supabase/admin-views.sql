@@ -4,6 +4,7 @@
 --   select * from admin.users;        -- everyone who actually did something
 --   select * from admin.all_users;    -- including guests who clicked Begin and left
 --   select * from admin.summary;      -- headline counts
+--   select * from admin.likely_same_device; -- ids that are probably one computer
 --
 -- Guests are labelled "Guest-XXXXXX": the first 6 characters of their user id, so a
 -- label maps straight onto the actor_id you see in Authentication → Logs.
@@ -67,7 +68,8 @@ select
   host(ls.ip)                                                 as last_ip,
   u.created_at                                                as first_seen,
   greatest(u.last_sign_in_at, ls.updated_at, p.last_practice) as last_seen,
-  u.id
+  u.id,
+  ls.user_agent  -- kept last: `create or replace view` can only add columns at the end
 from auth.users u
 left join practice p        on p.user_id = u.id
 left join latest_session ls on ls.user_id = u.id
@@ -84,5 +86,27 @@ select
   count(*) filter (where status = 'guest (no activity)')   as guests_no_activity,
   count(*) filter (where last_seen > now() - interval '7 days' and status <> 'guest (no activity)') as active_last_7_days
 from admin.all_users;
+
+-- User ids that are probably the same computer: same IP and the exact same browser string
+-- (browser, version and OS), e.g. one student who used incognito or cleared cookies. A hint,
+-- not proof: on school or library Wi-Fi, classmates on identical laptops share both, so check
+-- first_seen/last_seen and activity before treating a group as one person. Users whose latest
+-- session ended (signed out or expired) have no IP and can't be grouped.
+create or replace view admin.likely_same_device as
+select
+  device,
+  last_ip,
+  count(*)                                          as user_ids,
+  count(*) filter (where status <> 'account')       as guest_ids,
+  array_agg(who order by first_seen)                as who,
+  sum(answers)                                      as total_answers,
+  min(first_seen)                                   as first_seen,
+  max(last_seen)                                    as last_seen,
+  array_agg(id order by first_seen)                 as ids
+from admin.all_users
+where last_ip is not null and user_agent is not null
+group by device, last_ip, user_agent
+having count(*) > 1
+order by max(last_seen) desc;
 
 revoke all on all tables in schema admin from public, anon, authenticated;

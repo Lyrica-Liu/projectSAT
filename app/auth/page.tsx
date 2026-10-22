@@ -3,9 +3,9 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { saveGuestWithEmail } from "@/lib/auth";
+import { saveGuestWithEmail, SWITCH_COOKIE } from "@/lib/auth";
 import { Input } from "@/components/ui/ds";
-import { Wordmark } from "@/components/ui/nav";
+import { Wordmark, LoadingScreen } from "@/components/ui/nav";
 
 function GoogleIcon() {
   return (
@@ -42,24 +42,39 @@ function AuthForm() {
   // sign in to that account. Supabase reports this in the URL fragment (#error_code=...),
   // which the server-side callback can't see but the browser carries through its redirect.
   // No loop: signing in (not linking) can't hit this error again.
+  // Until that check runs, an error redirect shows a loading screen rather than flashing the form.
+  //
+  // Leaving the guest session sets SWITCH_COOKIE (with how many sets they finished as a guest),
+  // so the callback shows /auth/confirm before the dashboard.
+  const [switching, setSwitching] = useState(params.has("error"));
   useEffect(() => {
-    const fragment = new URLSearchParams(window.location.hash.slice(1));
-    if (params.get("error") === "google_taken" || fragment.get("error_code") === "identity_already_exists") {
+    async function run() {
+      const fragment = new URLSearchParams(window.location.hash.slice(1));
+      if (params.get("error") !== "google_taken" && fragment.get("error_code") !== "identity_already_exists") {
+        setSwitching(false);
+        return;
+      }
       history.replaceState(null, "", "/auth");
-      signInWithGoogle(true);
+      const { count } = await supabase.from("sessions").select("id", { count: "exact", head: true }).not("completed_at", "is", null);
+      document.cookie = `${SWITCH_COOKIE}=${count ?? 0}; path=/; max-age=600; samesite=lax`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) { setSwitching(false); setError(error.message); }
     }
+    run();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** `intoExisting` skips linking and signs in to the Google account's own user. */
-  async function signInWithGoogle(intoExisting = false) {
+  async function signInWithGoogle() {
     setLoading(true);
     setError(null);
     // An anonymous session (started from onboarding, before any account existed) already has
     // real progress attached to it — link Google to that same user instead of starting a
     // separate one, so nothing gets orphaned.
     const { data: { user } } = await supabase.auth.getUser();
-    if (user?.is_anonymous && !intoExisting) {
+    if (user?.is_anonymous) {
       const { error } = await supabase.auth.linkIdentity({
         provider: "google",
         options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -130,6 +145,8 @@ function AuthForm() {
     }
   }
 
+  if (switching) return <LoadingScreen message="Signing you in to your account…" />;
+
   return (
     <div style={{ minHeight: "100vh", display: "flex", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
 
@@ -180,7 +197,7 @@ function AuthForm() {
           </p>
 
           <button
-            type="button" onClick={() => signInWithGoogle()} disabled={loading}
+            type="button" onClick={signInWithGoogle} disabled={loading}
             style={{
               width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
               padding: "12px 0", marginBottom: 22, background: "transparent", border: "1px solid var(--border-strong)",
