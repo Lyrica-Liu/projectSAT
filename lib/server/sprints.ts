@@ -127,7 +127,7 @@ export async function quitSprint(supabase: SupabaseClient, userId: string) {
 }
 
 /** Starts (or resumes) the active short sprint's next day; returns its session id. */
-export async function startNextSprintDay(supabase: SupabaseClient, userId: string): Promise<{ ok: true; sessionId: string } | { ok: false; error: string; status: number }> {
+export async function startNextSprintDay(supabase: SupabaseClient, userId: string, { multipleChoiceOnly = false } = {}): Promise<{ ok: true; sessionId: string } | { ok: false; error: string; status: number }> {
   const { data: sprint } = await supabase.from("user_sprints").select("id, sprint_key").eq("user_id", userId).eq("status", "active").maybeSingle();
   if (!sprint || sprint.sprint_key === "full-30") return { ok: false, error: "No active short sprint.", status: 404 };
 
@@ -145,7 +145,7 @@ export async function startNextSprintDay(supabase: SupabaseClient, userId: strin
   const { data: progress } = await supabase.from("category_progress").select("difficulty")
     .eq("user_id", userId).eq("subcategory", day.subcategory).maybeSingle();
   const difficulty = (progress?.difficulty as Difficulty | undefined) ?? (day.difficulty as Difficulty);
-  const set = await createPracticeSet(supabase, userId, { subcategories: [day.subcategory], difficulty, count: day.question_count });
+  const set = await createPracticeSet(supabase, userId, { subcategories: [day.subcategory], difficulty, count: day.question_count, multipleChoiceOnly });
   if (!set.ok) return set;
   await supabase.from("sprint_days").update({ session_id: set.sessionId, difficulty }).eq("id", day.id);
   return { ok: true, sessionId: set.sessionId };

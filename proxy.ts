@@ -5,6 +5,12 @@ import { NextResponse, type NextRequest } from "next/server";
 // visitor in anonymously itself.
 const PROTECTED_PREFIXES = ["/dashboard", "/practice", "/results", "/plan", "/for-you", "/account", "/notebook", "/sprints"];
 
+const LITE_ENTRY_PATHS = ["/", "/dashboard"];
+/** Phones only: iPads and Android tablets (no "Mobile" in their user agent) keep the website. */
+const PHONE_UA = /iPhone|iPod|Android.+Mobile|Windows Phone/i;
+/** Set to "1" by Lite's "Full site" link. */
+const FULL_SITE_COOKIE = "pw_full_site";
+
 function getSupabaseEnv(name: string) {
   return process.env[name]?.trim();
 }
@@ -56,6 +62,18 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
+
+  // 800Path Lite: phones opening the home pages land in Lite, unless they chose "Full site"
+  // there (which sets FULL_SITE_COOKIE). Off until Lite's screens ship: LITE_REDIRECT=on.
+  if (
+    process.env.LITE_REDIRECT === "on" && LITE_ENTRY_PATHS.includes(pathname) &&
+    PHONE_UA.test(request.headers.get("user-agent") ?? "") && request.cookies.get(FULL_SITE_COOKIE)?.value !== "1"
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/lite";
+    return NextResponse.redirect(url);
+  }
+
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (isProtected && !user) {

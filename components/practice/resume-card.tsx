@@ -31,7 +31,7 @@ export function ResumeCard({ style }: { style?: React.CSSProperties }) {
       const since = new Date(Date.now() - MAX_AGE_DAYS * 86_400_000).toISOString();
       const [sessionsRes, planRes] = await Promise.all([
         supabase.from("sessions").select("id, started_at, question_count")
-          .eq("user_id", user.id).is("completed_at", null).gte("started_at", since)
+          .eq("user_id", user.id).eq("kind", "set").is("completed_at", null).gte("started_at", since)
           .order("started_at", { ascending: false }).limit(10),
         supabase.from("plan_days").select("session_id").eq("user_id", user.id).not("session_id", "is", null),
       ]);

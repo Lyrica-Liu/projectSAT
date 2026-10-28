@@ -44,12 +44,17 @@ export type PracticeSetResult = { ok: true; sessionId: string } | { ok: false; e
 export async function createPracticeSet(
   supabase: SupabaseClient,
   userId: string,
-  { subcategories, difficulty, count }: { subcategories: string[]; difficulty: Difficulty; count: number },
+  { subcategories, difficulty, count, multipleChoiceOnly = false }: {
+    subcategories: string[]; difficulty: Difficulty; count: number;
+    /** Lite skips grid-ins: typing math answers on a phone isn't on-the-go practice. */
+    multipleChoiceOnly?: boolean;
+  },
 ): Promise<PracticeSetResult> {
   const pool: PoolItem[] = [];
   for (const subcategory of subcategories) {
     if (MATH_SUBCATEGORIES.has(subcategory)) {
       for (const q of getMathBankQuestions(subcategory, difficulty)) {
+        if (multipleChoiceOnly && q.questionType !== "multiple_choice") continue;
         pool.push({
           subcategory, domain: "math", skill: q.skill, difficulty: q.difficulty, passage: q.passage, stem: q.stem,
           question_type: q.questionType, options: q.options, answer: q.answer,
