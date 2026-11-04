@@ -39,10 +39,10 @@ export const LEVEL_LABEL: Record<CategoryMastery["level"], string> = {
   mastered: "Mastered",
 };
 
-/** The same scale as 800Path Lite: grey → coral (weak) → light violet (strong) → deep violet (mastered). */
+/** The same scale as 800Path Lite: grey → coral (weak) → rose (strong) → violet (mastered). */
 export const LEVEL_STYLE: Record<CategoryMastery["level"], { background: string; border: string; ink: string; sub: string }> = {
   not_started: { background: "transparent", border: "1px dashed var(--line-strong)", ink: "var(--text-muted)", sub: "var(--text-faint)" },
   weak: { background: "var(--coral-50)", border: "1px solid var(--coral-100)", ink: "var(--text-strong)", sub: "var(--coral-500)" },
-  strong: { background: "var(--moss-100)", border: "1px solid var(--moss-100)", ink: "var(--text-strong)", sub: "var(--moss-600)" },
+  strong: { background: "var(--claret-50)", border: "1px solid var(--claret-100)", ink: "var(--text-strong)", sub: "var(--claret-600)" },
   mastered: { background: "var(--moss-500)", border: "1px solid var(--moss-500)", ink: "var(--text-on-brand)", sub: "var(--moss-50)" },
 };

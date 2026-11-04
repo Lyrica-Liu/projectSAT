@@ -29,10 +29,12 @@
   --oat-line: #e0dbcf;
 
   /* ── Sidebar family — oat spine, ink type, wine active mark. ── */
-  --sidebar-bg:        var(--oat-100);
-  --sidebar-line:      var(--oat-line);
-  --sidebar-hover:     var(--oat-200);
-  --sidebar-active:    var(--wine-500);
+  /* Quiet: a hair darker than the page, with the active tab a raised white chip (ink type,
+     a small brand-gradient dot; see components/ui/nav.tsx) rather than a block of color. */
+  --sidebar-bg:        #f7f5f1;
+  --sidebar-line:      var(--line);
+  --sidebar-hover:     rgba(32, 31, 28, 0.045);
+  --sidebar-active:    var(--surface);
   --sidebar-rail:      var(--oat-300);
   --sidebar-ink:       #201f1c;
   --sidebar-ink-muted: #5c574f;

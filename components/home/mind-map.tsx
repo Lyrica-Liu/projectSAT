@@ -161,11 +161,12 @@ function branchShape(from: Placed, to: Placed, w0: number, w1: number): string {
   return `M ${pts.map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" L ")} Z`;
 }
 
+/** Lite's scale: coral (weak) → rose (strong) → violet (mastered). */
 const LEVEL_INK: Record<CategoryMastery["level"], string> = {
   not_started: "var(--ink-300)",
-  weak: "var(--claret-500)",
-  strong: "var(--moss-500)",
-  mastered: "var(--moss-600)",
+  weak: "var(--coral-500)",
+  strong: "var(--claret-500)",
+  mastered: "var(--moss-500)",
 };
 const BRANCH_WIDTH: Record<Kind, [number, number]> = { root: [0, 0], subject: [16, 7], domain: [7, 3.2], skill: [3.6, 1.4] };
 

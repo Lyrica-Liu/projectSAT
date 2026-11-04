@@ -182,13 +182,17 @@ export function Sidebar() {
           const rowStyle: React.CSSProperties = {
             display: "flex", alignItems: "center", gap: 14, padding: "10px 12px",
             borderRadius: "var(--radius-md)",
-            color: active ? "var(--text-on-brand)" : isHovered ? "var(--sidebar-ink)" : "var(--sidebar-ink-muted)",
+            color: active || isHovered ? "var(--sidebar-ink)" : "var(--sidebar-ink-muted)",
+            fontWeight: active ? 600 : 400,
             background: active ? "var(--sidebar-active)" : isHovered ? "var(--sidebar-hover)" : "transparent",
+            boxShadow: active ? "0 1px 3px rgba(32,31,28,.07), 0 0 0 1px var(--sidebar-line)" : undefined,
           };
           const inner = (
             <>
               <Icon name={icon} size={16} color="currentColor" />
-              <span className="pw-lbl">{label}</span>
+              <span className="pw-lbl" style={{ flex: 1 }}>{label}</span>
+              {/* Lite's coral → violet, as a small mark on the current page. */}
+              {active && <span className="pw-lbl" aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gradient-radiant)", flexShrink: 0 }} />}
             </>
           );
           return active ? (
