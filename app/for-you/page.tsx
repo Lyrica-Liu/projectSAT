@@ -87,11 +87,14 @@ interface DomainCard {
 interface ChartPoint { date: Date; score: number }
 
 
+/** Each step of grasp a step along Lite's coral → rose → violet. */
+const PIP_COLORS = ["#f0664f", "#e04a73", "#b14fa8", "#8458e8"];
+
 function Pips({ n }: { n: number }) {
   return (
     <span style={{ display: "inline-flex", gap: 5 }}>
       {[0, 1, 2, 3].map((i) => (
-        <span key={i} style={{ width: 26, height: 3, background: i < n ? "var(--brand)" : "var(--surface-sunken)" }} />
+        <span key={i} style={{ width: 26, height: 3, borderRadius: 2, background: i < n ? PIP_COLORS[i] : "var(--surface-sunken)" }} />
       ))}
     </span>
   );

@@ -311,6 +311,18 @@
   margin: 0;
 }
 
+/* Signed-in pages: Lite's soft coral and violet glows, very faint, fixed behind the content. */
+body:has(.pw-sidebar) {
+  background-image:
+    radial-gradient(720px 480px at 92% -8%, rgba(224, 74, 115, 0.075), transparent 70%),
+    radial-gradient(640px 460px at 18% 108%, rgba(132, 88, 232, 0.06), transparent 70%),
+    radial-gradient(520px 380px at 40% -12%, rgba(240, 102, 79, 0.05), transparent 70%);
+  background-attachment: fixed;
+}
+/* Each signed-in page wraps the sidebar and its content in a full-height canvas-colored box;
+   let the glow above show through it. */
+:has(> .pw-sidebar) { background-color: transparent !important; }
+
 /* Sidebar hover-expand — 66px spine widens to 218px, labels fade in. `.pw-sidebar-intro`
    forces the same expanded state without a hover, so a brand-new user sees the labelled
    sidebar once on their first signed-in page (see components/ui/nav.tsx) instead of

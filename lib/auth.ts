@@ -6,6 +6,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  */
 export const SWITCH_COOKIE = "pw_switched_account";
 
+/**
+ * Signed-in accounts are signed out when the browser restarts. This cookie has no expiry, so
+ * the browser drops it on quit; an account arriving without it gets signed out (proxy.ts).
+ * Every sign-in sets it. Guests are exempt (signing out would lose their progress), and so is
+ * Lite (iPhone closes home-screen apps all the time).
+ */
+export const BROWSER_SESSION_COOKIE = "pw_browser_session";
+
+/** Call right after a sign-in that happens in the browser (email + password). */
+export function markBrowserSession() {
+  document.cookie = `${BROWSER_SESSION_COOKIE}=1; path=/; samesite=lax`;
+}
+
 /** Where to land after a Google sign-in started from Lite (a /lite path); read by the auth callback. */
 export const LITE_RETURN_COOKIE = "pw_lite_return";
 
@@ -27,7 +40,7 @@ export async function saveGuestWithEmail(
   if (error.code !== "email_exists") return { kind: "error", message: error.message };
 
   const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-  if (!signInErr) return { kind: "signed_in" };
+  if (!signInErr) { markBrowserSession(); return { kind: "signed_in" }; }
   return {
     kind: "error",
     message: "That email already has an account, but the password doesn't match. Use that account's password, or Google if that's how you signed up.",

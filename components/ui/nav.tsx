@@ -189,7 +189,7 @@ export function Sidebar() {
           };
           const inner = (
             <>
-              <Icon name={icon} size={16} color="currentColor" />
+              <Icon name={icon} size={16} color={active ? "var(--accent)" : "currentColor"} />
               <span className="pw-lbl" style={{ flex: 1 }}>{label}</span>
               {/* Lite's coral → violet, as a small mark on the current page. */}
               {active && <span className="pw-lbl" aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gradient-radiant)", flexShrink: 0 }} />}

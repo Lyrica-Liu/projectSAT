@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { LITE_RETURN_COOKIE, SWITCH_COOKIE } from "@/lib/auth";
+import { BROWSER_SESSION_COOKIE, LITE_RETURN_COOKIE, SWITCH_COOKIE } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
       // A guest who was moved into the Google account they already had: let them check it's
       // the right account first.
       const cookieStore = await cookies();
+      // Signed in during this browser session (no expiry: the browser drops it on quit).
+      cookieStore.set(BROWSER_SESSION_COOKIE, "1", { path: "/", sameSite: "lax" });
       // Started from Lite: go back there. (A cookie rather than ?next=, which would have to be
       // added to Supabase's allowed redirect URLs.) Only Lite paths, so it can't redirect off-site.
       const liteReturn = cookieStore.get(LITE_RETURN_COOKIE)?.value;

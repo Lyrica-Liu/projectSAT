@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { BROWSER_SESSION_COOKIE } from "@/lib/auth";
 
 // /onboarding is deliberately public: it's the landing page's entry point and signs the
 // visitor in anonymously itself.
@@ -57,11 +58,35 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const {
+  let {
     data: { user },
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
+
+  // A signed-in account without this browser session's marker means the browser was restarted
+  // since they signed in: sign them out (see BROWSER_SESSION_COOKIE in lib/auth.ts). Guests
+  // keep their session, as does Lite, and the auth pages are left alone mid-sign-in.
+  if (
+    user && !user.is_anonymous && !request.cookies.get(BROWSER_SESSION_COOKIE) &&
+    !pathname.startsWith("/lite") && !pathname.startsWith("/auth")
+  ) {
+    await supabase.auth.signOut({ scope: "local" }); // clears the auth cookies on supabaseResponse
+    user = null;
+    if (PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth";
+      const redirect = NextResponse.redirect(url);
+      supabaseResponse.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+      return redirect;
+    }
+    return supabaseResponse;
+  }
+  // Guests get the marker too (it never signs them out), so a guest who turns into a real account
+  // mid-session (saving progress by email) isn't signed out on their next page.
+  if (user?.is_anonymous && !request.cookies.get(BROWSER_SESSION_COOKIE)) {
+    supabaseResponse.cookies.set(BROWSER_SESSION_COOKIE, "1", { path: "/", sameSite: "lax" });
+  }
 
   // 800Path Lite: phones opening the home pages land in Lite, unless they chose "Full site"
   // there (which sets FULL_SITE_COOKIE). Off until Lite's screens ship: LITE_REDIRECT=on.

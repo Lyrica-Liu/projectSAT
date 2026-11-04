@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { saveGuestWithEmail, SWITCH_COOKIE } from "@/lib/auth";
+import { markBrowserSession, saveGuestWithEmail, SWITCH_COOKIE } from "@/lib/auth";
 import { Input } from "@/components/ui/ds";
 import { Wordmark, LoadingScreen } from "@/components/ui/nav";
 
@@ -124,6 +124,7 @@ function AuthForm() {
           setError(error.message);
         } else if (data.session) {
           // Straight to the skill map — goal-setting and the diagnostic are optional now.
+          markBrowserSession();
           window.location.href = "/dashboard";
           return;
         } else {
@@ -134,6 +135,7 @@ function AuthForm() {
         if (error) {
           setError(error.message);
         } else {
+          markBrowserSession();
           window.location.href = "/dashboard";
           return;
         }

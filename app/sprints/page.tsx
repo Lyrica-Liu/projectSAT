@@ -25,6 +25,9 @@ const primaryButton = (disabled = false): React.CSSProperties => ({
 });
 
 /** Optional sprints: pick one, see its progress, or quit — no penalty either way. */
+/** Each sprint card in one of Lite's soft tints, coral through violet. */
+const SPRINT_TINTS = ["var(--coral-50)", "var(--claret-50)", "var(--moss-50)", "var(--gradient-radiant-soft)"];
+
 export default function SprintsPage() {
   const router = useRouter();
   const [data, setData] = useState<SprintsResponse | null>(null);
@@ -120,10 +123,10 @@ export default function SprintsPage() {
         <section aria-label="Sprint menu" style={{ margin: "44px 0 0" }}>
           <p style={{ ...microLabel, margin: "0 0 14px", paddingBottom: 10, borderBottom: "1px solid var(--line-strong)" }}>{active ? "Other sprints" : "Pick a sprint"}</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
-            {data.menu.filter((s) => s.key !== active?.key).map((s) => {
+            {data.menu.filter((s) => s.key !== active?.key).map((s, i) => {
               const doneBefore = completed.some((h) => h.key === s.key);
               return (
-                <div key={s.key} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 18, padding: "22px 22px 20px", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface)" }}>
+                <div key={s.key} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 18, padding: "22px 22px 20px", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: SPRINT_TINTS[i % SPRINT_TINTS.length] }}>
                   <div>
                     <h3 style={{ fontWeight: 400, fontSize: 20, color: "var(--text-strong)", margin: "0 0 6px" }}>
                       {s.title}{doneBefore && <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--success)", marginLeft: 8 }}>✓ done before</span>}
