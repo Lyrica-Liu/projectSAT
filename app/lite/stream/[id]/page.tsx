@@ -182,7 +182,7 @@ export default function LiteStream() {
     <>
       <Glow tone="rose" size={420} style={{ left: -60, bottom: -200, position: "fixed" }} />
       <main className="l-page no-tabs" style={{ paddingBottom: card?.result ? "52dvh" : undefined }}>
-        <header data-no-advance style={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 5, background: "rgba(255,255,255,.9)", backdropFilter: "blur(8px)", margin: "-16px -20px 0", padding: "calc(env(safe-area-inset-top) + 12px) 20px 12px" }}>
+        <header data-no-advance style={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 5, background: "rgba(253,252,249,.92)", backdropFilter: "blur(8px)", margin: "-16px -20px 0", padding: "calc(env(safe-area-inset-top) + 12px) 20px 12px" }}>
           <button onClick={stop} disabled={ending} aria-label="Stop practicing" style={{ border: 0, background: "var(--l-soft2)", width: 40, height: 40, borderRadius: "50%", fontSize: 18, fontWeight: 600, color: "var(--l-ink)" }}>✕</button>
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--l-muted)" }} aria-live="polite">{tally.answered} answered · {tally.correct} right</span>
           <span style={{ width: 40 }} />

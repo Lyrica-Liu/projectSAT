@@ -17,7 +17,8 @@ function Passage({ text }: { text: string }) {
     else blocks.push({ table, lines: [line] });
   }
   return (
-    <div style={{ fontSize: 17, lineHeight: 1.55, color: "var(--l-body)" }}>
+    // Passages in the website's serif, the way the real test sets them.
+    <div style={{ fontFamily: "var(--l-serif)", fontSize: 18, lineHeight: 1.6, color: "var(--l-body)" }}>
       {blocks.map((b, i) => {
         if (!b.table) return <p key={i} style={{ margin: "0 0 10px", whiteSpace: "pre-wrap", textWrap: "pretty" }}>{b.lines.join("\n").trim()}</p>;
         const rows = b.lines.filter((l) => !/^\s*\|[\s:|-]+\|\s*$/.test(l)).map((l) => l.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim()));

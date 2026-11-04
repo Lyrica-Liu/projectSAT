@@ -35,12 +35,13 @@
   --sidebar-ink-muted: #5c574f;
   --sidebar-ink-faint: #8a8479;
 
-  /* ── The accent: burnt sienna. Emphasis, live state, the one wrong answer. ── */
-  --claret-50:  #f6ece7;
-  --claret-100: #ebd9d0;
-  --claret-500: #8f4a35;
-  --claret-600: #743a29;
-  --claret-700: #57291c;
+  /* ── The accent: a rosy claret (nudged from burnt sienna toward 800Path Lite's rose, so the
+     two read as one brand). Emphasis, live state, the one wrong answer. ── */
+  --claret-50:  #f7ebec;
+  --claret-100: #edd6d9;
+  --claret-500: #964452;
+  --claret-600: #7a3442;
+  --claret-700: #5a2531;
 
   /* ── Olive: correct, complete, steady. A printed green, not a screen green. ── */
   --moss-50:  #eef0e9;
@@ -197,19 +198,20 @@
   --space-32: 8rem;
   --space-40: 10rem;
 
-  /* ── Radii — crisp ── */
-  --radius-sm:   2px;
-  --radius-md:   4px;
-  --radius-lg:   6px;
-  --radius-xl:   8px;
-  --radius-2xl:  10px;
+  /* ── Radii ── */
+  /* A little rounder than pure print, toward Lite's softer shapes. */
+  --radius-sm:   3px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
   --radius-pill: 999px;
 
-  /* ── Shadows — effectively off ── */
+  /* ── Shadows — soft and rare ── */
   --shadow-xs: none;
   --shadow-sm: none;
-  --shadow-md: 0 1px 2px rgba(32, 31, 28, 0.04);
-  --shadow-lg: 0 8px 30px rgba(32, 31, 28, 0.07);
+  --shadow-md: 0 2px 10px rgba(32, 31, 28, 0.05);
+  --shadow-lg: 0 14px 40px rgba(58, 36, 74, 0.08);
   --shadow-brand: none;
 
   /* ── Motion — subtle fades only ── */

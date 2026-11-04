@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { ActiveSprint } from "@/lib/server/sprints";
+import { Mark } from "@/components/ui/mark";
 
 /** POSTs (or GETs, without a body) JSON to an API route; throws the route's error message. */
 export async function api<T>(url: string, body?: unknown): Promise<T> {
@@ -75,8 +76,10 @@ export function Glow({ tone, size, style }: { tone: "coral" | "rose" | "violet";
 
 export function Logo() {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-      <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.04em" }}>800path</span>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+      {/* The website's wordmark, so the two read as one product. */}
+      <Mark width={28} height={17} fill="var(--l-ink)" />
+      <span style={{ fontFamily: "var(--l-serif)", fontSize: 19, fontWeight: 600, letterSpacing: "-0.02em" }}>800Path</span>
       <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "var(--l-gradient)", padding: "3px 8px", borderRadius: 999 }}>lite</span>
     </span>
   );
@@ -86,7 +89,7 @@ export function StreakBadge({ streak }: { streak: number }) {
   return (
     <span className="l-chip" style={{ background: "var(--l-accent-soft)", color: "var(--l-accent-ink)", fontSize: 15, padding: "8px 12px" }} aria-label={`${streak}-day streak`}>
       <svg width="14" height="16" viewBox="0 0 14 16" aria-hidden="true">
-        <defs><linearGradient id="l-flame" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor="#ff6b5a" /><stop offset="1" stopColor="#f0507f" /></linearGradient></defs>
+        <defs><linearGradient id="l-flame" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor="#f0664f" /><stop offset="1" stopColor="#e04a73" /></linearGradient></defs>
         <path d="M7 0c1 3 5 5 5 9.5A5 5 0 0 1 2 9.5C2 7 4 6 4 3.5 5.5 5 6 6 6 7.5 7.5 6 7.5 3 7 0Z" fill="url(#l-flame)" />
       </svg>
       {streak}
@@ -102,7 +105,7 @@ export function GoalRing({ done, goal, size = 64 }: { done: number; goal: number
   const id = `l-ring-${size}`;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${done} of ${goal} questions today`}>
-      <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ff6b5a" /><stop offset=".5" stopColor="#f0507f" /><stop offset="1" stopColor="#8e5cf7" /></linearGradient></defs>
+      <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f0664f" /><stop offset=".5" stopColor="#e04a73" /><stop offset="1" stopColor="#8458e8" /></linearGradient></defs>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--l-soft2)" strokeWidth="7" />
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={frac >= 1 ? "var(--l-violet)" : `url(#${id})`} strokeWidth="7" strokeLinecap="round"
         strokeDasharray={c} strokeDashoffset={c * (1 - frac)} transform={`rotate(-90 ${size / 2} ${size / 2})`} style={{ transition: "stroke-dashoffset 0.5s ease" }} />
@@ -153,7 +156,7 @@ export function Sheet({ onClose, children, label }: { onClose: () => void; child
 
 /** A small burst of confetti dots for a right answer. */
 export function Burst() {
-  const colors = ["var(--l-coral)", "var(--l-accent)", "var(--l-violet)", "#ffb3c7"];
+  const colors = ["var(--l-coral)", "var(--l-accent)", "var(--l-violet)", "#f3b3c4"];
   return (
     <div className="l-burst" aria-hidden="true">
       {Array.from({ length: 14 }, (_, i) => {

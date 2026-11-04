@@ -141,7 +141,7 @@ function Study({ deck, onDone }: { deck: Card[]; onDone: (tally: { got: number; 
               <Glow tone="violet" size={250} style={{ left: -90, bottom: -120 }} />
               {card.isNew && !done && <span className="l-chip" style={{ position: "absolute", top: 20, left: 20, background: "#fff", color: "var(--l-accent-ink)" }}>New word</span>}
               {done && <span className="l-chip" style={{ position: "absolute", top: 20, left: 20, background: "#fff", color: done === "got_it" ? "var(--l-violet-ink)" : "var(--l-coral-ink)" }}>{done === "got_it" ? "✓ Got it" : "Still learning"}</span>}
-              <p style={{ position: "relative", fontSize: 42, fontWeight: 800, letterSpacing: "-0.045em", margin: 0 }}>{card.word}</p>
+              <p style={{ position: "relative", fontFamily: "var(--l-serif)", fontSize: 44, fontWeight: 600, letterSpacing: "-0.025em", margin: 0 }}>{card.word}</p>
               <p style={{ position: "relative", fontSize: 16, fontWeight: 600, color: "var(--l-muted)", margin: "8px 0 0", fontStyle: "italic" }}>{card.pos}</p>
               <p style={{ position: "absolute", bottom: 22, fontSize: 13, fontWeight: 600, color: "var(--l-faint)", margin: 0 }}>Tap to flip</p>
             </div>
