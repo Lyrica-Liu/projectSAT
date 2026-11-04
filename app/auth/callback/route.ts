@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { SWITCH_COOKIE } from "@/lib/auth";
+import { LITE_RETURN_COOKIE, SWITCH_COOKIE } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -19,6 +19,13 @@ export async function GET(request: NextRequest) {
       if (guestSets != null) {
         cookieStore.delete(SWITCH_COOKIE);
         return NextResponse.redirect(`${origin}/auth/confirm?guest_sets=${encodeURIComponent(guestSets)}`);
+      }
+      // Started from Lite: go back there. (A cookie rather than ?next=, which would have to be
+      // added to Supabase's allowed redirect URLs.) Only Lite paths, so it can't redirect off-site.
+      const liteReturn = cookieStore.get(LITE_RETURN_COOKIE)?.value;
+      if (liteReturn) {
+        cookieStore.delete(LITE_RETURN_COOKIE);
+        if (liteReturn.startsWith("/lite")) return NextResponse.redirect(`${origin}${liteReturn}`);
       }
       // No forced onboarding: signing in goes straight in. Setting a goal and the diagnostic
       // are optional and reachable from home.

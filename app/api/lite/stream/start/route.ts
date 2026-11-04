@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { loadSkillMapData } from "@/lib/server/mastery";
-import { serveNextCard } from "@/lib/server/lite-stream";
+import { serveNextCard, type LiteSession } from "@/lib/server/lite-stream";
 import { buildStreamPlan, PICK_GROUPS, STREAM_MODES, type StreamMode } from "@/lib/lite/stream";
 
 /**
@@ -25,12 +25,13 @@ export async function POST(req: NextRequest) {
 
   const { data: session, error } = await supabase.from("sessions")
     .insert({ user_id: user.id, kind: "stream", stream_plan: plan, question_count: 0, domain_filter: "both" })
-    .select("id").single();
+    .select("id, kind, stream_plan, started_at, completed_at").single();
   if (error || !session) return NextResponse.json({ error: "Could not start practice." }, { status: 500 });
 
-  await supabase.auth.updateUser({ data: { lite_last_mode: mode, lite_last_pick: mode === "pick" ? pick : null } });
-
-  const card = await serveNextCard(supabase, user.id, session.id);
+  const [card] = await Promise.all([
+    serveNextCard(supabase, user.id, session.id, { session: session as LiteSession, cards: [] }),
+    supabase.auth.updateUser({ data: { lite_last_mode: mode, lite_last_pick: mode === "pick" ? pick : null } }),
+  ]);
   if ("error" in card) return NextResponse.json({ error: card.error }, { status: card.status });
   return NextResponse.json({ sessionId: session.id, card });
 }

@@ -6,6 +6,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  */
 export const SWITCH_COOKIE = "pw_switched_account";
 
+/** Where to land after a Google sign-in started from Lite (a /lite path); read by the auth callback. */
+export const LITE_RETURN_COOKIE = "pw_lite_return";
+
 export type SaveGuestResult = { kind: "confirm_email" } | { kind: "signed_in" } | { kind: "error"; message: string };
 
 /**
