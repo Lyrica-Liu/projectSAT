@@ -32,6 +32,8 @@ function ConfirmAccount() {
   const params = useSearchParams();
   const supabase = createClient();
   const guestSets = Number(params.get("guest_sets")) || 0;
+  // Back to Lite when the sign-in started there (the callback only ever passes /lite paths).
+  const next = params.get("next")?.startsWith("/lite") ? params.get("next")! : "/dashboard";
 
   const [info, setInfo] = useState<AccountInfo | null>(null);
   const [name, setName] = useState("");
@@ -43,7 +45,7 @@ function ConfirmAccount() {
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || user.is_anonymous) { router.replace("/dashboard"); return; }
+      if (!user || user.is_anonymous) { router.replace(next); return; }
 
       const { data: done } = await supabase
         .from("sessions").select("completed_at").eq("user_id", user.id)
@@ -74,7 +76,7 @@ function ConfirmAccount() {
       const { error: err } = await supabase.auth.updateUser({ data: { display_name: name.trim() || null, test_date: testDate || null } });
       if (err) { setBusy(false); setError(err.message); return; }
     }
-    router.replace("/dashboard");
+    router.replace(next);
   }
 
   async function useAnotherAccount() {

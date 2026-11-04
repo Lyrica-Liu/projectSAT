@@ -15,18 +15,19 @@ export async function GET(request: NextRequest) {
       // A guest who was moved into the Google account they already had: let them check it's
       // the right account first.
       const cookieStore = await cookies();
-      const guestSets = cookieStore.get(SWITCH_COOKIE)?.value;
-      if (guestSets != null) {
-        cookieStore.delete(SWITCH_COOKIE);
-        return NextResponse.redirect(`${origin}/auth/confirm?guest_sets=${encodeURIComponent(guestSets)}`);
-      }
       // Started from Lite: go back there. (A cookie rather than ?next=, which would have to be
       // added to Supabase's allowed redirect URLs.) Only Lite paths, so it can't redirect off-site.
       const liteReturn = cookieStore.get(LITE_RETURN_COOKIE)?.value;
-      if (liteReturn) {
-        cookieStore.delete(LITE_RETURN_COOKIE);
-        if (liteReturn.startsWith("/lite")) return NextResponse.redirect(`${origin}${liteReturn}`);
+      const liteNext = liteReturn?.startsWith("/lite") ? liteReturn : null;
+      if (liteReturn) cookieStore.delete(LITE_RETURN_COOKIE);
+
+      const guestSets = cookieStore.get(SWITCH_COOKIE)?.value;
+      if (guestSets != null) {
+        cookieStore.delete(SWITCH_COOKIE);
+        const q = new URLSearchParams({ guest_sets: guestSets, ...(liteNext ? { next: liteNext } : {}) });
+        return NextResponse.redirect(`${origin}/auth/confirm?${q}`);
       }
+      if (liteNext) return NextResponse.redirect(`${origin}${liteNext}`);
       // No forced onboarding: signing in goes straight in. Setting a goal and the diagnostic
       // are optional and reachable from home.
       return NextResponse.redirect(`${origin}${next}`);

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { saveGuestWithEmail, LITE_RETURN_COOKIE } from "@/lib/auth";
+import { LITE_RETURN_COOKIE } from "@/lib/auth";
 import { DOMAINS } from "@/lib/categories";
 import type { CategoryMastery } from "@/lib/mastery";
 import { LEVEL_COLOR, LevelDot } from "@/components/lite/pick-sheet";
@@ -12,6 +12,17 @@ import { ErrorNote, Glow, GoalRing, Loading, Skeleton, TabBar, api, goToFullSite
 const GOALS = [5, 10, 20, 30];
 
 interface NotebookRow { question_id: string; question: { stem: string; subcategory: string | null } | { stem: string; subcategory: string | null }[] | null }
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+      <path d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  );
+}
 
 const LEVEL_ORDER: CategoryMastery["level"][] = ["mastered", "strong", "weak", "not_started"];
 const LEVEL_NAME: Record<CategoryMastery["level"], string> = { mastered: "Mastered", strong: "Strong", weak: "Weak", not_started: "New" };
@@ -75,9 +86,7 @@ export default function LiteMe() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Save progress (guests)
-  const [formEmail, setFormEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Save progress (guests): Google only in Lite.
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -117,16 +126,6 @@ export default function LiteMe() {
     document.cookie = `${LITE_RETURN_COOKIE}=/lite/me; path=/; max-age=600; samesite=lax`;
     const { error: err } = await supabase.auth.linkIdentity({ provider: "google", options: { redirectTo: `${window.location.origin}/auth/callback` } });
     if (err) { setBusy(false); setSaveMsg(err.message); }
-  }
-
-  async function saveWithEmail() {
-    if (!formEmail.trim() || !password) { setSaveMsg("Enter an email and password."); return; }
-    setBusy(true);
-    setSaveMsg(null);
-    const result = await saveGuestWithEmail(supabase, formEmail.trim(), password);
-    setBusy(false);
-    if (result.kind === "signed_in") { window.location.reload(); return; }
-    setSaveMsg(result.kind === "error" ? result.message : `Check ${formEmail} for a confirmation link. Everything you've done is kept.`);
   }
 
   if (!me) return meError ? <main className="l-page"><ErrorNote message={meError} /></main> : <Loading />;
@@ -170,14 +169,11 @@ export default function LiteMe() {
             <Glow tone="rose" size={240} style={{ right: -90, top: -110 }} />
             <div style={{ position: "relative" }}>
               <p className="l-h2" style={{ fontSize: 22 }}>Save your progress</p>
-              <p className="l-sub" style={{ marginTop: 6 }}>Right now it lives only on this phone. Save it to an account to keep it and use it on the website too.</p>
+              <p className="l-sub" style={{ marginTop: 6 }}>Right now it lives only on this phone. Sign in to keep it and use it on the website too. Already have an account? This signs you in to it.</p>
             </div>
-            <button className="l-btn" onClick={saveWithGoogle} disabled={busy} style={{ position: "relative" }}>Continue with Google</button>
-            <input type="email" placeholder="Email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} autoComplete="email"
-              style={{ position: "relative", height: 52, borderRadius: 16, border: "1.5px solid var(--l-line2)", background: "#fff", padding: "0 16px", fontSize: 16, fontFamily: "inherit" }} />
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password"
-              style={{ position: "relative", height: 52, borderRadius: 16, border: "1.5px solid var(--l-line2)", background: "#fff", padding: "0 16px", fontSize: 16, fontFamily: "inherit" }} />
-            <button className="l-btn ghost" onClick={saveWithEmail} disabled={busy} style={{ position: "relative" }}>Save with email</button>
+            <button className="l-btn" onClick={saveWithGoogle} disabled={busy} style={{ position: "relative", gap: 10 }}>
+              <GoogleIcon />{busy ? "Opening Google…" : "Continue with Google"}
+            </button>
             {saveMsg && <p role="status" style={{ position: "relative", margin: 0, fontSize: 14, fontWeight: 600 }}>{saveMsg}</p>}
           </section>
         )}

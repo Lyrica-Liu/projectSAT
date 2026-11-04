@@ -57,6 +57,18 @@ html:has(.lite), body:has(.lite) {
 .lite button { font-family: inherit; cursor: pointer; }
 .lite button:disabled { cursor: default; }
 
+/* Behind the status bar and Dynamic Island in the installed app: frosted, tinted glass, so the
+   page shows through as it scrolls under (the way Safari does it), while the white clock and
+   battery iOS draws there stay readable. Exactly the status bar's height, so in Safari (which
+   draws its own bar, inset 0) and on laptops it doesn't show. */
+.l-statusbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50; pointer-events: none;
+  height: env(safe-area-inset-top);
+  background: linear-gradient(100deg, rgba(242, 84, 91, 0.72) 0%, rgba(217, 67, 127, 0.72) 50%, rgba(124, 77, 235, 0.72) 100%);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+}
+
 /* Phone-width column; on a laptop it sits centered like a phone screen. */
 .l-app {
   position: relative;
