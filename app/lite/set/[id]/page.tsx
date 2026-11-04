@@ -109,7 +109,7 @@ export default function LiteSet() {
   return (
     <>
       <main className="l-page no-tabs" style={{ paddingBottom: card.result ? "52dvh" : undefined }}>
-        <header data-no-advance style={{ position: "sticky", top: 0, zIndex: 5, background: "rgba(253,252,249,.92)", backdropFilter: "blur(8px)", margin: "-16px -20px 0", padding: "calc(env(safe-area-inset-top) + 12px) 20px 12px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <header data-no-advance style={{ position: "sticky", top: 0, zIndex: 5, background: "rgba(252,251,248,.92)", backdropFilter: "blur(8px)", margin: "-16px -20px 0", padding: "calc(env(safe-area-inset-top) + 12px) 20px 12px", display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", gap: 3 }} aria-label={`Question ${index + 1} of ${cards.length}`}>
             {cards.map((c, i) => (
               <span key={c.answerId} style={{ flex: 1, height: 4, borderRadius: 2, background: i === index ? "var(--l-accent)" : c.result ? "var(--l-ink)" : "var(--l-line)" }} />

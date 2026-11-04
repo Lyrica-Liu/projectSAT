@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Instrument_Sans } from "next/font/google";
 import { LiteSession } from "@/components/lite/session";
 import "./lite.css";
 
-const geist = Geist({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-geist" });
+// The website's two fonts: Instrument Sans (loaded here with the bold weights Lite's buttons and
+// numbers use) and Source Serif 4 (already loaded by the root layout).
+const sans = Instrument_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-lite-sans" });
 
 export const metadata: Metadata = {
   title: "800Path Lite",
@@ -16,13 +18,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fdfcf9",
+  themeColor: "#fcfbf8",
   viewportFit: "cover",
 };
 
 export default function LiteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`lite ${geist.variable}`}>
+    <div className={`lite ${sans.variable}`}>
       <div className="l-app">
         <LiteSession>{children}</LiteSession>
       </div>

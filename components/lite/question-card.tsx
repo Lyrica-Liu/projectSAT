@@ -151,7 +151,7 @@ export function ExplanationSheet({ card, onNext, nextLabel = "Next", busy = fals
       <p className="l-h2" style={{ color: r.correct ? "var(--l-right)" : "var(--l-wrong)" }}>
         {r.correct ? ["Nice!", "Correct!", "Got it!", "Nailed it!"][card.position % 4] : `Not quite: it's ${r.answer}`}
       </p>
-      <p style={{ fontSize: 15, lineHeight: 1.55, color: "var(--l-text2)", margin: "10px 0 18px", whiteSpace: "pre-wrap" }}>{r.explanation}</p>
+      <p style={{ fontFamily: "var(--l-serif)", fontSize: 16, lineHeight: 1.55, color: "var(--l-text2)", margin: "10px 0 18px", whiteSpace: "pre-wrap" }}>{r.explanation}</p>
       <button className="l-btn" onClick={onNext} disabled={busy}>{busy ? "Loading…" : nextLabel}</button>
       <p style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--l-faint)", margin: "10px 0 0" }}>or tap anywhere to continue</p>
     </div>
