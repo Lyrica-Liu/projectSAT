@@ -110,6 +110,7 @@ function Study({ deck, onDone }: { deck: Card[]; onDone: (tally: { got: number; 
 
       {/* Card and buttons sit centered in the space under the header. */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div className="l-deck-clip">
       <div className="l-deck">
         {remainingBehind > 1 && <div className="l-deck-under u2" />}
         {remainingBehind > 0 && <div className="l-deck-under u1" />}
@@ -155,6 +156,7 @@ function Study({ deck, onDone }: { deck: Card[]; onDone: (tally: { got: number; 
 
         <button className="l-arrow prev" onClick={prev} disabled={index === 0 || moving} aria-label="Previous card"><Chevron dir="left" /></button>
         <button className="l-arrow next" onClick={next} disabled={moving || (index === cards.length - 1 && !cards.every((c) => graded[c.word]))} aria-label="Next card"><Chevron dir="right" /></button>
+      </div>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginTop: 8 }}>

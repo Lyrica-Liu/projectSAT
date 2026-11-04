@@ -174,6 +174,8 @@ const TABS: { href: string; label: string; icon: React.ReactNode }[] = [
 
 export function TabBar() {
   const pathname = usePathname();
+  // Each tab starts flush left, even if something ever nudged the page sideways.
+  useEffect(() => { if (window.scrollX) window.scrollTo(0, window.scrollY); }, [pathname]);
   return (
     <nav className="l-tabbar" aria-label="Lite">
       {TABS.map((t) => (

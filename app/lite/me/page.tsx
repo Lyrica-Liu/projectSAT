@@ -13,6 +13,57 @@ const GOALS = [5, 10, 20, 30];
 
 interface NotebookRow { question_id: string; question: { stem: string; subcategory: string | null } | { stem: string; subcategory: string | null }[] | null }
 
+const LEVEL_ORDER: CategoryMastery["level"][] = ["mastered", "strong", "weak", "not_started"];
+const LEVEL_NAME: Record<CategoryMastery["level"], string> = { mastered: "Mastered", strong: "Strong", weak: "Weak", not_started: "New" };
+
+function SkillChip({ m }: { m: CategoryMastery }) {
+  return (
+    <span className="l-chip" style={{ background: "#fff", border: "1px solid var(--l-line)", color: "var(--l-ink)", fontWeight: 600 }}>
+      <LevelDot level={m.level} />{m.subcategory}
+    </span>
+  );
+}
+
+/**
+ * Skill levels at a glance instead of fifteen stacked bars: one bar showing the mix of levels,
+ * the three skills to work on next, and every skill as small chips behind "See all".
+ */
+function SkillSummary({ mastery }: { mastery: CategoryMastery[] }) {
+  const [open, setOpen] = useState(false);
+  const counts = LEVEL_ORDER.map((level) => ({ level, n: mastery.filter((m) => m.level === level).length })).filter((c) => c.n > 0);
+  // Weakest skills they've started first; untouched ones only if there aren't three of those.
+  const started = mastery.filter((m) => m.level !== "not_started" && m.level !== "mastered").sort((a, b) => a.score - b.score);
+  const next = [...started, ...mastery.filter((m) => m.level === "not_started")].slice(0, 3);
+  const ordered = DOMAINS.flatMap((d) => d.categories).map((c) => mastery.find((m) => m.subcategory === c.subcategory)).filter((m): m is CategoryMastery => !!m);
+
+  return (
+    <section className="l-tile" style={{ display: "flex", flexDirection: "column", gap: 14, padding: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <p className="l-eyebrow">Skill levels</p>
+        <button className="l-link" style={{ fontSize: 14 }} onClick={() => setOpen((o) => !o)} aria-expanded={open}>{open ? "Show less" : `See all ${mastery.length}`}</button>
+      </div>
+      <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", gap: 2 }} role="img"
+        aria-label={counts.map((c) => `${c.n} ${LEVEL_NAME[c.level].toLowerCase()}`).join(", ")}>
+        {counts.map((c) => <span key={c.level} style={{ flex: c.n, background: LEVEL_COLOR(c.level) }} />)}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
+        {counts.map((c) => (
+          <span key={c.level} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--l-muted)" }}>
+            <LevelDot level={c.level} /><b style={{ color: "var(--l-ink)" }}>{c.n}</b> {LEVEL_NAME[c.level]}
+          </span>
+        ))}
+      </div>
+      {!open && next.length > 0 && (
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "var(--l-muted)", margin: "0 0 8px" }}>Work on next</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{next.map((m) => <SkillChip key={m.subcategory} m={m} />)}</div>
+        </div>
+      )}
+      {open && <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{ordered.map((m) => <SkillChip key={m.subcategory} m={m} />)}</div>}
+    </section>
+  );
+}
+
 /** Me: streak and daily goal, skill levels, the mistake notebook, and the account. */
 export default function LiteMe() {
   const router = useRouter();
@@ -79,7 +130,6 @@ export default function LiteMe() {
   }
 
   if (!me) return meError ? <main className="l-page"><ErrorNote message={meError} /></main> : <Loading />;
-  const levels = new Map((mastery ?? []).map((m) => [m.subcategory, m]));
   const email = me.email;
   const displayName = me.isAnonymous ? "Guest" : me.name ?? email?.split("@")[0] ?? "You";
 
@@ -132,28 +182,7 @@ export default function LiteMe() {
           </section>
         )}
 
-        <section>
-          <p className="l-eyebrow" style={{ marginBottom: 6 }}>Skill levels</p>
-          {!mastery ? <Skeleton height={120} /> : DOMAINS.map((d) => (
-            <div key={d.domain} style={{ marginTop: 10 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "var(--l-muted)", margin: "0 0 2px" }}>{d.domain}</p>
-              {d.categories.filter((c) => levels.has(c.subcategory)).map((c) => {
-                const m = levels.get(c.subcategory)!;
-                return (
-                  <div key={c.subcategory} style={{ padding: "8px 0" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, fontWeight: 600 }}>
-                      <LevelDot level={m.level} /><span style={{ flex: 1 }}>{c.subcategory}</span>
-                      <span style={{ color: "var(--l-faint)", fontSize: 13 }}>{m.level === "not_started" ? "—" : `${m.score}%`}</span>
-                    </div>
-                    <div style={{ height: 6, borderRadius: 3, background: "var(--l-soft2)", marginTop: 6 }}>
-                      <div style={{ width: `${m.score}%`, height: 6, borderRadius: 3, background: LEVEL_COLOR(m.level) }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </section>
+        {!mastery ? <Skeleton height={150} /> : <SkillSummary mastery={mastery} />}
 
         <section>
           <p className="l-eyebrow" style={{ marginBottom: 6 }}>Mistake notebook</p>

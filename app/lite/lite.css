@@ -46,6 +46,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 .lite *, .lite *::before, .lite *::after { box-sizing: border-box; }
+
+/* Lite owns the whole screen: white edge to edge (behind the Dynamic Island, the home bar and
+   Safari's toolbars, where the website's paper color used to show), and no sideways scrolling. */
+html:has(.lite), body:has(.lite) {
+  background: var(--l-canvas, #fff);
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
 .lite button { font-family: inherit; cursor: pointer; }
 .lite button:disabled { cursor: default; }
 
@@ -55,7 +63,7 @@
   max-width: 480px;
   min-height: 100dvh;
   margin: 0 auto;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 .l-page {
   position: relative;
@@ -157,8 +165,12 @@
 @keyframes l-fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* Flashcards: a deck with cards peeking behind, a lifted 3D flip, cards tossed aside. */
+/* Full-width strip that clips the deck. iOS Safari lets 3D-transformed cards (mid-flip, or
+   tossed aside) escape ordinary overflow clipping and widen the page, so this clips on its own
+   compositing layer. Nothing position:fixed lives inside it, so the transform is safe. */
+.l-deck-clip { margin: 0 -20px; padding: 4px 20px 34px; overflow: hidden; isolation: isolate; transform: translateZ(0); }
 /* Fills the phone's height (minus header and buttons), within sensible limits. */
-.l-deck { position: relative; height: clamp(340px, calc(100dvh - 300px), 500px); margin: 4px 0 28px; }
+.l-deck { position: relative; height: clamp(340px, calc(100dvh - 300px), 500px); }
 .l-deck-under {
   position: absolute; inset: 0; border-radius: 30px; background: #fff; border: 1.5px solid var(--l-line);
   box-shadow: 0 10px 30px rgba(17, 17, 20, 0.05); transition: transform 0.3s ease;
@@ -185,6 +197,18 @@
 }
 .l-flash-face.front { background: var(--l-gradient-soft); align-items: center; justify-content: center; text-align: center; }
 .l-flash-face.back { transform: rotateY(180deg); justify-content: center; gap: 16px; }
+/* Safari doesn't reliably hide a face turned away (backface-visibility), so whichever face is
+   away is hidden outright, swapping exactly halfway through the flip, when the card is edge-on. */
+/* End states (also what reduced-motion users get); the animations below run the swap. */
+.l-flash-inner.front .l-flash-face.back,
+.l-flash-inner.to-front .l-flash-face.back,
+.l-flash-inner.to-back .l-flash-face.front { visibility: hidden; }
+.l-flash-inner.to-back .l-flash-face.front { animation: l-face-out 0.56s forwards; }
+.l-flash-inner.to-back .l-flash-face.back { animation: l-face-in 0.56s forwards; }
+.l-flash-inner.to-front .l-flash-face.back { animation: l-face-out 0.56s forwards; }
+.l-flash-inner.to-front .l-flash-face.front { animation: l-face-in 0.56s forwards; }
+@keyframes l-face-out { 0%, 49% { visibility: visible; } 50%, 100% { visibility: hidden; } }
+@keyframes l-face-in { 0%, 49% { visibility: hidden; } 50%, 100% { visibility: visible; } }
 /* Small airy arrows on the deck's sides */
 .l-arrow {
   position: absolute; top: 50%; z-index: 3; width: 40px; height: 40px; margin-top: -20px; border-radius: 50%;
