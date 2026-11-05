@@ -65,7 +65,7 @@ export function ResumeCard({ style }: { style?: React.CSSProperties }) {
         </p>
       </div>
       <Link href={`/practice/${unfinished.id}`} style={{
-        flexShrink: 0, background: "var(--brand)", color: "var(--text-on-brand)",
+        flexShrink: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)",
         fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "12px 24px", borderRadius: "var(--radius-lg)",
       }}>
         Resume

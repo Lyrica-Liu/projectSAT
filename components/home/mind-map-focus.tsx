@@ -223,7 +223,7 @@ function StartButton({ m, tier, starting, onStart, label }: { m: CategoryMastery
       onClick={() => onStart(m)}
       disabled={!!starting}
       style={{
-        border: "none", borderRadius: 999, padding: "10px 18px", cursor: starting ? "default" : "pointer", background: "var(--brand)",
+        border: "none", borderRadius: 999, padding: "10px 18px", cursor: starting ? "default" : "pointer", background: "var(--brand-fill)",
         color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 13, opacity: starting && starting !== m.subcategory ? 0.5 : 1,
       }}
     >
@@ -261,7 +261,7 @@ function SkillAnalysis({ m, tier, history, starting, onStart }: { m: CategoryMas
                 <div key={t} style={{ display: "grid", gridTemplateColumns: "96px 1fr 40px", alignItems: "center", gap: 10 }}>
                   <span style={{ fontSize: 12, color: here ? "var(--text-strong)" : "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 6 }}>
                     {DIFFICULTY_LABELS[t]}
-                    {here && <span title="The tier you're practicing at" style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", padding: "1px 6px", borderRadius: 99, background: "var(--brand)", color: "var(--text-on-brand)" }}>now</span>}
+                    {here && <span title="The tier you're practicing at" style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", padding: "1px 6px", borderRadius: 99, background: "var(--brand-fill)", color: "var(--text-on-brand)" }}>now</span>}
                   </span>
                   <span style={{ height: 8, borderRadius: 99, background: "var(--surface-2)", overflow: "hidden" }}>
                     <span className="mm-bar" style={{ display: "block", height: "100%", width: `${pct(p)}%`, borderRadius: 99, background: p < WEAK_BELOW ? "var(--claret-500)" : p >= MASTERED_AT ? "var(--moss-600)" : "var(--moss-500)" }} />

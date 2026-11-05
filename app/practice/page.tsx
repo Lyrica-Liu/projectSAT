@@ -285,7 +285,7 @@ export default function PracticeSetupPage() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "40px 0 0" }}>
               <button onClick={startSession} disabled={selected.size === 0 || loading} style={{
-                border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                 fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)",
                 cursor: selected.size === 0 || loading ? "default" : "pointer",
                 opacity: selected.size === 0 || loading ? 0.5 : 1,

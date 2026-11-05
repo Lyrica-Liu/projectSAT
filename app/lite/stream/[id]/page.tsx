@@ -144,7 +144,7 @@ export default function LiteStream() {
         <Glow tone="violet" size={380} style={{ right: -160, top: -60 }} />
         <main className="l-page no-tabs" style={{ minHeight: "100dvh" }}>
           <div style={{ textAlign: "center", marginTop: 40 }}>
-            <span className="l-chip" style={{ background: "rgba(255,255,255,.85)", fontSize: 14 }}>Nice session</span>
+            <span className="l-chip" style={{ background: "rgba(255,255,255,.85)", fontSize: 14 }}>{pct >= 80 ? "Great session" : pct >= 50 ? "Nice session" : "Every miss is a lesson"}</span>
             <div className="l-big-num" style={{ fontSize: 104, marginTop: 18 }}>{recap.correct}<span style={{ color: "var(--l-dim)" }}>/{recap.answered}</span></div>
             <p style={{ fontSize: 17, fontWeight: 600, margin: "12px 0 0" }}>{pct}% right</p>
           </div>

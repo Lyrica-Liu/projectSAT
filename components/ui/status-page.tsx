@@ -23,7 +23,7 @@ export function StatusPage({ eyebrow, title, body, children }: {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, flexWrap: "wrap" }}>
             {children}
             <Link href="/dashboard" style={{
-              background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+              background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
               fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
             }}>
               Go to your dashboard

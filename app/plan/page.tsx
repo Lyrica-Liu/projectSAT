@@ -246,7 +246,7 @@ export default function PlanPage() {
                     onClick={() => applyAdjust(subject)}
                     disabled={count === 0 || applying === subject || (skip[subject].length === 0 && reduce[subject].length === 0)}
                     style={{
-                      marginTop: 14, border: 0, background: "var(--dark-900)", color: "var(--text-on-dark)",
+                      marginTop: 14, border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)",
                       fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500, padding: "10px 18px", borderRadius: "var(--radius-md)",
                       cursor: count === 0 ? "default" : "pointer", opacity: count === 0 || applying === subject ? 0.5 : 1,
                     }}
@@ -288,7 +288,7 @@ export default function PlanPage() {
                   if (isToday) {
                     const todayEditable = isEditable(d);
                     return (
-                      <div key={d} ref={todayRef} style={{ margin: "18px 0 22px", background: "var(--dark-900)", color: "var(--text-on-dark)", borderRadius: "var(--radius-2xl)", padding: "40px 44px 38px" }}>
+                      <div key={d} ref={todayRef} className="pw-glass" style={{ margin: "18px 0 22px", color: "var(--text-on-dark)", borderRadius: "var(--radius-2xl)", padding: "40px 44px 38px" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, margin: "0 0 26px" }}>
                           <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-on-dark-faint)" }}>Today · Day {d} of 30 · {subj}</span>
                           {todayEditable && (
@@ -314,7 +314,7 @@ export default function PlanPage() {
                         </div>
                         <h2 style={{ fontWeight: 400, fontSize: 36, lineHeight: 1.08, letterSpacing: "-0.024em", color: "var(--text-on-dark)", margin: "0 0 16px", maxWidth: "22ch", textWrap: "pretty" }}>{focus}</h2>
                         <p style={{ fontSize: 16, lineHeight: 1.66, color: "var(--text-on-dark-muted)", margin: "0 0 32px", maxWidth: "46ch" }}>Steady work compounds. Settle in, take the questions one at a time, and let today&apos;s module do its job.</p>
-                        <button onClick={() => router.push(`/plan/${d}`)} style={{ border: 0, background: "var(--text-on-dark)", color: "var(--dark-900)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+                        <button onClick={() => router.push(`/plan/${d}`)} style={{ border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
                           Begin Day {d}
                         </button>
                       </div>
@@ -394,7 +394,7 @@ export default function PlanPage() {
                 {Math.min(currentDay, 30)}<span style={{ fontSize: 18, color: "var(--text-faint)" }}> / 30</span>
               </p>
               <div style={{ height: 2, background: "var(--surface-2)", margin: "20px 0 0" }}>
-                <div style={{ width: `${Math.round((doneCt / 30) * 100)}%`, height: "100%", background: "var(--brand)" }} />
+                <div style={{ width: `${Math.round((doneCt / 30) * 100)}%`, height: "100%", background: "var(--brand-fill)" }} />
               </div>
               <div style={{ display: "flex", gap: 32, margin: "22px 0 0" }}>
                 <span><span style={{ fontFamily: "var(--font-sans)", fontSize: 20, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{streak}</span><span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", display: "block", marginTop: 4 }}>day streak</span></span>

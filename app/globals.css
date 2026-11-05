@@ -117,8 +117,11 @@
   --danger-surface:  var(--coral-50);
 
   /* ── Aliases ── */
-  --brand:            var(--dark-900);
-  --brand-hover:      var(--dark-700);
+  /* Primary actions wear Lite's gradient instead of black (--brand-fill); --brand is the solid
+     stand-in where a gradient can't go (accent colors, the design system's own buttons). */
+  --brand:            #c23f66;
+  --brand-hover:      #a3324f;
+  --brand-fill:       linear-gradient(135deg, #ec6250 0%, #da4778 52%, #7f55e0 100%);
   --brand-soft:       var(--surface-2);
   --brand-ink:        var(--dark-950);
   --mark:             var(--wine-500);
@@ -131,7 +134,7 @@
   --text-body:        var(--ink-700);
   --text-muted:       var(--ink-500);
   --text-faint:       var(--ink-400);
-  --text-on-brand:    #f6f4ef;
+  --text-on-brand:    #ffffff;
   --border:           var(--line);
   --border-strong:    var(--line-strong);
   --surface-card:     var(--surface);
@@ -311,17 +314,51 @@
   margin: 0;
 }
 
-/* Signed-in pages: Lite's soft coral and violet glows, very faint, fixed behind the content. */
-body:has(.pw-sidebar) {
+/* Every website page (not Lite, which has its own): Lite's soft coral and violet glows, very
+   faint, fixed behind the content. */
+body:not(:has(.lite)) {
   background-image:
     radial-gradient(720px 480px at 92% -8%, rgba(224, 74, 115, 0.075), transparent 70%),
     radial-gradient(640px 460px at 18% 108%, rgba(132, 88, 232, 0.06), transparent 70%),
     radial-gradient(520px 380px at 40% -12%, rgba(240, 102, 79, 0.05), transparent 70%);
   background-attachment: fixed;
 }
-/* Each signed-in page wraps the sidebar and its content in a full-height canvas-colored box;
-   let the glow above show through it. */
-:has(> .pw-sidebar) { background-color: transparent !important; }
+/* Pages wrap their content in a full-height canvas-colored box; let the glow above show
+   through it (signed-in pages, plus the public ones that opt in with .pw-page). */
+:has(> .pw-sidebar), .pw-page { background-color: transparent !important; }
+
+/* Liquid glass: frosted, translucent white over the color wash. The website's panels use this
+   where they used to be solid charcoal. */
+.pw-glass {
+  background: rgba(255, 255, 255, 0.58);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 18px 50px rgba(90, 50, 140, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+/* The soft coral → rose → violet wash with glows, for side panels (onboarding, sign-in). */
+.pw-wash {
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(420px 380px at 12% 8%, rgba(240, 102, 79, 0.28), transparent 70%),
+    radial-gradient(460px 420px at 92% 38%, rgba(224, 74, 115, 0.22), transparent 70%),
+    radial-gradient(520px 460px at 30% 100%, rgba(132, 88, 232, 0.26), transparent 70%),
+    linear-gradient(160deg, #fdf3ef 0%, #fbeff4 50%, #f3effd 100%);
+}
+/* Inside glass and wash panels the "on dark" text tokens resolve to ink, so panels that used to
+   be charcoal keep their markup and read correctly on the light glass. */
+.pw-glass, .pw-wash {
+  --text-on-dark: var(--text-strong);
+  --text-on-dark-muted: var(--text-muted);
+  --text-on-dark-faint: var(--text-faint);
+  --dark-700: rgba(32, 31, 28, 0.14);
+  --dark-border: rgba(32, 31, 28, 0.12);
+}
+
+/* Primary buttons in the gradient: a soft colored lift on hover. */
+.pw-cta { box-shadow: 0 6px 18px rgba(218, 71, 120, 0.22); transition: box-shadow 0.18s, transform 0.12s, filter 0.18s; }
+.pw-cta:hover:not(:disabled) { filter: brightness(1.05); box-shadow: 0 10px 26px rgba(218, 71, 120, 0.3); }
+.pw-cta:active:not(:disabled) { transform: translateY(1px); }
 
 /* Sidebar hover-expand — 66px spine widens to 218px, labels fade in. `.pw-sidebar-intro`
    forces the same expanded state without a hover, so a brand-new user sees the labelled

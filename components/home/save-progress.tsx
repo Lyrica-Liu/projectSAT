@@ -68,7 +68,7 @@ export function SaveProgressPrompt({
           </p>
         </div>
         <button onClick={() => setOpen(true)} style={{
-          flexShrink: 0, border: 0, background: "var(--brand)", color: "var(--text-on-brand)",
+          flexShrink: 0, border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)",
           fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "12px 24px",
           borderRadius: "var(--radius-lg)", cursor: "pointer",
         }}>
@@ -85,7 +85,7 @@ export function SaveProgressPrompt({
                 <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: "0 0 28px" }}>
                   We sent a confirmation link to <strong style={{ color: "var(--text-strong)" }}>{email}</strong>. Once you confirm it, everything you&apos;ve done here is safely yours.
                 </p>
-                <button onClick={() => { setOpen(false); setAwaitingConfirm(false); }} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+                <button onClick={() => { setOpen(false); setAwaitingConfirm(false); }} style={{ border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
                   Done
                 </button>
               </>
@@ -116,7 +116,7 @@ export function SaveProgressPrompt({
                 {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: "10px 0 0" }}>{error}</p>}
                 <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 24 }}>
                   <button onClick={createWithEmail} disabled={loading} style={{
-                    border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                    border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                     fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
                     cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1,
                   }}>

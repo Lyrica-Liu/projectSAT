@@ -125,7 +125,7 @@ function CTAButton({ onClick, busy = false }: { onClick: () => void; busy?: bool
   return (
     <div>
       <button onClick={onClick} disabled={busy} style={{
-        display: "inline-flex", alignItems: "center", background: "var(--brand)", color: "var(--text-on-brand)",
+        display: "inline-flex", alignItems: "center", background: "var(--brand-fill)", color: "var(--text-on-brand)",
         fontFamily: "var(--font-sans)", fontSize: 17, fontWeight: 600, padding: "19px 36px",
         borderRadius: "var(--radius-lg)", border: "none", cursor: "pointer", transition: "background 0.16s",
         boxShadow: "0 10px 26px rgba(32,31,28,.16)", opacity: busy ? 0.7 : 1,
@@ -151,9 +151,9 @@ const MOCKUP_VISIBLE_TRANSFORM = "rotate(0deg) scale(1) translateY(0)";
 const MOCKUP_POP_EASE = "cubic-bezier(0.34, 1.76, 0.64, 1)";
 
 /** Wraps `children` in the "photo straightens and pops up" reveal — reused by both mockups so they animate identically. */
-function PhotoReveal({ visible, style, children }: { visible: boolean; style?: React.CSSProperties; children: React.ReactNode }) {
+function PhotoReveal({ visible, style, className, children }: { visible: boolean; style?: React.CSSProperties; className?: string; children: React.ReactNode }) {
   return (
-    <div style={{
+    <div className={className} style={{
       willChange: "transform, opacity",
       opacity: visible ? 1 : 0, transform: visible ? MOCKUP_VISIBLE_TRANSFORM : MOCKUP_HIDDEN_TRANSFORM,
       transition: `opacity 0.7s ${MOCKUP_POP_EASE}, transform 1.1s ${MOCKUP_POP_EASE}`,
@@ -307,7 +307,7 @@ function SampleQuestion({ onBegin }: { onBegin: () => void }) {
             <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--text-body)", margin: 0 }}>{q.why}</p>
             <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", margin: "18px 0 0" }}>
               <button onClick={onBegin} style={{
-                background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600,
+                background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600,
                 padding: "12px 22px", borderRadius: "var(--radius-md)", border: "none", cursor: "pointer",
               }}>Start practicing</button>
               <button onClick={() => setPicked(null)} style={{
@@ -369,9 +369,9 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div style={{ background: "var(--canvas)", minHeight: "100vh", fontFamily: "var(--font-serif)", color: "var(--text-body)", overflowX: "hidden" }}>
+    <div className="pw-page" style={{ background: "var(--canvas)", minHeight: "100vh", fontFamily: "var(--font-serif)", color: "var(--text-body)", overflowX: "hidden" }}>
 
-      <nav style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(246,244,239,.94)", backdropFilter: "blur(8px)", borderBottom: "1px solid var(--border)" }}>
+      <nav style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(252,251,248,.72)", backdropFilter: "blur(16px) saturate(1.4)", borderBottom: "1px solid var(--border)" }}>
         <div style={{ maxWidth: 1220, margin: "0 auto", padding: "0 40px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", height: 58 }}>
           <span />
           <span style={{ display: "inline-flex", alignItems: "center", gap: 12, justifySelf: "center" }}>
@@ -399,7 +399,7 @@ export default function LandingPage() {
           </div>
 
           <div ref={heroMockupRef}>
-            <PhotoReveal visible={heroMockupVisible} style={{ background: "var(--dark-900)", borderRadius: "var(--radius-xl)", padding: 8, boxShadow: "0 24px 60px rgba(32,31,28,.14)" }}>
+            <PhotoReveal visible={heroMockupVisible} className="pw-glass" style={{ borderRadius: "var(--radius-xl)", padding: 8 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px 12px", fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-on-dark-faint)" }}>
                 <span style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}>Words in Context · Medium</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 12 }}>

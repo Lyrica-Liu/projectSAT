@@ -331,7 +331,7 @@ export default function ResultsPage() {
         {mapInfo?.sprintReward && <SprintReward title={mapInfo.sprintReward.title} tiles={mapInfo.sprintReward.tiles} style={{ margin: "36px 0 0" }} />}
 
         {/* Right after finishing a set is when a guest has the most to lose, so ask here too, not just on the dashboard. */}
-        {isAnonymous && <SaveProgressPrompt headline="Nice work. Save it so this set isn't lost." style={{ margin: "36px 0 0" }} />}
+        {isAnonymous && <SaveProgressPrompt headline={score >= 60 ? "Nice work. Save it so this set isn't lost." : "Save this set so it isn't lost."} style={{ margin: "36px 0 0" }} />}
 
         {mapInfo?.change && (() => {
           const { before, after } = mapInfo.change;
@@ -385,7 +385,7 @@ export default function ResultsPage() {
               <span style={{ display: "inline-flex", alignItems: "center", gap: 16 }}>
                 {wrongNotInNotebook.length > 0 && (
                   <button onClick={() => addToNotebook(wrongNotInNotebook)} disabled={notebookBusy} style={{
-                    display: "inline-flex", alignItems: "center", gap: 6, border: 0, background: "var(--brand)", color: "var(--text-on-brand)",
+                    display: "inline-flex", alignItems: "center", gap: 6, border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)",
                     fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500, padding: "10px 18px", borderRadius: "var(--radius-md)",
                     cursor: notebookBusy ? "default" : "pointer", opacity: notebookBusy ? 0.6 : 1,
                   }}>
@@ -504,7 +504,7 @@ export default function ResultsPage() {
               <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "10px 0 0" }}>Opens tomorrow</p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-              <button onClick={() => router.push("/plan")} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+              <button onClick={() => router.push("/plan")} style={{ border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
                 Back to my plan
               </button>
               <button onClick={() => router.push("/dashboard")} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)", cursor: "pointer", padding: 0 }}>
@@ -514,7 +514,7 @@ export default function ResultsPage() {
           </div>
         ) : (
           <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "64px 0 0" }}>
-            <button onClick={() => router.push("/practice")} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+            <button onClick={() => router.push("/practice")} style={{ border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
               Practice again
             </button>
             <button onClick={() => router.push("/dashboard")} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)", cursor: "pointer", padding: 0 }}>

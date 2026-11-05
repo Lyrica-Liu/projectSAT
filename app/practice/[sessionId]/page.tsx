@@ -736,7 +736,7 @@ export default function ActiveSessionPage() {
           </span>
         </div>
         <div style={{ height: 2, background: "var(--surface-2)" }}>
-          <div style={{ width: `${sessionTarget > 0 ? (answeredCount / sessionTarget) * 100 : 0}%`, height: "100%", background: "var(--brand)", transition: "width 0.4s var(--ease-out)" }} />
+          <div style={{ width: `${sessionTarget > 0 ? (answeredCount / sessionTarget) * 100 : 0}%`, height: "100%", background: "var(--brand-fill)", transition: "width 0.4s var(--ease-out)" }} />
         </div>
       </header>
 
@@ -985,7 +985,7 @@ export default function ActiveSessionPage() {
                       </span>
                     )}
                     <button onClick={requestFinish} disabled={submitting} style={{
-                      border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                      border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                       fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
                       cursor: submitting ? "default" : "pointer", opacity: submitting ? 0.5 : 1,
                     }}>
@@ -994,7 +994,7 @@ export default function ActiveSessionPage() {
                     </>
                   ) : (
                     <button onClick={goNext} disabled={generatingNext} style={{
-                      border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                      border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                       fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)",
                       cursor: generatingNext ? "default" : "pointer", opacity: generatingNext ? 0.5 : 1,
                     }}>
@@ -1031,7 +1031,7 @@ export default function ActiveSessionPage() {
               ))}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-              <button onClick={() => { const first = blankOnFinish[0]; setBlankOnFinish(null); jumpTo(first - 1); }} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+              <button onClick={() => { const first = blankOnFinish[0]; setBlankOnFinish(null); jumpTo(first - 1); }} style={{ border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
                 Go to question {blankOnFinish[0]}
               </button>
               <button onClick={() => { setBlankOnFinish(null); finishSession(); }} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-faint)", cursor: "pointer", padding: 0 }}>
@@ -1060,7 +1060,7 @@ export default function ActiveSessionPage() {
                 : `You've answered ${answeredCount} of ${sessionTarget}, and your answers are saved. You can pick it up again from your home screen.`}
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-              <button onClick={() => setShowExit(false)} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+              <button onClick={() => setShowExit(false)} style={{ border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "13px 26px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
                 Keep going
               </button>
               <button onClick={leaveSession} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-faint)", cursor: "pointer", padding: 0 }}>

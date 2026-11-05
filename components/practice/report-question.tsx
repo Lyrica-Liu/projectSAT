@@ -104,7 +104,7 @@ export function ReportQuestionButton({ questionId }: { questionId: string }) {
 
             <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 18 }}>
               <button onClick={submit} disabled={!reason || sending} style={{
-                border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                 fontSize: 14, fontWeight: 500, padding: "11px 22px", borderRadius: "var(--radius-lg)",
                 cursor: !reason || sending ? "default" : "pointer", opacity: !reason || sending ? 0.5 : 1,
               }}>

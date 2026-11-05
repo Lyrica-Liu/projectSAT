@@ -108,7 +108,7 @@ function ConfirmAccount() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={info.avatarUrl} alt="" width={44} height={44} referrerPolicy="no-referrer" style={{ borderRadius: "50%" }} />
             ) : (
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--brand)", color: "var(--text-on-brand)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-sans)", fontSize: 18 }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--brand-fill)", color: "var(--text-on-brand)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-sans)", fontSize: 18 }}>
                 {(name || info.email).charAt(0).toUpperCase()}
               </div>
             )}
@@ -147,7 +147,7 @@ function ConfirmAccount() {
 
         <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", marginTop: 28 }}>
           <button onClick={confirm} disabled={busy} style={{
-            border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+            border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
             fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)",
             cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
           }}>

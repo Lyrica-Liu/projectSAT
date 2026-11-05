@@ -53,7 +53,7 @@ export function NextUpCard({ suggestion, style }: { suggestion: Suggestion; styl
         {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "10px 0 0" }}>{error}</p>}
       </div>
       <button onClick={go} disabled={busy} style={{
-        position: "relative", flexShrink: 0, border: 0, background: "var(--brand)", color: "var(--text-on-brand)",
+        position: "relative", flexShrink: 0, border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)",
         fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 500, padding: "15px 28px",
         borderRadius: 999, cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1,
       }}>

@@ -337,13 +337,13 @@ export default function OnboardingPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
+    <div className="pw-page" style={{ minHeight: "100vh", display: "flex", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
 
       {/* Left brand panel */}
-      <aside style={{
-        position: "relative", flex: "0 0 40%", minWidth: 340, maxWidth: 520,
-        overflow: "hidden", display: "flex", flexDirection: "column",
-        justifyContent: "space-between", padding: "44px 48px", background: "var(--dark-900)",
+      <aside className="pw-wash" style={{
+        flex: "0 0 40%", minWidth: 340, maxWidth: 520,
+        display: "flex", flexDirection: "column",
+        justifyContent: "space-between", padding: "44px 48px",
       }}>
         <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <Wordmark dark />
@@ -377,8 +377,8 @@ export default function OnboardingPage() {
             <span style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-on-dark-faint)" }}>{stepLabel}</span>
             <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-on-dark-muted)", fontVariantNumeric: "tabular-nums" }}>{barPct}%</span>
           </div>
-          <div style={{ height: 2, background: "var(--dark-border)", overflow: "hidden" }}>
-            <span style={{ display: "block", height: "100%", background: "var(--text-on-dark)", width: `${barPct}%`, transition: "width 0.3s var(--ease-out)" }} />
+          <div style={{ height: 3, borderRadius: 2, background: "var(--dark-border)", overflow: "hidden" }}>
+            <span style={{ display: "block", height: "100%", background: "var(--brand-fill)", width: `${barPct}%`, transition: "width 0.3s var(--ease-out)" }} />
           </div>
         </div>
       </aside>
@@ -485,7 +485,7 @@ export default function OnboardingPage() {
               </p>
 
               {/* Mini reading-desk mockup — timed, one question at a time */}
-              <div style={{ background: "var(--dark-900)", borderRadius: "var(--radius-xl)", padding: 8, marginBottom: 12 }}>
+              <div className="pw-glass" style={{ borderRadius: "var(--radius-xl)", padding: 8, marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px 10px", fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-on-dark-faint)" }}>
                   <span style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}>Day 4 · English</span>
                   <span style={{ display: "flex", alignItems: "center", gap: 10 }}>

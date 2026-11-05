@@ -643,9 +643,10 @@ function RootNode({ mastery, started, hidden, onSelect }: { mastery: CategoryMas
         </svg>
         <button data-node="root" onClick={onSelect} aria-label={`Your SAT: ${started} of ${mastery.length} skills started. Show details.`} className={`mm-root-disc${hidden ? " mm-hidden" : ""}`} style={{
           position: "absolute", left: 30, top: 30, width: 120, height: 120, borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "var(--font-serif)",
-          background: "radial-gradient(circle at 35% 30%, #3a3833 0%, var(--brand) 60%, #141310 100%)",
+          // Lite's gradient circle: a glassy coral → rose → violet orb.
+          background: "radial-gradient(circle at 32% 26%, #ff9a82 0%, #ec6250 22%, #da4778 55%, #7f55e0 100%)",
           color: "var(--text-on-brand)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 18px 40px rgba(32,31,28,.28), inset 0 1px 0 rgba(255,255,255,.08)",
+          boxShadow: "0 18px 44px rgba(218,71,120,.32), inset 0 1px 0 rgba(255,255,255,.35), inset 0 -10px 24px rgba(80,40,140,.25)",
         }}>
           <span style={{ fontSize: 19, letterSpacing: "-0.015em" }}>Your SAT</span>
           <span style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.04em", opacity: 0.7, marginTop: 4 }}>{started} of {mastery.length} started</span>

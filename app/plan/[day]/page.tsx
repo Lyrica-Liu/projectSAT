@@ -225,7 +225,7 @@ export default function DailySessionPage() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 26, margin: "40px 0 0" }}>
             {completedRow?.session_id && (
-              <button onClick={() => router.push(`/results/${completedRow.session_id}`)} style={{ border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
+              <button onClick={() => router.push(`/results/${completedRow.session_id}`)} style={{ border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
                 See full results
               </button>
             )}
@@ -260,7 +260,7 @@ export default function DailySessionPage() {
             {error && <p style={{ fontSize: 14, color: "var(--danger)", margin: "20px 0 0" }}>{error}</p>}
             <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "40px 0 0" }}>
               <button onClick={beginModule} style={{
-                border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                 fontSize: 14, fontWeight: 500, padding: "15px 30px", borderRadius: "var(--radius-lg)", cursor: "pointer",
               }}>
                 Try again

@@ -165,7 +165,7 @@ export default function NotebookPage() {
                     </button>
                   )}
                   <button onClick={() => practice(practiceIds)} disabled={starting || practiceIds.length === 0} style={{
-                    border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+                    border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
                     fontSize: 14, fontWeight: 500, padding: "12px 22px", borderRadius: "var(--radius-lg)",
                     cursor: starting || practiceIds.length === 0 ? "default" : "pointer", opacity: starting || practiceIds.length === 0 ? 0.5 : 1,
                   }}>

@@ -19,7 +19,7 @@ const microLabel: React.CSSProperties = {
 };
 
 const primaryButton = (disabled = false): React.CSSProperties => ({
-  border: 0, background: "var(--brand)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
+  border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",
   fontSize: 14, fontWeight: 500, padding: "12px 24px", borderRadius: "var(--radius-lg)",
   cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.45 : 1,
 });
