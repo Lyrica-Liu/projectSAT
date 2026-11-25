@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mark } from "@/components/ui/mark";
 import { createClient } from "@/lib/supabase/client";
@@ -121,7 +121,8 @@ const eyebrowLight: React.CSSProperties = {
 /** Layout that changes with width: one column on phones. */
 const LANDING_CSS = `
 .lp-wrap { max-width: 1220px; margin-left: auto; margin-right: auto; padding-left: 40px; padding-right: 40px; box-sizing: content-box; }
-.lp-h1 { font-size: clamp(38px, 5vw, 60px); }
+.lp-h1 { font-size: clamp(38px, 4.6vw, 60px); }
+.lp-hero { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
 .lp-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
 .lp-split { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 56px; align-items: start; }
 .lp-sprint { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; }
@@ -129,6 +130,7 @@ const LANDING_CSS = `
 @media (max-width: 820px) {
   .lp-wrap { padding-left: 20px; padding-right: 20px; }
   .lp-steps { grid-template-columns: 1fr; gap: 8px; }
+  .lp-hero { grid-template-columns: 1fr; gap: 40px; }
   .lp-split { grid-template-columns: 1fr; gap: 24px; }
   .lp-sprint { flex-direction: column; gap: 4px; }
   .lp-sprint > :last-child { text-align: left; }
@@ -148,6 +150,75 @@ function CTAButton({ onClick, busy = false }: { onClick: () => void; busy?: bool
         Free. No account needed.
       </p>
     </div>
+  );
+}
+
+/** Rest state the card animates in from: a photo sitting at a slight angle, small and faded, that
+ *  straightens flat, rises, and pops up to full size once it's in view. */
+const MOCKUP_HIDDEN_TRANSFORM = "rotate(-22deg) scale(0.62) translateY(120px)";
+const MOCKUP_VISIBLE_TRANSFORM = "rotate(0deg) scale(1) translateY(0)";
+const MOCKUP_POP_EASE = "cubic-bezier(0.34, 1.76, 0.64, 1)";
+
+/** Wraps `children` in the "photo straightens and pops up" reveal. */
+function PhotoReveal({ visible, style, className, children }: { visible: boolean; style?: React.CSSProperties; className?: string; children: React.ReactNode }) {
+  return (
+    <div className={className} style={{
+      willChange: "transform, opacity",
+      opacity: visible ? 1 : 0, transform: visible ? MOCKUP_VISIBLE_TRANSFORM : MOCKUP_HIDDEN_TRANSFORM,
+      transition: `opacity 0.7s ${MOCKUP_POP_EASE}, transform 1.1s ${MOCKUP_POP_EASE}`,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+/** The hero's question card: one Words in Context question mid-set, answered. */
+function HeroCard({ visible }: { visible: boolean }) {
+  return (
+    <PhotoReveal visible={visible} className="pw-glass" style={{ borderRadius: "var(--radius-xl)", padding: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px 12px", fontSize: 11, color: "var(--text-muted)" }}>
+        <span style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}>Words in Context · Medium</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontVariantNumeric: "tabular-nums" }}>3 / 10</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-strong)" }}>14:22</span>
+        </span>
+      </div>
+      <div style={{ background: "var(--surface)", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
+        <div style={{ padding: "15px 20px 13px", borderBottom: "1px solid var(--border)" }}>
+          <p style={{ fontFamily: "var(--font-sans)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 9px" }}>Passage</p>
+          <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--text-body)", margin: 0 }}>
+            The naturalist Anna Botsford Comstock argued that a child taught to look closely at a single leaf had learned more than one marched through a textbook. Her <span style={{ borderBottom: "1.5px solid var(--accent)", paddingBottom: 1, color: "var(--text-strong)" }}>terse</span> field guides omitted nearly everything a rival volume would include.
+          </p>
+        </div>
+        <div style={{ padding: "14px 20px 16px" }}>
+          <p style={{ fontSize: 14, lineHeight: 1.4, color: "var(--text-strong)", margin: "0 0 10px" }}>
+            As used in the text, <span style={{ fontStyle: "italic" }}>terse</span> most nearly means
+          </p>
+          <div style={{ display: "grid" }}>
+            {[
+              { l: "A", t: "lengthy" },
+              { l: "B", t: "abrupt" },
+              { l: "C", t: "concise", correct: true },
+              { l: "D", t: "unclear" },
+            ].map((o) => (
+              <div key={o.l} style={{
+                display: "flex", gap: 10, padding: "7px 9px", borderTop: "1px solid var(--border)",
+                borderLeft: o.correct ? "2px solid var(--brand)" : "2px solid transparent",
+                background: o.correct ? "var(--claret-50)" : "transparent", fontSize: 13,
+                color: o.correct ? "var(--text-strong)" : "var(--text-body)",
+              }}>
+                <span style={{ fontSize: 9, color: o.correct ? "var(--brand)" : "var(--text-faint)", width: 9, paddingTop: 3 }}>{o.l}</span>
+                <span>{o.t}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text-muted)", margin: "10px 0 0", paddingLeft: 10, borderLeft: "2px solid var(--brand)" }}>
+            She is set against writers who were <span style={{ fontStyle: "italic" }}>exhaustive</span>. The contrast is length, not tone, which rules out <span style={{ fontStyle: "italic" }}>abrupt</span>.
+          </p>
+        </div>
+      </div>
+    </PhotoReveal>
   );
 }
 
@@ -242,6 +313,16 @@ export default function LandingPage() {
     router.push("/dashboard");
   }
 
+  const [heroCardVisible, setHeroCardVisible] = useState(false);
+  const heroCardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = heroCardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setHeroCardVisible(true); observer.disconnect(); } }, { threshold: 0.35 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="pw-page lp" style={{ background: "var(--canvas)", minHeight: "100vh", fontFamily: "var(--font-serif)", color: "var(--text-body)", overflowX: "hidden" }}>
       <style>{LANDING_CSS}</style>
@@ -256,15 +337,18 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <header className="lp-wrap" style={{ textAlign: "center", paddingTop: 44, paddingBottom: 28 }}>
-        <p style={{ ...eyebrowLight, margin: "0 0 18px" }}>Digital SAT · Reading, Writing &amp; Math</p>
-        <h1 className="lp-h1" style={{ fontWeight: 400, lineHeight: 1.06, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: "0 auto", maxWidth: "22ch", minHeight: "2.12em", textWrap: "balance" }}>
-          <TypewriterHeadline text={HERO_HEADLINE} />
-        </h1>
-        <p style={{ fontSize: 19, lineHeight: 1.5, color: "var(--text-muted)", margin: "16px auto 24px", maxWidth: "44ch", textWrap: "balance" }}>
-          Every skill on the test, on one map. Short sets fill it in.
-        </p>
-        <div style={{ display: "flex", justifyContent: "center" }}><CTAButton onClick={goBegin} busy={starting} /></div>
+      <header className="lp-wrap lp-hero" style={{ paddingTop: 48, paddingBottom: 56 }}>
+        <div>
+          <p style={{ ...eyebrowLight, margin: "0 0 18px" }}>Digital SAT · Reading, Writing &amp; Math</p>
+          <h1 className="lp-h1" style={{ fontWeight: 400, lineHeight: 1.06, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0, minHeight: "2.12em" }}>
+            <TypewriterHeadline text={HERO_HEADLINE} />
+          </h1>
+          <p style={{ fontSize: 19, lineHeight: 1.5, color: "var(--text-muted)", margin: "18px 0 28px", maxWidth: "34ch", textWrap: "pretty" }}>
+            Every skill on the test, on one map. Short sets fill it in.
+          </p>
+          <CTAButton onClick={goBegin} busy={starting} />
+        </div>
+        <div ref={heroCardRef}><HeroCard visible={heroCardVisible} /></div>
       </header>
 
       <section id="skill-map" aria-label="Sample skill map" className="lp-wrap" style={{ paddingTop: 8, paddingBottom: 0 }}>
