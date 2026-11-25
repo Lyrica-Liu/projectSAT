@@ -207,10 +207,12 @@ interface MindMapProps {
   history?: Record<string, SkillHistory>;
   mode: "inline" | "full";
   height?: number | string;
+  /** Sample map for signed-out visitors: starting a set makes them a guest first. */
+  guest?: boolean;
 }
 
-export function MindMap({ mastery, tiers, history, mode, height }: MindMapProps) {
-  const { starting, error, start } = useStartSet(tiers);
+export function MindMap({ mastery, tiers, history, mode, height, guest = false }: MindMapProps) {
+  const { starting, error, start } = useStartSet(tiers, guest);
   const tree = useMemo(() => buildTree(mastery), [mastery]);
   const groupIds = useMemo(() => {
     const ids: string[] = [];
@@ -709,9 +711,9 @@ const subscribeWide = (cb: () => void) => {
  * `header` sits left of the Full screen button, `banner` between that row and the map; `height`
  * sizes the inline map (default 660px).
  */
-export function SkillMapView({ mastery, tiers, history, header, banner, height }: {
+export function SkillMapView({ mastery, tiers, history, header, banner, height, guest = false }: {
   mastery: CategoryMastery[]; tiers: Tiers; history?: Record<string, SkillHistory>;
-  header?: React.ReactNode; banner?: React.ReactNode; height?: number | string;
+  header?: React.ReactNode; banner?: React.ReactNode; height?: number | string; guest?: boolean;
 }) {
   const wide = useSyncExternalStore(subscribeWide, () => window.matchMedia(WIDE_QUERY).matches, () => true);
   const [full, setFull] = useState(false);
@@ -738,7 +740,7 @@ export function SkillMapView({ mastery, tiers, history, header, banner, height }
     <>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: header ? "space-between" : "flex-end", gap: 16, flexWrap: "wrap", margin: "0 0 14px" }}>{header}{openButton}</div>
       {banner}
-      {wide ? <MindMap mastery={mastery} tiers={tiers} history={history} mode="inline" height={height} /> : <SkillMap mastery={mastery} tiers={tiers} />}
+      {wide ? <MindMap mastery={mastery} tiers={tiers} history={history} mode="inline" height={height} guest={guest} /> : <SkillMap mastery={mastery} tiers={tiers} guest={guest} />}
 
       {full && (
         <div role="dialog" aria-modal="true" aria-label="Skill map, full screen" style={{ position: "fixed", inset: 0, zIndex: 70, background: "var(--canvas)", display: "flex", flexDirection: "column", fontFamily: "var(--font-serif)" }}>
@@ -753,7 +755,7 @@ export function SkillMapView({ mastery, tiers, history, header, banner, height }
             </button>
           </div>
           <div style={{ flex: 1, minHeight: 0 }}>
-            <MindMap mastery={mastery} tiers={tiers} history={history} mode="full" />
+            <MindMap mastery={mastery} tiers={tiers} history={history} mode="full" guest={guest} />
           </div>
         </div>
       )}

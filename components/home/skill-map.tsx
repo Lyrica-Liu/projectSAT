@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DOMAINS } from "@/lib/categories";
+import { createClient } from "@/lib/supabase/client";
 import { DIFFICULTY_LABELS } from "@/lib/plan";
 import type { CategoryMastery } from "@/lib/mastery";
 import type { Difficulty } from "@/lib/types";
@@ -14,8 +15,12 @@ const SET = 10;
 
 export type Tiers = Record<string, Difficulty>;
 
-/** Starting a set from a skill (tile or mind-map node): one at a time, then into practice. */
-export function useStartSet(tiers: Tiers) {
+/**
+ * Starting a set from a skill (tile or mind-map node): one at a time, then into practice.
+ * `guest`: the visitor may not be signed in yet (the landing page's sample map), so make a guest
+ * first if there's no session.
+ */
+export function useStartSet(tiers: Tiers, guest = false) {
   const router = useRouter();
   const [starting, setStarting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +30,14 @@ export function useStartSet(tiers: Tiers) {
     setStarting(m.subcategory);
     setError(null);
     try {
+      if (guest) {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          const { error: err } = await supabase.auth.signInAnonymously({ options: { data: { signup_source: "landing_map" } } });
+          if (err) throw new Error("Couldn't get started just now. Please try again.");
+        }
+      }
       const id = await startPracticeSet(m.subcategory, tiers[m.subcategory] ?? "medium-low", m.level === "not_started" ? FIRST_SET : SET);
       router.push(`/practice/${id}`);
     } catch (err) {
@@ -84,8 +97,8 @@ function Tile({ m, tier, busy, onStart }: { m: CategoryMastery; tier: Difficulty
 }
 
 /** Every category as a tile, grouped by SAT domain. Clicking a tile starts a set there. */
-export function SkillMap({ mastery, tiers }: { mastery: CategoryMastery[]; tiers: Tiers }) {
-  const { starting, error, start } = useStartSet(tiers);
+export function SkillMap({ mastery, tiers, guest = false }: { mastery: CategoryMastery[]; tiers: Tiers; guest?: boolean }) {
+  const { starting, error, start } = useStartSet(tiers, guest);
   const bySub = new Map(mastery.map((m) => [m.subcategory, m]));
 
   return (
