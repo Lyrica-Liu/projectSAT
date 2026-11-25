@@ -74,19 +74,12 @@ export default function SprintsPage() {
       <Sidebar />
 
       <main className="pw-main-content" style={{ maxWidth: 1000 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-          <span>Sprints</span>
-          <span>Optional · quit anytime</span>
-        </div>
 
         <div style={{ padding: "48px 0 0" }}>
           <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0 }}>Short sprints</h1>
-          <p style={{ fontSize: 17, lineHeight: 1.6, color: "var(--text-muted)", margin: "16px 0 0", maxWidth: "56ch" }}>
-            A few days of short daily sets with a clear finish line. Pick one when you want structure — or skip them and just use your skill map.
-          </p>
         </div>
 
-        {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "20px 0 0" }}>{error}</p>}
+        {error && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "20px 0 0" }}>{error}</p>}
 
         {active && (
           <section aria-label="Your sprint" style={{ margin: "36px 0 0", padding: "26px 30px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-lg)" }}>
@@ -94,13 +87,13 @@ export default function SprintsPage() {
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
               <div>
                 <h2 style={{ fontWeight: 400, fontSize: 26, letterSpacing: "-0.014em", color: "var(--text-strong)", margin: "0 0 6px" }}>{active.title}</h2>
-                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
+                <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)", margin: 0 }}>
                   {active.nextDay ? `Day ${active.nextDay} of ${active.days.length}` : "Every day done"} · {active.completedCount} finished
                 </p>
               </div>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 18 }}>
                 <button onClick={() => setConfirmQuit(true)} style={{ border: 0, background: "none", padding: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-faint)" }}>Quit sprint</button>
-                {active.key === "full-30" && <Link href="/plan" style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", textDecoration: "underline" }}>See the full plan</Link>}
+                {active.key === "full-30" && <Link href="/plan" style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)", textDecoration: "underline" }}>See the full plan</Link>}
                 {active.nextDay && <Link href={active.continueHref} style={{ ...primaryButton(), display: "inline-block" }}>Continue</Link>}
               </span>
             </div>
@@ -111,7 +104,7 @@ export default function SprintsPage() {
                   padding: active.days.length > 10 ? 0 : "8px 10px", borderRadius: "var(--radius-sm)",
                   background: d.completed ? "var(--moss-500)" : d.day === active.nextDay ? "var(--accent-soft)" : "transparent",
                   border: d.completed ? "1px solid var(--moss-500)" : d.day === active.nextDay ? "1px solid var(--accent)" : "1px dashed var(--line-strong)",
-                  color: d.completed ? "var(--text-on-brand)" : "var(--text-muted)", fontFamily: "var(--font-sans)", fontSize: 11,
+                  color: d.completed ? "var(--text-on-brand)" : "var(--text-muted)", fontFamily: "var(--font-serif)", fontSize: 12,
                 }}>
                   {active.days.length <= 10 && (<><span style={{ display: "block", opacity: 0.8 }}>Day {d.day}{d.completed && d.score !== null ? ` · ${d.score}%` : ""}</span><span style={{ display: "block", marginTop: 2 }}>{d.subcategory}</span></>)}
                 </li>
@@ -129,14 +122,14 @@ export default function SprintsPage() {
                 <div key={s.key} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 18, padding: "22px 22px 20px", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: SPRINT_TINTS[i % SPRINT_TINTS.length] }}>
                   <div>
                     <h3 style={{ fontWeight: 400, fontSize: 20, color: "var(--text-strong)", margin: "0 0 6px" }}>
-                      {s.title}{doneBefore && <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--success)", marginLeft: 8 }}>✓ done before</span>}
+                      {s.title}{doneBefore && <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--success)", marginLeft: 8 }}>✓ done before</span>}
                     </h3>
                     <p style={{ fontSize: 15, lineHeight: 1.5, color: "var(--text-muted)", margin: "0 0 10px" }}>{s.tagline}</p>
-                    <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: 0 }}>
+                    <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: 0 }}>
                       {s.days} days · {s.questionsPerDay} questions a day
                     </p>
                     {s.preview && (
-                      <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, lineHeight: 1.6, color: "var(--text-muted)", margin: "10px 0 0" }}>
+                      <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, lineHeight: 1.6, color: "var(--text-muted)", margin: "10px 0 0" }}>
                         For you: {[...new Set(s.preview)].join(", ")}
                       </p>
                     )}
@@ -156,7 +149,7 @@ export default function SprintsPage() {
             {data.history.map((h, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "12px 4px", borderBottom: "1px solid var(--border)" }}>
                 <span style={{ fontSize: 15, color: "var(--text-strong)" }}>{h.title}</span>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: h.status === "completed" ? "var(--success)" : "var(--text-faint)" }}>
+                <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: h.status === "completed" ? "var(--success)" : "var(--text-faint)" }}>
                   {h.status === "completed" ? "✓ Completed" : "Stopped"}{h.endedAt ? ` · ${new Date(h.endedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : ""}
                 </span>
               </div>
@@ -170,7 +163,7 @@ export default function SprintsPage() {
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "36px 36px 30px", maxWidth: 420 }}>
             <h2 id="quit-title" style={{ fontWeight: 400, fontSize: 26, color: "var(--text-strong)", margin: "0 0 10px" }}>Quit {active.title}?</h2>
             <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: "0 0 24px" }}>
-              No penalty. Everything you practiced still counts on your skill map, and you can start any sprint again later.
+              Everything you practiced still counts.
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
               <button onClick={() => setConfirmQuit(false)} style={primaryButton()}>Keep going</button>

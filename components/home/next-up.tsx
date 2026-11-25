@@ -50,7 +50,7 @@ export function NextUpCard({ suggestion, style }: { suggestion: Suggestion; styl
         <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--accent)", margin: "0 0 10px" }}>Next up</p>
         <h2 style={{ fontWeight: 400, fontSize: 24, lineHeight: 1.25, letterSpacing: "-0.014em", color: "var(--text-strong)", margin: "0 0 6px" }}>{suggestion.title}</h2>
         <p style={{ fontSize: 15, lineHeight: 1.55, color: "var(--text-muted)", margin: 0 }}>{suggestion.body}</p>
-        {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "10px 0 0" }}>{error}</p>}
+        {error && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "10px 0 0" }}>{error}</p>}
       </div>
       <button onClick={go} disabled={busy} style={{
         position: "relative", flexShrink: 0, border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)",

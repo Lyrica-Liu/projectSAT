@@ -130,9 +130,8 @@ function CTAButton({ onClick, busy = false }: { onClick: () => void; busy?: bool
         borderRadius: "var(--radius-lg)", border: "none", cursor: "pointer", transition: "background 0.16s",
         boxShadow: "0 10px 26px rgba(32,31,28,.16)", opacity: busy ? 0.7 : 1,
       }}>{busy ? "Getting your first questions…" : "Start practicing"}</button>
-      <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.5, color: "var(--text-muted)", margin: "12px 0 0", maxWidth: "44ch" }}>
-        Free, no account and no setup — pick a skill and answer your first question in seconds.{" "}
-        An optional quick start colors in your whole map.
+      <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, lineHeight: 1.5, color: "var(--text-muted)", margin: "12px 0 0", maxWidth: "44ch" }}>
+        Free. No account needed.
       </p>
     </div>
   );
@@ -175,7 +174,7 @@ function AnalysisMockup({ visible }: { visible: boolean }) {
         <span style={{ letterSpacing: "0", textTransform: "none" }}>This week</span>
       </div>
 
-      <div style={{ display: "flex", gap: 16, marginBottom: 15, fontFamily: "var(--font-sans)", fontSize: 12, borderBottom: "1px solid var(--border)" }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 15, fontFamily: "var(--font-serif)", fontSize: 13, borderBottom: "1px solid var(--border)" }}>
         <span style={{ paddingBottom: 8, borderBottom: "2px solid var(--text-strong)", color: "var(--text-strong)", fontWeight: 500 }}>English</span>
         <span style={{ paddingBottom: 8, color: "var(--text-faint)" }}>Math</span>
       </div>
@@ -192,7 +191,7 @@ function AnalysisMockup({ visible }: { visible: boolean }) {
             />
           </svg>
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: 17, fontWeight: 600, color: "var(--text-strong)" }}>{RING_ACCURACY}%</span>
+            <span style={{ fontFamily: "var(--font-serif)", fontSize: 17, fontWeight: 600, color: "var(--text-strong)" }}>{RING_ACCURACY}%</span>
           </div>
         </div>
         <div>
@@ -216,7 +215,7 @@ function AnalysisMockup({ visible }: { visible: boolean }) {
                 transition: "width 1s var(--ease-out) 0.55s",
               }} />
             </div>
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", width: 26, textAlign: "right", flexShrink: 0 }}>{s.v}%</span>
+            <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", width: 26, textAlign: "right", flexShrink: 0 }}>{s.v}%</span>
           </div>
         ))}
       </div>
@@ -224,7 +223,7 @@ function AnalysisMockup({ visible }: { visible: boolean }) {
       <div style={{ padding: "14px 0", borderBottom: "1px solid var(--border)" }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 9 }}>
           <p style={{ fontFamily: "var(--font-sans)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: 0 }}>Accuracy over time</p>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--success)" }}>+9 vs last month</span>
+          <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--success)" }}>+9 vs last month</span>
         </div>
         <svg width="100%" height={46} viewBox="0 0 220 60" style={{ display: "block", overflow: "visible" }} preserveAspectRatio="none">
           <polyline
@@ -244,7 +243,7 @@ function AnalysisMockup({ visible }: { visible: boolean }) {
 
       <div style={{ paddingTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span style={{ fontSize: 13, color: "var(--text-strong)" }}>Suggested next: Boundaries</span>
-        <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--accent)" }}>Start →</span>
+        <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--accent)" }}>Start →</span>
       </div>
     </PhotoReveal>
   );
@@ -289,7 +288,7 @@ function SampleQuestion({ onBegin }: { onBegin: () => void }) {
                   cursor: answered ? "default" : "pointer", opacity: answered && !isAnswer && !isPicked ? 0.55 : 1,
                 }}
               >
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, width: 12, flexShrink: 0, color: showCorrect ? "var(--success)" : showWrong ? "var(--danger)" : "var(--text-faint)" }}>{letter}</span>
+                <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, width: 12, flexShrink: 0, color: showCorrect ? "var(--success)" : showWrong ? "var(--danger)" : "var(--text-faint)" }}>{letter}</span>
                 <span>{q.options[letter]}</span>
               </button>
             );
@@ -317,7 +316,7 @@ function SampleQuestion({ onBegin }: { onBegin: () => void }) {
             </div>
           </div>
         ) : (
-          <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "14px 0 0" }}>Pick an answer to see the explanation.</p>
+          <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: "14px 0 0" }}>Pick an answer to see the explanation.</p>
         )}
       </div>
     </div>
@@ -375,10 +374,10 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1220, margin: "0 auto", padding: "0 40px", display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", height: 58 }}>
           <span />
           <span style={{ display: "inline-flex", alignItems: "center", gap: 12, justifySelf: "center" }}>
-            <Mark width={30} height={18} fill="var(--text-strong)" />
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, letterSpacing: "0.01em", color: "var(--text-muted)" }}>DSAT for self studiers</span>
+            <Mark height={22} />
+            <span style={{ fontFamily: "var(--font-serif)", fontSize: 14, letterSpacing: "0.01em", color: "var(--text-muted)" }}>800Path</span>
           </span>
-          <Link href="/auth" style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-faint)", justifySelf: "end" }}>Sign in</Link>
+          <Link href="/auth" style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, color: "var(--text-strong)", justifySelf: "end", padding: "8px 18px", borderRadius: 999, border: "1px solid var(--border-strong)", background: "var(--surface)" }}>Sign in</Link>
         </div>
       </nav>
 
@@ -400,7 +399,7 @@ export default function LandingPage() {
 
           <div ref={heroMockupRef}>
             <PhotoReveal visible={heroMockupVisible} className="pw-glass" style={{ borderRadius: "var(--radius-xl)", padding: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px 12px", fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-on-dark-faint)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px 12px", fontFamily: "var(--font-serif)", fontSize: 11, color: "var(--text-on-dark-faint)" }}>
                 <span style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}>Words in Context · Medium</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <span style={{ fontVariantNumeric: "tabular-nums" }}>3 / 10</span>
@@ -431,7 +430,7 @@ export default function LandingPage() {
                         background: o.correct ? "var(--moss-50)" : "transparent", fontSize: 13,
                         color: o.correct ? "var(--text-strong)" : "var(--text-body)",
                       }}>
-                        <span style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: o.correct ? "var(--success)" : "var(--text-faint)", width: 9, paddingTop: 3 }}>{o.l}</span>
+                        <span style={{ fontFamily: "var(--font-serif)", fontSize: 9, color: o.correct ? "var(--success)" : "var(--text-faint)", width: 9, paddingTop: 3 }}>{o.l}</span>
                         <span>{o.t}</span>
                       </div>
                     ))}
@@ -442,9 +441,6 @@ export default function LandingPage() {
                 </div>
               </div>
             </PhotoReveal>
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-faint)", margin: "10px 0 0" }}>
-              The reading desk — passage held left, reasoning right.
-            </p>
           </div>
 
         </div>
@@ -458,7 +454,7 @@ export default function LandingPage() {
         <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32, borderTop: "1px solid var(--line-strong)" }}>
           {HOW_IT_WORKS.map((step) => (
             <li key={step.n} style={{ padding: "20px 0 0" }}>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.1em", color: "var(--text-faint)", fontVariantNumeric: "tabular-nums" }}>{step.n}</span>
+              <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, letterSpacing: "0.1em", color: "var(--text-faint)", fontVariantNumeric: "tabular-nums" }}>{step.n}</span>
               <h3 style={{ fontWeight: 400, fontSize: 20, lineHeight: 1.25, color: "var(--text-strong)", margin: "8px 0 8px", letterSpacing: "-0.012em" }}>{step.title}</h3>
               <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: 0, maxWidth: "34ch" }}>{step.body}</p>
             </li>
@@ -473,9 +469,6 @@ export default function LandingPage() {
             <h2 style={{ fontWeight: 400, fontSize: 30, lineHeight: 1.18, letterSpacing: "-0.02em", color: "var(--text-strong)", margin: "0 0 14px", maxWidth: "18ch", textWrap: "pretty" }}>
               A real question, before you sign up for anything.
             </h2>
-            <p style={{ fontSize: 16, lineHeight: 1.6, color: "var(--text-muted)", margin: 0, maxWidth: "36ch" }}>
-              This is what a session looks like: a Digital SAT–style question, then a plain explanation of why each choice is right or wrong.
-            </p>
           </div>
           <SampleQuestion onBegin={goBegin} />
         </div>
@@ -516,7 +509,6 @@ export default function LandingPage() {
             );
           })}
         </div>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "12px 0 0" }}>An example map. Yours starts grey and colors in as you practice.</p>
 
         <div style={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: 48, alignItems: "start", margin: "56px 0 0" }}>
           <div>
@@ -555,7 +547,7 @@ export default function LandingPage() {
       </section>
 
       <footer style={{ borderTop: "1px solid var(--border)", marginTop: 64 }}>
-        <div style={{ maxWidth: 1220, margin: "0 auto", padding: "24px 40px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>
+        <div style={{ maxWidth: 1220, margin: "0 auto", padding: "24px 40px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)" }}>
           <span>800Path © 2026</span>
           <span>SAT is a trademark of College Board, which does not endorse this tool.</span>
         </div>

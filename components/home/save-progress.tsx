@@ -63,9 +63,6 @@ export function SaveProgressPrompt({
       }}>
         <div>
           <p style={{ fontSize: 16, color: "var(--text-strong)", margin: "0 0 4px" }}>{headline}</p>
-          <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
-            It lives only in this browser — clear it or switch devices and your skill map is gone.
-          </p>
         </div>
         <button onClick={() => setOpen(true)} style={{
           flexShrink: 0, border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)",
@@ -106,14 +103,14 @@ export function SaveProgressPrompt({
                 </button>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
                   <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", whiteSpace: "nowrap" }}>or continue with email</span>
+                  <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", whiteSpace: "nowrap" }}>or continue with email</span>
                   <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: 8 }}>
                   <Input label="Email" type="email" value={email} placeholder="you@example.com" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} />
                   <Input label="Password" type="password" value={password} placeholder="••••••••" onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} />
                 </div>
-                {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: "10px 0 0" }}>{error}</p>}
+                {error && <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--danger)", margin: "10px 0 0" }}>{error}</p>}
                 <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 24 }}>
                   <button onClick={createWithEmail} disabled={loading} style={{
                     border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)",

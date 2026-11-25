@@ -61,8 +61,13 @@ export default function HomePage() {
 
       <main className="pw-main-content" style={{ maxWidth: 1080 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-          <span>Home</span>
+          <span />
           <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            {data.isAnonymous && (
+              <Link href="/auth" style={{ fontSize: 13, fontWeight: 600, letterSpacing: "normal", textTransform: "none", color: "var(--text-strong)", padding: "7px 16px", borderRadius: 999, border: "1px solid var(--border-strong)", background: "var(--surface)" }}>
+                Guest · <span style={{ color: "var(--accent)" }}>Sign in</span>
+              </Link>
+            )}
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
               Test day:
               {editingDate ? (
@@ -78,42 +83,33 @@ export default function HomePage() {
                 </button>
               )}
             </span>
-            <form action="/auth/signout" method="post">
-              <button type="submit" style={{
-                border: "1px solid var(--border)", background: "none", fontFamily: "var(--font-sans)",
-                fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)",
-                cursor: "pointer", padding: "6px 12px", borderRadius: "var(--radius-md)",
-              }}>
-                Sign out
-              </button>
-            </form>
           </span>
         </div>
-
-        {data.isAnonymous && data.recentSessions.length > 0 && <SaveProgressPrompt style={{ margin: "24px 0 0" }} />}
 
         <div style={{ padding: "48px 0 0" }}>
           <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0 }}>Your skill map</h1>
           <p style={{ fontSize: 17, lineHeight: 1.6, color: "var(--text-muted)", margin: "16px 0 0", maxWidth: "56ch" }}>
             {started === 0
-              ? "Every SAT skill, one tile each. Tap any tile for a short set — your map fills in as you go."
-              : `${started} of ${data.mastery.length} skills started${mastered ? ` · ${mastered} mastered` : ""}. Tap a tile for a short set in that skill.`}
+              ? "Tap any skill to start."
+              : `${started} of ${data.mastery.length} skills started${mastered ? ` · ${mastered} mastered` : ""}`}
           </p>
         </div>
 
         {data.activeSprint && (
-          <Link href="/sprints" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", margin: "28px 0 0", fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>
+          <Link href="/sprints" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", margin: "28px 0 0", fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)" }}>
             <span style={{ color: "var(--text-strong)" }}>{data.activeSprint.title}</span>
             <span aria-hidden style={{ display: "inline-flex", gap: 3 }}>
               {Array.from({ length: data.activeSprint.total }, (_, i) => (
                 <span key={i} style={{ width: data.activeSprint!.total > 10 ? 5 : 14, height: 6, borderRadius: 2, background: i < data.activeSprint!.completed ? "var(--moss-500)" : "var(--surface-2)" }} />
               ))}
             </span>
-            <span>{data.activeSprint.completed} of {data.activeSprint.total} days · Sprint details →</span>
+            <span>{data.activeSprint.completed} of {data.activeSprint.total} days</span>
           </Link>
         )}
 
         {data.suggestion && <NextUpCard suggestion={data.suggestion} style={{ margin: data.activeSprint ? "14px 0 0" : "32px 0 0" }} />}
+
+        {data.isAnonymous && data.recentSessions.length > 0 && <SaveProgressPrompt style={{ margin: "16px 0 0" }} />}
 
         {/* Offered until it's done — or until half the map is filled in anyway. */}
         {data.quickStart.status !== "done" && started < data.mastery.length / 2 && (
@@ -135,7 +131,7 @@ export default function HomePage() {
                 <span style={{ fontSize: 15, color: "var(--text-strong)" }}>
                   {new Date(s.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </span>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
                   {s.score ?? "—"}% · See results →
                 </span>
               </Link>

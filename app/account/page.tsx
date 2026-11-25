@@ -181,32 +181,22 @@ export default function AccountPage() {
     ? "Set both section scores to see your climb"
     : gap > 0 ? `+${gap} points to your goal` : "You've hit your target.";
 
-  let daysLabel = "No test date set";
-  if (form.testDate) {
-    const d = Math.ceil((new Date(form.testDate).getTime() - now) / 86400000);
-    daysLabel = d > 0 ? `${d} days to test day` : "Test day has passed";
-  }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--canvas)", fontFamily: "var(--font-serif)", color: "var(--text-body)" }}>
       <Sidebar />
 
       <main className="pw-main-content" style={{ maxWidth: 880 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-          <span>Account center</span>
-          <span>{daysLabel}</span>
-        </div>
 
         <div style={{ padding: "52px 0 0", marginBottom: 32 }}>
           <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, color: "var(--text-strong)", margin: 0, letterSpacing: "-0.026em" }}>Account center</h1>
-          <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "18px 0 0", maxWidth: "50ch" }}>Update your details and the goals that shape your suggestions.</p>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 20, padding: "0 0 24px", marginBottom: 28, borderBottom: "1px solid var(--line-strong)" }}>
           <Avatar name={form.displayName || form.email} size={56} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 23, color: "var(--text-strong)", margin: 0, letterSpacing: "-0.016em" }}>{form.displayName || "Your name"}</p>
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "6px 0 0" }}>{form.email} · Grade {form.grade}</p>
+            <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: "6px 0 0" }}>{form.email} · Grade {form.grade}</p>
           </div>
         </div>
 
@@ -237,9 +227,6 @@ export default function AccountPage() {
         {/* Scores */}
         <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "30px 32px", marginBottom: 20 }}>
           <SectionHeading icon="target">Scores</SectionHeading>
-          <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", margin: "0 0 20px", paddingLeft: 36 }}>
-            Your diagnostic sets the plan; these section scores and your target are mostly for tracking your own climb.
-          </p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22, alignItems: "start" }}>
             <div>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 }}>
@@ -290,7 +277,7 @@ export default function AccountPage() {
                 <span style={{ fontSize: 12, color: "var(--text-faint)" }}>1600</span>
               </div>
               <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", background: "var(--surface-sunken)", borderRadius: "var(--radius-md)", padding: "7px 13px" }}>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>{gapLabel}</span>
+                <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>{gapLabel}</span>
               </div>
             </div>
           </div>
@@ -299,9 +286,6 @@ export default function AccountPage() {
         {/* Plan preferences */}
         <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "30px 32px", marginBottom: 20 }}>
           <SectionHeading icon="compass">Plan preferences</SectionHeading>
-          <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", margin: "0 0 20px", paddingLeft: 36 }}>
-            The answers from your setup — change them anytime.
-          </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "end" }}>
               <Input label="When's test day?" type="date" value={form.testDate} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set({ testDate: e.target.value })} />
@@ -326,10 +310,7 @@ export default function AccountPage() {
         {/* Redo onboarding */}
         <section style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-2xl)", padding: "30px 32px", marginBottom: 20 }}>
           <h2 style={sectionLabel}>Redo onboarding</h2>
-          <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: "10px 0 20px", maxWidth: "50ch" }}>
-            Retake the welcome questions — target score, starting point, and focus areas — to recalibrate your plan.
-          </p>
-          {redoError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 14px" }}>{redoError}</p>}
+          {redoError && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "0 0 14px" }}>{redoError}</p>}
           <Button variant="secondary" onClick={redoOnboarding} disabled={redoingOnboarding}>
             {redoingOnboarding ? "Loading…" : "Redo onboarding"}
           </Button>
@@ -341,7 +322,7 @@ export default function AccountPage() {
           <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: "10px 0 20px", maxWidth: "50ch" }}>
             Clears every day&apos;s progress — Day 1 again, same topics and skill level.
           </p>
-          {restartError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 14px" }}>{restartError}</p>}
+          {restartError && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "0 0 14px" }}>{restartError}</p>}
           {confirmingRestart ? (
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <Button variant="secondary" onClick={restartPlan} disabled={restarting}>
@@ -370,7 +351,7 @@ export default function AccountPage() {
       {dirty && (
         <div className="pw-main-content" style={{ position: "sticky", bottom: 0, zIndex: 20, background: "var(--canvas)", borderTop: "1px solid var(--border)" }}>
           <div style={{ maxWidth: 880, marginRight: "auto", padding: "14px 56px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)" }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)" }} />
               You have unsaved changes
               {error && <span style={{ color: "var(--danger)" }}>· {error}</span>}
@@ -389,7 +370,7 @@ export default function AccountPage() {
           position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 30,
           background: "var(--text-strong)", color: "var(--text-on-dark)",
           borderRadius: "var(--radius-md)", padding: "11px 20px",
-          fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500,
+          fontFamily: "var(--font-serif)", fontSize: 14, fontWeight: 500,
         }}>
           Changes saved
         </div>

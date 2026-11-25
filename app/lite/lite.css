@@ -5,6 +5,7 @@
   /* Shared with the website: its ink, its paper-white surface, its serif for headlines. */
   --l-ink: #201f1c;
   --l-serif: "Source Serif 4", Charter, Georgia, serif;
+  --l-sans: var(--font-lite-sans), "Instrument Sans", -apple-system, BlinkMacSystemFont, sans-serif;
   --l-body: #2a2a30;
   --l-text2: #4a4a52;
   --l-muted: #6b6b73;
@@ -44,7 +45,7 @@
   min-height: 100dvh;
   background: var(--l-canvas);
   color: var(--l-ink);
-  font-family: var(--font-lite-sans), "Instrument Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--l-serif);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -57,7 +58,10 @@ html:has(.lite), body:has(.lite) {
   overflow-x: clip;
   overscroll-behavior-x: none;
 }
-.lite button { font-family: inherit; cursor: pointer; }
+/* Serif for everything you read; sans only for controls and tiny labels. */
+.lite button, .l-chip, .l-eyebrow, .l-tabbar { font-family: var(--l-sans); }
+.lite button.l-choice, .lite button.l-row, .lite button.l-serif-btn { font-family: var(--l-serif); }
+.lite button { cursor: pointer; }
 .lite button:disabled { cursor: default; }
 
 /* Phone-width column; on a laptop it sits centered like a phone screen. */
@@ -97,7 +101,7 @@ html:has(.lite), body:has(.lite) {
 .l-h2 { font-family: var(--l-serif); font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin: 0; }
 .l-eyebrow { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--l-faint); margin: 0; }
 .l-sub { font-family: var(--l-serif); font-size: 16px; color: var(--l-muted); margin: 0; line-height: 1.45; }
-.l-big-num { font-weight: 800; letter-spacing: -0.06em; line-height: 1; }
+.l-big-num { font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
 
 /* Buttons */
 .l-btn {
@@ -144,12 +148,12 @@ html:has(.lite), body:has(.lite) {
 .l-choice {
   width: 100%; display: flex; align-items: flex-start; gap: 14px; padding: 15px 16px; border-radius: 18px;
   border: 1.5px solid var(--l-line); background: #fff; color: var(--l-ink); text-align: left;
-  font-size: 17px; font-weight: 600; line-height: 1.35; transition: background 0.15s, border-color 0.15s, transform 0.12s, opacity 0.2s;
+  font-size: 18px; font-weight: 400; line-height: 1.35; transition: background 0.15s, border-color 0.15s, transform 0.12s, opacity 0.2s;
 }
 .l-choice:active:not(:disabled) { transform: scale(0.98); }
 .l-choice .l-letter {
   flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--l-soft2);
-  display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; font-family: var(--l-sans); font-size: 13px; font-weight: 700;
 }
 .l-choice.right { background: var(--l-right-soft); border-color: var(--l-right); }
 .l-choice.right .l-letter { background: var(--l-right); color: #fff; }

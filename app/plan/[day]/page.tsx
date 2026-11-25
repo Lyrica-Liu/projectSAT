@@ -202,15 +202,15 @@ export default function DailySessionPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", margin: "48px 0 0", borderTop: "1px solid var(--line-strong)", borderBottom: "1px solid var(--border)" }}>
             <div style={{ padding: "24px 32px 24px 0" }}>
               <p style={{ fontFamily: "var(--font-sans)", fontSize: 30, fontWeight: 500, color: "var(--text-strong)", margin: 0, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{accuracy != null ? `${accuracy}%` : "—"}</p>
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "9px 0 0" }}>accuracy today</p>
+              <p style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", margin: "9px 0 0" }}>accuracy today</p>
             </div>
             <div style={{ padding: "24px 32px", borderLeft: "1px solid var(--border)" }}>
               <p style={{ fontFamily: "var(--font-sans)", fontSize: 30, fontWeight: 500, color: "var(--text-strong)", margin: 0, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{wrapStats?.streak ?? "—"}</p>
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "9px 0 0" }}>day streak</p>
+              <p style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", margin: "9px 0 0" }}>day streak</p>
             </div>
             <div style={{ padding: "24px 0 24px 32px", borderLeft: "1px solid var(--border)" }}>
               <p style={{ fontFamily: "var(--font-sans)", fontSize: 30, fontWeight: 500, color: "var(--text-strong)", margin: 0, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{Math.max(0, 30 - dayNum)}</p>
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "9px 0 0" }}>days remaining</p>
+              <p style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", margin: "9px 0 0" }}>days remaining</p>
             </div>
           </div>
 
@@ -219,7 +219,7 @@ export default function DailySessionPage() {
               <span style={{ fontSize: 16, color: "var(--text-muted)" }}>
                 Tomorrow · <span style={{ color: "var(--text-strong)" }}>Day {wrapStats.tomorrow.day}, {wrapStats.tomorrow.subj}</span> — {wrapStats.tomorrow.focus}
               </span>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", whiteSpace: "nowrap" }}>Opens tomorrow</span>
+              <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", whiteSpace: "nowrap" }}>Opens tomorrow</span>
             </div>
           )}
 
@@ -265,14 +265,14 @@ export default function DailySessionPage() {
               }}>
                 Try again
               </button>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>The timer starts when you begin.</span>
+              <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)" }}>The timer starts when you begin.</span>
             </div>
           </div>
           <div style={{ borderLeft: "1px solid var(--border)", padding: "4px 0 4px 24px" }}>
             <p style={{ ...microLabel, margin: "0 0 18px" }}>Today&apos;s sitting</p>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 12 }}>
               <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Module</span>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{sessionLength} questions · {planDay.durationMins} min</span>
+              <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{sessionLength} questions · {planDay.durationMins} min</span>
             </div>
             {rowInfo.difficulty && (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 12 }}>
@@ -284,7 +284,7 @@ export default function DailySessionPage() {
             )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Counts toward</span>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)" }}>Streak</span>
+              <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-strong)" }}>Streak</span>
             </div>
           </div>
         </div>

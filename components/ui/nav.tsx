@@ -87,7 +87,7 @@ export function LoadingScreen({ message = "Loading…" }: { message?: string }) 
       alignItems: "center", justifyContent: "center", gap: 14,
     }}>
       <Spinner size={28} />
-      <p style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-sm)", color: "var(--text-faint)", margin: 0 }}>
+      <p style={{ fontFamily: "var(--font-serif)", fontSize: "var(--text-sm)", color: "var(--text-faint)", margin: 0 }}>
         {message}
       </p>
     </div>
@@ -98,7 +98,7 @@ export function Wordmark({ href = "/", dark = false }: { href?: string; dark?: b
   const ink = dark ? "var(--text-on-dark)" : "var(--text-strong)";
   return (
     <Link href={href} style={{ display: "inline-flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
-      <Mark width={30} height={18} fill={ink} />
+      <Mark height={22} />
       <span style={{
         fontFamily: "var(--font-serif)", fontWeight: 600, fontSize: 19,
         letterSpacing: "-0.02em", color: ink,
@@ -119,6 +119,8 @@ const NAV_LINKS: { href: string; label: string; icon: string }[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [displayName, setDisplayName] = useState("");
+  // Who's signed in, so the footer can always say so: a guest, or an account and its email.
+  const [account, setAccount] = useState<{ guest: boolean; email: string | null } | null>(null);
   const [planDay, setPlanDay] = useState(1);
   const [streak, setStreak] = useState(0);
   /** The 30-day progress footer only means something for students with that plan. */
@@ -137,6 +139,7 @@ export function Sidebar() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setAccount({ guest: user.is_anonymous ?? false, email: user.email ?? null });
       setDisplayName(
         user.user_metadata?.display_name ||
         user.user_metadata?.full_name ||
@@ -168,14 +171,14 @@ export function Sidebar() {
       display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       <Link href="/dashboard" style={{
-        height: 60, display: "flex", alignItems: "center", gap: 12, padding: "0 21px",
+        height: 60, display: "flex", alignItems: "center", gap: 12, padding: "0 17px", // centers the mark in the collapsed 66px rail
         flexShrink: 0, borderBottom: "1px solid var(--sidebar-line)",
       }}>
-        <Mark width={30} height={18} fill="var(--sidebar-ink)" />
+        <Mark height={18} />
         <span className="pw-lbl" style={{ fontSize: 16, fontWeight: 600, color: "var(--sidebar-ink)", letterSpacing: "-0.018em" }}>800Path</span>
       </Link>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: 2, padding: "14px 9px", flex: 1, fontFamily: "var(--font-sans)", fontSize: 13 }}>
+      <nav style={{ display: "flex", flexDirection: "column", gap: 2, padding: "14px 9px", flex: 1, fontFamily: "var(--font-serif)", fontSize: 14 }}>
         {NAV_LINKS.map(({ href, label, icon }) => {
           const active = isActive(href);
           const isHovered = hovered === href;
@@ -189,7 +192,8 @@ export function Sidebar() {
           };
           const inner = (
             <>
-              <Icon name={icon} size={16} color={active ? "var(--accent)" : "currentColor"} />
+              {/* Never shrinks: in the collapsed rail the (hidden) label would otherwise squeeze it to nothing. */}
+              <span style={{ display: "flex", flexShrink: 0 }}><Icon name={icon} size={16} color={active ? "var(--accent)" : "currentColor"} /></span>
               <span className="pw-lbl" style={{ flex: 1 }}>{label}</span>
               {/* Lite's coral → violet, as a small mark on the current page. */}
               {active && <span className="pw-lbl" aria-hidden="true" style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gradient-radiant)", flexShrink: 0 }} />}
@@ -212,11 +216,11 @@ export function Sidebar() {
               return <span key={d} style={{ aspectRatio: 1, background: bg, borderRadius: 1 }} />;
             })}
           </div>
-          <p className="pw-lbl" style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--sidebar-ink-faint)", margin: "10px 0 0" }}>
+          <p className="pw-lbl" style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--sidebar-ink-faint)", margin: "10px 0 0" }}>
             Day {clampedDay} of thirty · {streak}-day streak
           </p>
         </div>}
-        <Link href="/account" onMouseEnter={() => setHovered("/account")} onMouseLeave={() => setHovered(null)} style={{
+        <Link href={account?.guest ? "/auth" : "/account"} onMouseEnter={() => setHovered("/account")} onMouseLeave={() => setHovered(null)} style={{
           display: "flex", alignItems: "center", gap: 14, padding: "10px 12px",
           borderRadius: "var(--radius-md)", color: hovered === "/account" ? "var(--sidebar-ink)" : "var(--sidebar-ink-muted)",
           background: hovered === "/account" ? "var(--sidebar-hover)" : "transparent",
@@ -226,9 +230,19 @@ export function Sidebar() {
             width: 16, height: 16, borderRadius: 999, border: "1px solid var(--sidebar-ink-faint)",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, flexShrink: 0,
           }}>
-            {(displayName[0] ?? "?").toUpperCase()}
+            {account?.guest ? "G" : (displayName[0] ?? "?").toUpperCase()}
           </span>
-          <span className="pw-lbl">{displayName || "Account"}</span>
+          {account?.guest ? (
+            <span className="pw-lbl" style={{ flex: 1, display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+              <span>Guest</span>
+              <span style={{ color: "var(--accent)", fontWeight: 600 }}>Sign in</span>
+            </span>
+          ) : (
+            <span className="pw-lbl" style={{ minWidth: 0, display: "flex", flexDirection: "column", lineHeight: 1.3 }}>
+              <span style={{ color: "var(--sidebar-ink)" }}>{displayName || "Account"}</span>
+              {account?.email && <span style={{ fontSize: 11, color: "var(--sidebar-ink-faint)", overflow: "hidden", textOverflow: "ellipsis" }}>{account.email}</span>}
+            </span>
+          )}
         </Link>
       </div>
     </aside>

@@ -27,9 +27,9 @@ export function PickSheet({ onPick, onClose }: { onPick: (pick: string) => void;
   const practicable = data ? new Set(data.mastery.map((m) => m.subcategory)) : null;
 
   const bigOption = (pick: string, title: string, sub: string, tone: string) => (
-    <button onClick={() => onPick(pick)} style={{ flex: 1, border: 0, borderRadius: 20, padding: 16, background: tone, textAlign: "left", minHeight: 88, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+    <button className="l-serif-btn" onClick={() => onPick(pick)} style={{ flex: 1, border: 0, borderRadius: 20, padding: 16, background: tone, textAlign: "left", minHeight: 88, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       <span style={{ fontSize: 13, fontWeight: 600, color: "var(--l-muted)" }}>{sub}</span>
-      <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", color: "var(--l-ink)" }}>{title}</span>
+      <span style={{ fontSize: 18, fontWeight: 600, letterSpacing: "-0.02em", color: "var(--l-ink)" }}>{title}</span>
     </button>
   );
 

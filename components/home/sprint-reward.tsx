@@ -22,7 +22,6 @@ export function SprintReward({ title, tiles, style }: { title: string; tiles: Ca
         Sprint complete
       </p>
       <h2 style={{ fontWeight: 400, fontSize: 28, letterSpacing: "-0.016em", color: "var(--text-strong)", margin: "0 0 6px" }}>You finished the {title}.</h2>
-      <p style={{ fontSize: 15, lineHeight: 1.55, color: "var(--text-muted)", margin: "0 0 20px" }}>Here&apos;s where these skills stand on your map now.</p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 10 }}>
         {tiles.map((m, i) => {
           const look = LEVEL_STYLE[lit ? m.level : "not_started"];
@@ -42,7 +41,7 @@ export function SprintReward({ title, tiles, style }: { title: string; tiles: Ca
           );
         })}
       </div>
-      <div style={{ display: "flex", gap: 20, margin: "22px 0 0", fontFamily: "var(--font-sans)", fontSize: 13 }}>
+      <div style={{ display: "flex", gap: 20, margin: "22px 0 0", fontFamily: "var(--font-serif)", fontSize: 14 }}>
         <Link href="/dashboard" style={{ color: "var(--text-strong)", textDecoration: "underline" }}>See your whole map</Link>
         <Link href="/sprints" style={{ color: "var(--text-muted)", textDecoration: "underline" }}>Pick another sprint</Link>
       </div>

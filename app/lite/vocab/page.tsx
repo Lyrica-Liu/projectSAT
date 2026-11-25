@@ -139,15 +139,14 @@ function Study({ deck, onDone }: { deck: Card[]; onDone: (tally: { got: number; 
             <div className="l-flash-face front">
               <Glow tone="coral" size={260} style={{ right: -100, top: -110 }} />
               <Glow tone="violet" size={250} style={{ left: -90, bottom: -120 }} />
-              {card.isNew && !done && <span className="l-chip" style={{ position: "absolute", top: 20, left: 20, background: "#fff", color: "var(--l-accent-ink)" }}>New word</span>}
-              {done && <span className="l-chip" style={{ position: "absolute", top: 20, left: 20, background: "#fff", color: done === "got_it" ? "var(--l-violet-ink)" : "var(--l-coral-ink)" }}>{done === "got_it" ? "✓ Got it" : "Still learning"}</span>}
+                            {done && <span className="l-chip" style={{ position: "absolute", top: 20, left: 20, background: "#fff", color: done === "got_it" ? "var(--l-violet-ink)" : "var(--l-coral-ink)" }}>{done === "got_it" ? "✓ Got it" : "Still learning"}</span>}
               <p style={{ position: "relative", fontFamily: "var(--l-serif)", fontSize: 44, fontWeight: 600, letterSpacing: "-0.025em", margin: 0 }}>{card.word}</p>
               <p style={{ position: "relative", fontSize: 16, fontWeight: 600, color: "var(--l-muted)", margin: "8px 0 0", fontStyle: "italic" }}>{card.pos}</p>
-              <p style={{ position: "absolute", bottom: 22, fontSize: 13, fontWeight: 600, color: "var(--l-faint)", margin: 0 }}>Tap to flip</p>
+              {index === 0 && <p style={{ position: "absolute", bottom: 22, fontSize: 13, color: "var(--l-faint)", margin: 0 }}>Tap to flip</p>}
             </div>
             <div className="l-flash-face back">
               <p style={{ fontSize: 14, fontWeight: 700, color: "var(--l-muted)", margin: 0 }}>{card.word} <span style={{ fontWeight: 500, fontStyle: "italic" }}>· {card.pos}</span></p>
-              <p style={{ fontSize: 25, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.18, margin: 0 }}>{card.definition}</p>
+              <p style={{ fontSize: 25, fontWeight: 600, letterSpacing: "-0.02em", lineHeight: 1.18, margin: 0 }}>{card.definition}</p>
               <div style={{ height: 1, background: "var(--l-line)" }} />
               <p style={{ fontSize: 16, lineHeight: 1.55, color: "var(--l-text2)", margin: 0 }}><Example sentence={card.example} word={card.word} /></p>
             </div>
@@ -187,7 +186,7 @@ export default function LiteVocab() {
 
   const tile = (n: number | undefined, label: string, tone: string) => (
     <div className="l-tile" style={{ textAlign: "center", background: tone }}>
-      <p style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", margin: 0 }}>{n ?? "–"}</p>
+      <p style={{ fontSize: 26, fontWeight: 600, letterSpacing: "-0.02em", margin: 0 }}>{n ?? "–"}</p>
       <p style={{ fontSize: 13, fontWeight: 600, color: "var(--l-muted)", margin: "2px 0 0" }}>{label}</p>
     </div>
   );
@@ -202,7 +201,6 @@ export default function LiteVocab() {
       <main className="l-page">
         <div>
           <h1 className="l-h1">Vocab</h1>
-          <p className="l-sub" style={{ marginTop: 6 }}>SAT words, a few minutes a day.</p>
         </div>
 
         {summary && (
@@ -220,10 +218,7 @@ export default function LiteVocab() {
             <Glow tone="rose" size={280} style={{ right: -100, top: -120 }} />
             <Glow tone="violet" size={240} style={{ left: -90, bottom: -140 }} />
             <div style={{ position: "relative" }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,.72)", margin: 0 }}>
-                {stats!.dueNow > 0 ? `${stats!.dueNow} ${stats!.dueNow === 1 ? "word" : "words"} due for review` : "Nothing due right now"}
-              </p>
-              <p style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", margin: "8px 0 0" }}>{deck.length > 0 ? `${deck.length} cards today` : "All caught up"}</p>
+              <p style={{ fontSize: 34, fontWeight: 600, letterSpacing: "-0.02em", margin: "8px 0 0" }}>{deck.length > 0 ? `${deck.length} cards today` : "All caught up"}</p>
               {deck.length > 0 && (
                 <p style={{ fontSize: 15, color: "rgba(255,255,255,.72)", margin: "6px 0 0" }}>
                   {deck.filter((c) => c.isNew).length} new · {deck.filter((c) => !c.isNew).length} review
@@ -241,7 +236,6 @@ export default function LiteVocab() {
           {tile(stats?.learning, "Learning", "var(--l-accent-soft)")}
           {tile(stats?.unseen, "New", "var(--l-coral-soft)")}
         </div>
-        {stats && <p className="l-sub">{stats.total} words in the deck. A word counts as learned once you&apos;ve known it five times in a row, spaced out over about a month.</p>}
         <ErrorNote message={error} onRetry={refresh} />
       </main>
       <TabBar />

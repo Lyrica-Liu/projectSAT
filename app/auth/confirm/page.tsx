@@ -114,7 +114,7 @@ function ConfirmAccount() {
             )}
             <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: 17, color: "var(--text-strong)", margin: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{info.email}</p>
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "2px 0 0" }}>Member since {formatDate(info.memberSince)}</p>
+              <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: "2px 0 0" }}>Member since {formatDate(info.memberSince)}</p>
             </div>
           </div>
 
@@ -138,12 +138,12 @@ function ConfirmAccount() {
         </div>
 
         {guestSets > 0 && (
-          <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.55, color: "var(--text-muted)", margin: "18px 0 0" }}>
+          <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, lineHeight: 1.55, color: "var(--text-muted)", margin: "18px 0 0" }}>
             The {guestSets} {guestSets === 1 ? "set" : "sets"} you did as a guest stay with that guest session and aren&apos;t part of this account.
           </p>
         )}
 
-        {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: "14px 0 0" }}>{error}</p>}
+        {error && <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--danger)", margin: "14px 0 0" }}>{error}</p>}
 
         <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", marginTop: 28 }}>
           <button onClick={confirm} disabled={busy} style={{

@@ -102,7 +102,7 @@ function Pips({ n }: { n: number }) {
 
 function ViewToggle({ view, setView }: { view: View; setView: (v: View) => void }) {
   return (
-    <div style={{ display: "flex", borderBottom: "1px solid var(--line-strong)", marginBottom: 32, fontFamily: "var(--font-sans)" }}>
+    <div style={{ display: "flex", borderBottom: "1px solid var(--line-strong)", marginBottom: 32, fontFamily: "var(--font-serif)" }}>
       {(["english", "math"] as View[]).map((v) => {
         const active = view === v;
         return (
@@ -161,7 +161,7 @@ function AccuracyChart({ points }: { points: ChartPoint[] }) {
     <section style={{ margin: "56px 0 0" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 20, flexWrap: "wrap", paddingBottom: 12, borderBottom: "1px solid var(--line-strong)" }}>
         <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: 0 }}>Accuracy over time</p>
-        <div style={{ display: "flex", gap: 4, fontFamily: "var(--font-sans)" }}>
+        <div style={{ display: "flex", gap: 4, fontFamily: "var(--font-serif)" }}>
           {rangeDefs.map((r) => {
             const active = range === r.v;
             return (
@@ -341,7 +341,7 @@ export default function ForYouPage() {
         <Sidebar />
         <main className="pw-main-content" style={{ maxWidth: 1060 + SIDEBAR_WIDTH, marginRight: "auto", padding: "88px 56px", textAlign: "center" }}>
           <h1 style={{ fontWeight: 400, fontSize: 40, letterSpacing: "-0.024em", color: "var(--text-strong)", margin: "0 0 12px" }}>No insights yet</h1>
-          <p style={{ fontSize: 16, color: "var(--text-muted)", margin: "0 0 28px" }}>Finish a practice set from your skill map and we&apos;ll show you exactly where to focus next.</p>
+          <p style={{ fontSize: 16, color: "var(--text-muted)", margin: "0 0 28px" }}>Finish a set to see where to focus.</p>
           <button onClick={() => router.push("/dashboard")} style={{ border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>
             Go to your skill map
           </button>
@@ -391,16 +391,9 @@ export default function ForYouPage() {
       <Sidebar />
 
       <main className="pw-main-content" style={{ maxWidth: 1060 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-          <span>Picked for you</span>
-          <span>Extra practice · not part of the plan</span>
-        </div>
 
         <div style={{ padding: "52px 0 0", marginBottom: 36 }}>
           <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, color: "var(--text-strong)", margin: 0, letterSpacing: "-0.026em" }}>Picked for you</h1>
-          <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "18px 0 0", maxWidth: "52ch" }}>
-            Practice tuned to your results — every set also updates your skill map.
-          </p>
         </div>
 
         {recap && (
@@ -435,11 +428,10 @@ export default function ForYouPage() {
                 <p style={{ ...microLabel, margin: 0 }}>Overall grasp</p>
                 <p style={{ fontSize: 24, color: "var(--text-strong)", margin: 0, lineHeight: 1.1, letterSpacing: "-0.018em" }}>{GRASP_LABEL_BY_N[overallGraspN] || "Emerging"}</p>
                 <Pips n={overallGraspN} />
-                <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: 0 }}>Difficulty-adjusted skill level.</p>
               </div>
               <div style={{ padding: "24px 0 24px 32px", borderLeft: "1px solid var(--border)", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10 }}>
                 <p style={{ ...microLabel, margin: 0 }}>Suggested for you</p>
-                {startError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: 0 }}>{startError}</p>}
+                {startError && <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--danger)", margin: 0 }}>{startError}</p>}
                 {weakest.map((s) => (
                   <div key={s.skill} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                     <span style={{ fontSize: 16, color: "var(--text-strong)" }}>{s.label}</span>
@@ -471,9 +463,9 @@ export default function ForYouPage() {
                     <p style={{ fontSize: 16, color: "var(--text-strong)", margin: 0, lineHeight: 1.25 }}>{d.name}</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                       <Pips n={d.graspN} />
-                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>{d.grasp} grasp</span>
+                      <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)" }}>{d.grasp} grasp</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 5, fontFamily: "var(--font-sans)" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 5, fontFamily: "var(--font-serif)" }}>
                       <span style={{ fontWeight: 500, fontSize: 19, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{d.accuracy}%</span>
                       <span style={{ fontSize: 11, color: "var(--text-faint)" }}>accuracy</span>
                     </div>
@@ -486,14 +478,14 @@ export default function ForYouPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "22px 28px", background: "var(--surface-sunken)", borderBottom: "1px solid var(--border)" }}>
                 <Icon name={selIcon} size={19} color="var(--text-muted)" />
                 <h3 style={{ flex: 1, fontWeight: 400, fontSize: 23, color: "var(--text-strong)", margin: 0, letterSpacing: "-0.018em" }}>{sel.name}</h3>
-                <div style={{ textAlign: "right", flexShrink: 0, fontFamily: "var(--font-sans)" }}>
+                <div style={{ textAlign: "right", flexShrink: 0, fontFamily: "var(--font-serif)" }}>
                   <p style={{ fontSize: 11, color: "var(--text-muted)", margin: 0, whiteSpace: "nowrap" }}>{sel.grasp} grasp · {sel.accuracy}% accuracy</p>
                   <p style={{ fontSize: 11, color: "var(--text-faint)", margin: "4px 0 0", whiteSpace: "nowrap" }}>{sel.questions} questions</p>
                 </div>
               </div>
 
               <div style={{ padding: "8px 28px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 0.9fr 1.3fr 1fr", gap: 18, padding: "14px 0", borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 0.9fr 1.3fr 1fr", gap: 18, padding: "14px 0", borderBottom: "1px solid var(--border)", fontFamily: "var(--font-serif)" }}>
                   <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>Sub-category</span>
                   <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>Grasp</span>
                   <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>Accuracy</span>
@@ -503,13 +495,13 @@ export default function ForYouPage() {
                   <div key={row.skill} style={{ display: "grid", gridTemplateColumns: "1.5fr 0.9fr 1.3fr 1fr", gap: 18, alignItems: "center", padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
                     <div>
                       <p style={{ fontSize: 16, color: "var(--text-strong)", margin: 0 }}>{row.label}</p>
-                      <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "4px 0 0" }}>{row.note}</p>
+                      <p style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", margin: "4px 0 0" }}>{row.note}</p>
                     </div>
                     {row.hasData ? (
                       <>
                         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                           <Pips n={row.graspN} />
-                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>{row.grasp}</span>
+                          <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)" }}>{row.grasp}</span>
                         </div>
                         <SkillBar label="" accuracy={row.accuracy} detail={`${row.accuracy}% · at ${DIFFICULTY_LABELS[row.currentTier]}`} />
                         <div style={{ display: "flex", justifyContent: "flex-end" }}>
@@ -517,7 +509,7 @@ export default function ForYouPage() {
                         </div>
                       </>
                     ) : (
-                      <span style={{ gridColumn: "2 / -1", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>Not started yet</span>
+                      <span style={{ gridColumn: "2 / -1", fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)" }}>Not started yet</span>
                     )}
                   </div>
                 ))}
@@ -526,7 +518,7 @@ export default function ForYouPage() {
               <div style={{ padding: "20px 28px 28px" }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "0 0 14px" }}>
                   <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: 0 }}>Improvement areas</p>
-                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>weakest first</span>
+                  <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)" }}>weakest first</span>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", maxHeight: 250, overflowY: "auto", borderTop: "1px solid var(--border)" }}>
                   {improve.map((row) => (
@@ -539,7 +531,7 @@ export default function ForYouPage() {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 5 }}>
                           <p style={{ fontSize: 16, color: "var(--text-strong)", margin: 0 }}>{row.label}</p>
-                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", whiteSpace: "nowrap", flexShrink: 0 }}>{row.hasData ? `${row.grasp} grasp` : ""}</span>
+                          <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", whiteSpace: "nowrap", flexShrink: 0 }}>{row.hasData ? `${row.grasp} grasp` : ""}</span>
                         </div>
                         <p style={{ fontSize: 15, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>{row.advice}</p>
                       </div>

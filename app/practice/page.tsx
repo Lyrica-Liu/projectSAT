@@ -157,10 +157,6 @@ export default function PracticeSetupPage() {
       <Sidebar />
 
       <main className="pw-main-content" style={{ maxWidth: 960 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-          <span>Extra practice</span>
-          <span>Any skill, any time</span>
-        </div>
 
         <ResumeCard style={{ margin: "24px 0 0" }} />
 
@@ -168,7 +164,6 @@ export default function PracticeSetupPage() {
           <div>
             <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0 }}>Practice as you like</h1>
             <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "20px 0 0", maxWidth: "50ch", textWrap: "pretty" }}>
-              Short sets of 5 or 10, with your score and every explanation as soon as you finish.{" "}
               <Link href="/for-you" style={{ color: "var(--accent)" }}>See what&apos;s picked for you →</Link>
             </p>
 
@@ -188,7 +183,7 @@ export default function PracticeSetupPage() {
                         <Checkbox on={on} accent />
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ display: "block", fontFamily: "var(--font-serif)", fontSize: 17, color: "var(--text-strong)" }}>{r.insight.label}</span>
-                          <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>
+                          <span style={{ display: "block", fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-muted)", marginTop: 3 }}>
                             {r.subject} · {r.insight.accuracy}% accuracy · try {r.insight.suggestedLabel}
                           </span>
                         </span>
@@ -199,7 +194,7 @@ export default function PracticeSetupPage() {
               </>
             )}
             {recommended && recommended.length === 0 && (
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "28px 0 0" }}>
+              <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: "28px 0 0" }}>
                 Finish a session and we&apos;ll recommend the skills worth extra practice.
               </p>
             )}
@@ -280,7 +275,7 @@ export default function PracticeSetupPage() {
             </div>
 
             {error && (
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "24px 0 0" }}>{error}</p>
+              <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "24px 0 0" }}>{error}</p>
             )}
 
             <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "40px 0 0" }}>
@@ -292,7 +287,7 @@ export default function PracticeSetupPage() {
               }}>
                 {loading ? "Building your session…" : "Start session"}
               </button>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>
+              <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)" }}>
                 {selected.size === 0 ? "Choose at least one skill" : estimate}
               </span>
             </div>
@@ -302,19 +297,12 @@ export default function PracticeSetupPage() {
             <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 16px" }}>This session</p>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 12 }}>
               <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Skills</span>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)", textAlign: "right" }}>{selectedLabel}</span>
+              <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-strong)", textAlign: "right" }}>{selectedLabel}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 12 }}>
               <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Questions</span>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{count}</span>
+              <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{count}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "0 0 12px", borderBottom: "1px solid var(--border)", marginBottom: 18 }}>
-              <span style={{ fontSize: 15, color: "var(--text-muted)" }}>Counts toward</span>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)" }}>Your skill levels</span>
-            </div>
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, lineHeight: 1.66, color: "var(--text-faint)", margin: 0 }}>
-              Every set updates how strong you are in each skill. The countdown timer is off unless you turn it on.
-            </p>
           </div>
         </div>
       </main>
@@ -348,9 +336,9 @@ function TreeRow({ level, label, open, onToggle, selectedCount, hasRecommended }
       <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {label}
         {hasRecommended && <span title="Contains a recommended skill" style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)" }} />}
-        {selectedCount > 0 && <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>({selectedCount})</span>}
+        {selectedCount > 0 && <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-muted)" }}>({selectedCount})</span>}
       </span>
-      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", transform: open ? "rotate(90deg)" : "none", transition: "transform 0.16s" }}>›</span>
+      <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", transform: open ? "rotate(90deg)" : "none", transition: "transform 0.16s" }}>›</span>
     </button>
   );
 }
@@ -365,7 +353,7 @@ function SkillOption({ level, label, on, recommended, onToggle }: {
       background: recommended ? "var(--accent-soft)" : "transparent", cursor: "pointer", textAlign: "left",
     }}>
       <Checkbox on={on} accent={recommended} />
-      <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: recommended ? "var(--accent)" : on ? "var(--text-strong)" : "var(--text-muted)", fontWeight: recommended ? 500 : 400 }}>{label}</span>
+      <span style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: recommended ? "var(--accent)" : on ? "var(--text-strong)" : "var(--text-muted)", fontWeight: recommended ? 500 : 400 }}>{label}</span>
       {recommended && (
         <span style={{ marginLeft: "auto", fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)" }}>Recommended</span>
       )}

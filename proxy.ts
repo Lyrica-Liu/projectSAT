@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { BROWSER_SESSION_COOKIE } from "@/lib/auth";
+import { BROWSER_SESSION_COOKIE, SIGNED_OUT_COOKIE } from "@/lib/auth";
 
 // /onboarding is deliberately public: it's the landing page's entry point and signs the
 // visitor in anonymously itself.
@@ -86,6 +86,18 @@ export async function proxy(request: NextRequest) {
   // mid-session (saving progress by email) isn't signed out on their next page.
   if (user?.is_anonymous && !request.cookies.get(BROWSER_SESSION_COOKIE)) {
     supabaseResponse.cookies.set(BROWSER_SESSION_COOKIE, "1", { path: "/", sameSite: "lax" });
+  }
+
+  // Someone who signed out on purpose and comes back to the front door gets the welcome screen
+  // (sign in, or start fresh), not the marketing page.
+  if (!user && request.cookies.get(SIGNED_OUT_COOKIE) && (pathname === "/" || pathname === "/dashboard")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/welcome";
+    return NextResponse.redirect(url);
+  }
+  // Signed in again (any way at all): the signed-out marker has done its job.
+  if (user && request.cookies.get(SIGNED_OUT_COOKIE)) {
+    supabaseResponse.cookies.delete(SIGNED_OUT_COOKIE);
   }
 
   // 800Path Lite: phones opening the home pages land in Lite, unless they chose "Full site"

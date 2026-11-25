@@ -19,6 +19,13 @@ export function markBrowserSession() {
   document.cookie = `${BROWSER_SESSION_COOKIE}=1; path=/; samesite=lax`;
 }
 
+/**
+ * Set when someone signs out on purpose; while it's there, a signed-out visitor gets the welcome
+ * screen (sign in, or start fresh with the setup questions) instead of the marketing page or a
+ * silent new guest. proxy.ts clears it as soon as anyone is signed in again.
+ */
+export const SIGNED_OUT_COOKIE = "pw_signed_out";
+
 /** Where to land after a Google sign-in started from Lite (a /lite path); read by the auth callback. */
 export const LITE_RETURN_COOKIE = "pw_lite_return";
 

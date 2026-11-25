@@ -208,7 +208,7 @@ function toolButtonStyle(active: boolean): React.CSSProperties {
     border: `1px solid ${active ? "var(--text-strong)" : "var(--border)"}`,
     background: active ? "var(--surface-sunken)" : "transparent",
     color: active ? "var(--text-strong)" : "var(--text-faint)",
-    borderRadius: "var(--radius-md)", fontFamily: "var(--font-sans)", fontSize: 11,
+    borderRadius: "var(--radius-md)", fontFamily: "var(--font-serif)", fontSize: 12,
     padding: "5px 12px", cursor: "pointer",
   };
 }
@@ -641,7 +641,7 @@ export default function ActiveSessionPage() {
   if (error) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--canvas)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 24px" }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", background: "var(--danger-surface)", padding: "12px 18px", maxWidth: 400, textAlign: "center" }}>
+        <div style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", background: "var(--danger-surface)", padding: "12px 18px", maxWidth: 400, textAlign: "center" }}>
           {error}
         </div>
         <button onClick={() => router.push("/dashboard")} style={{ border: 0, background: "none", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)", cursor: "pointer" }}>← Back to dashboard</button>
@@ -744,7 +744,7 @@ export default function ActiveSessionPage() {
       <div style={{ borderBottom: "1px solid var(--border)", padding: "8px 44px" }}>
         <div style={{ maxWidth: 1360, margin: "0 auto", display: "flex", alignItems: "center", gap: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", marginRight: 4 }}>Text size</span>
+            <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", marginRight: 4 }}>Text size</span>
             <button
               onClick={() => setTextSizeIndex((i) => Math.max(0, i - 1))}
               disabled={textSizeIndex === 0}
@@ -758,7 +758,7 @@ export default function ActiveSessionPage() {
             >
               −
             </button>
-            <span style={{ width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--text-strong)" }}>
+            <span style={{ width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-serif)", fontSize: 15, color: "var(--text-strong)" }}>
               A
             </span>
             <button
@@ -967,7 +967,7 @@ export default function ActiveSessionPage() {
               )}
 
               {actionError && (
-                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "20px 0 0" }}>{actionError}</p>
+                <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "20px 0 0" }}>{actionError}</p>
               )}
 
               <div style={{ display: "flex", alignItems: "center", gap: 24, margin: "32px 0 0" }}>
@@ -980,7 +980,7 @@ export default function ActiveSessionPage() {
                   {atLastQuestion ? (
                     <>
                     {!allAnswered && (
-                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>
+                      <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)" }}>
                         {sessionTarget - answeredCount} unanswered
                       </span>
                     )}

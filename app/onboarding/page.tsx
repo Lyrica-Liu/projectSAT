@@ -8,13 +8,13 @@ import { Wordmark } from "@/components/ui/nav";
 import type { SubjectResult } from "@/lib/diagnostic-scoring";
 
 const STEPS = [
-  { title: "Welcome aboard", sub: "Let's build your personal path to a higher score — it only takes a minute." },
-  { title: "Where you stand", sub: "A recent score, if you have one, gives the diagnostic a head start." },
-  { title: "Aim high", sub: "Your target score shapes every practice set we choose." },
-  { title: "How it works", sub: "Every day follows the same shape — see it before you dive in." },
-  { title: "Quick diagnostic", sub: "About 30 questions, two from every skill, so the plan starts calibrated instead of guessing." },
-  { title: "Your results", sub: "Strong, medium, or weak — see exactly where you stand before anything's decided." },
-  { title: "You're all set", sub: "Your 30-day path is built and Day 1 is waiting." },
+  { title: "Welcome aboard", sub: "One minute of setup." },
+  { title: "Where you stand", sub: "Optional, if you have one." },
+  { title: "Aim high", sub: "Pick a number to aim for." },
+  { title: "How it works", sub: "The same shape every day." },
+  { title: "Quick diagnostic", sub: "About 30 questions." },
+  { title: "Your results", sub: "Where you're strong and weak." },
+  { title: "You're all set", sub: "Day 1 is ready." },
 ];
 
 const GRADES = ["9", "10", "11", "12", "Other"];
@@ -109,15 +109,23 @@ export default function OnboardingPage() {
   // defaults before the restore pass (below) has had a chance to run.
   const restoredRef = useRef(false);
 
+  // ?setup=quick ("Start fresh" on the welcome screen): just the first three questions (name and
+  // grade, scores, target), then home. No diagnostic and no 30-day plan; those stay on Sprints.
+  const [quick, setQuick] = useState(false);
+
   function clearDraft() {
     try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
   }
 
   useEffect(() => {
     async function guard() {
+      const isQuick = new URLSearchParams(window.location.search).get("setup") === "quick";
+      setQuick(isQuick);
+      // Starting fresh means a fresh form, not whatever the last person on this browser typed.
+      if (isQuick) clearDraft();
       let draft: OnboardingDraft | null = null;
       try {
-        const raw = localStorage.getItem(DRAFT_KEY);
+        const raw = isQuick ? null : localStorage.getItem(DRAFT_KEY);
         if (raw) draft = JSON.parse(raw);
       } catch { /* ignore malformed draft */ }
 
@@ -249,6 +257,23 @@ export default function OnboardingPage() {
     setStep(4);
   }
 
+  /** The end of the quick setup: save the answers to this (new guest) account and go home. */
+  async function finishQuick() {
+    setSaving(true);
+    setSaveError(null);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      const { error } = await supabase.auth.signInAnonymously({ options: { data: { signup_source: "welcome" } } });
+      if (error) { setSaving(false); setSaveError("Couldn't get started just now. Please try again."); return; }
+    }
+    const { error } = await supabase.auth.updateUser({
+      data: metadataFor({ name, grade, mathScore, noMathScore, englishScore, noEnglishScore, target, testDate }),
+    });
+    if (error) { setSaving(false); setSaveError("Couldn't save your answers just now. Please try again."); return; }
+    clearDraft();
+    router.push("/dashboard");
+  }
+
   async function beginDiagnostic() {
     setDiagnosticStarting(true);
     setDiagnosticError(null);
@@ -316,8 +341,8 @@ export default function OnboardingPage() {
   }
 
   const currentStep = STEPS[step];
-  const barPct = PCT_BY_STEP[step];
-  const stepLabel = step === 0 ? "Getting started" : step >= 1 && step <= 5 ? `Step ${step} of 5` : "Done";
+  const barPct = quick ? [33, 67, 100][step] ?? 100 : PCT_BY_STEP[step];
+  const stepLabel = quick ? `Step ${step + 1} of 3` : step === 0 ? "Getting started" : step >= 1 && step <= 5 ? `Step ${step} of 5` : "Done";
 
   const planPreview = Array.from({ length: 9 }, (_, i) => (i + 1) % 3 === 0);
 
@@ -375,7 +400,7 @@ export default function OnboardingPage() {
         <div style={{ position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <span style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--text-on-dark-faint)" }}>{stepLabel}</span>
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-on-dark-muted)", fontVariantNumeric: "tabular-nums" }}>{barPct}%</span>
+            <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-on-dark-muted)", fontVariantNumeric: "tabular-nums" }}>{barPct}%</span>
           </div>
           <div style={{ height: 3, borderRadius: 2, background: "var(--dark-border)", overflow: "hidden" }}>
             <span style={{ display: "block", height: "100%", background: "var(--brand-fill)", width: `${barPct}%`, transition: "width 0.3s var(--ease-out)" }} />
@@ -391,9 +416,6 @@ export default function OnboardingPage() {
           {step === 0 && (
             <div>
               <h1 style={{ fontWeight: 400, fontSize: 50, lineHeight: 1.04, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: "0 0 16px" }}>Who&apos;s studying?</h1>
-              <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 40px", lineHeight: 1.62, maxWidth: "46ch" }}>
-                Just enough to make this feel like yours. No account needed to start.
-              </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 32, marginBottom: 40 }}>
                 <Input label="What's your first name?" value={name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} placeholder="Maya" />
                 <div>
@@ -486,7 +508,7 @@ export default function OnboardingPage() {
 
               {/* Mini reading-desk mockup — timed, one question at a time */}
               <div className="pw-glass" style={{ borderRadius: "var(--radius-xl)", padding: 8, marginBottom: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px 10px", fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-on-dark-faint)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px 10px", fontFamily: "var(--font-serif)", fontSize: 11, color: "var(--text-on-dark-faint)" }}>
                   <span style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}>Day 4 · English</span>
                   <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ fontVariantNumeric: "tabular-nums" }}>7 / 20</span>
@@ -510,16 +532,13 @@ export default function OnboardingPage() {
                         background: o.correct ? "var(--moss-50)" : "transparent", fontSize: 13,
                         color: o.correct ? "var(--text-strong)" : "var(--text-body)",
                       }}>
-                        <span style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: o.correct ? "var(--success)" : "var(--text-faint)", width: 9, paddingTop: 3 }}>{o.l}</span>
+                        <span style={{ fontFamily: "var(--font-serif)", fontSize: 9, color: o.correct ? "var(--success)" : "var(--text-faint)", width: 9, paddingTop: 3 }}>{o.l}</span>
                         <span>{o.t}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "0 0 24px" }}>
-                Twenty questions a day, timed like the real thing.
-              </p>
 
               {/* Mini insights strip — the plan tracks what you miss */}
               <div style={{ display: "flex", alignItems: "center", gap: 20, padding: "16px 18px", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", marginBottom: 12 }}>
@@ -530,13 +549,13 @@ export default function OnboardingPage() {
                       strokeDasharray={2 * Math.PI * 42} strokeDashoffset={2 * Math.PI * 42 * (1 - 0.74)} />
                   </svg>
                   <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--text-strong)" }}>74%</span>
+                    <span style={{ fontFamily: "var(--font-serif)", fontSize: 14, fontWeight: 600, color: "var(--text-strong)" }}>74%</span>
                   </div>
                 </div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 9 }}>
                   {[{ l: "Command of Evidence", v: 82 }, { l: "Boundaries", v: 58 }].map((s) => (
                     <div key={s.l} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-body)", width: 132, flexShrink: 0 }}>{s.l}</span>
+                      <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-body)", width: 132, flexShrink: 0 }}>{s.l}</span>
                       <div style={{ flex: 1, height: 3, background: "var(--surface-2)" }}>
                         <div style={{ width: `${s.v}%`, height: "100%", background: "var(--text-strong)" }} />
                       </div>
@@ -544,10 +563,7 @@ export default function OnboardingPage() {
                   ))}
                 </div>
               </div>
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "0 0 24px" }}>
-                A sequence built around the skills you miss, with an explanation for every answer, right or wrong.
-              </p>
-              {saveError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 8px" }}>{saveError}</p>}
+              {saveError && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "0 0 8px" }}>{saveError}</p>}
             </div>
           )}
 
@@ -558,7 +574,7 @@ export default function OnboardingPage() {
               <p style={{ fontSize: 17, color: "var(--text-muted)", margin: "0 0 40px", lineHeight: 1.62, maxWidth: "46ch" }}>
                 About 30 questions, two from every Math and Reading &amp; Writing skill, mixed difficulty. Answer honestly — it just sets your starting point.
               </p>
-              {diagnosticError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 20px" }}>{diagnosticError}</p>}
+              {diagnosticError && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "0 0 20px" }}>{diagnosticError}</p>}
               <Button
                 full size="lg" disabled={diagnosticStarting || saving}
                 onClick={diagnosticCompleted ? () => setStep(5) : diagnosticSessionId ? resumeDiagnostic : beginDiagnostic}
@@ -570,9 +586,6 @@ export default function OnboardingPage() {
                   <button onClick={skipDiagnostic} disabled={saving} style={{ background: "none", border: "none", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", cursor: "pointer", textDecoration: "underline" }}>
                     {saving ? "Skipping…" : "Skip the diagnostic"}
                   </button>
-                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "8px 0 0", lineHeight: 1.5 }}>
-                    Without it, every skill gets equal time in the plan instead of extra time where you actually need it.
-                  </p>
                 </div>
               )}
             </div>
@@ -587,10 +600,10 @@ export default function OnboardingPage() {
               </p>
 
               {resultsLoading && (
-                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-faint)" }}>Scoring your diagnostic…</p>
+                <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-faint)" }}>Scoring your diagnostic…</p>
               )}
               {resultsError && (
-                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)" }}>{resultsError}</p>
+                <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)" }}>{resultsError}</p>
               )}
 
               {results && (
@@ -602,7 +615,7 @@ export default function OnboardingPage() {
                       <div key={subject} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "20px 0", borderBottom: "1px solid var(--border)" }}>
                         <span style={{ fontSize: 17, color: "var(--text-body)" }}>{subject === "english" ? "Reading & Writing" : "Math"}</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.accuracy}%</span>
+                          <span style={{ fontFamily: "var(--font-serif)", fontSize: 15, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{r.accuracy}%</span>
                           <Badge tone={TIER_TONE[r.tier]} size="sm">{r.tier}</Badge>
                         </div>
                       </div>
@@ -626,11 +639,11 @@ export default function OnboardingPage() {
                 {summary.map((s) => (
                   <div key={s.label} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, padding: "16px 0", borderBottom: "1px solid var(--border)" }}>
                     <span style={{ fontSize: 16, color: "var(--text-muted)" }}>{s.label}</span>
-                    <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-strong)" }}>{s.value}</span>
+                    <span style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-strong)" }}>{s.value}</span>
                   </div>
                 ))}
               </div>
-              {saveError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 20px" }}>{saveError}</p>}
+              {saveError && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "0 0 20px" }}>{saveError}</p>}
               <Button full size="lg" onClick={finish} disabled={saving}>
                 {saving ? "Building your plan…" : "See my 30-day path →"}
               </Button>
@@ -642,11 +655,15 @@ export default function OnboardingPage() {
             </div>
           )}
 
+          {quick && step === 2 && saveError && <p role="alert" style={{ fontSize: 14, color: "var(--danger)", margin: "24px 0 0" }}>{saveError}</p>}
+
           {/* Nav (steps 1–5, except 4 which has its own dedicated action button) */}
           {step >= 1 && step <= 5 && step !== 4 && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 44 }}>
               <Button variant="ghost" onClick={back} disabled={saving}>← Back</Button>
-              {step === 3 ? (
+              {quick && step === 2 ? (
+                <Button onClick={finishQuick} disabled={saving}>{saving ? "Saving…" : "Done →"}</Button>
+              ) : step === 3 ? (
                 <Button onClick={enterDiagnostic} disabled={saving}>{saving ? "Preparing…" : "Continue →"}</Button>
               ) : (
                 <Button onClick={next} disabled={step === 5 && (!results || resultsLoading)}>

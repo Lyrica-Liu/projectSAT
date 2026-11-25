@@ -37,6 +37,14 @@ function AuthForm() {
 
   const supabase = createClient();
   const isUp = mode === "signup";
+  // A guest here (from the sidebar or a save prompt) needs to know what happens to the practice
+  // they've done: kept when they create an account or link Google, left behind when they sign in
+  // to a different, existing account.
+  const [isGuest, setIsGuest] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setIsGuest(session?.user.is_anonymous ?? false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // A guest tried to link a Google account that already has its own 800Path account: just
   // sign in to that account. Supabase reports this in the URL fragment (#error_code=...),
@@ -172,13 +180,13 @@ function AuthForm() {
           </p>
         </div>
 
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-on-dark-faint)", margin: 0 }}>© 2026 800Path</p>
+        <p style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-on-dark-faint)", margin: 0 }}>© 2026 800Path</p>
       </aside>
 
       <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "72px 56px" }}>
         <div style={{ width: "100%", maxWidth: 380 }}>
 
-          <div style={{ display: "flex", borderBottom: "1px solid var(--line-strong)", margin: "0 0 36px", fontFamily: "var(--font-sans)" }}>
+          <div style={{ display: "flex", borderBottom: "1px solid var(--line-strong)", margin: "0 0 36px", fontFamily: "var(--font-serif)" }}>
             <button type="button" onClick={() => switchMode("signin")} style={{
               flex: 1, padding: "0 0 12px", border: "none", borderBottom: `2px solid ${!isUp ? "var(--text-strong)" : "transparent"}`,
               background: "none", fontSize: 13, color: !isUp ? "var(--text-strong)" : "var(--text-faint)",
@@ -195,7 +203,9 @@ function AuthForm() {
             {isUp ? "Create your account" : "Welcome back"}
           </h1>
           <p style={{ fontSize: 16, lineHeight: 1.6, color: "var(--text-muted)", margin: "0 0 32px" }}>
-            {isUp ? "Save your progress and practice on any device." : "Sign in to pick up where you left off."}
+            {isGuest
+              ? (isUp ? "Your practice so far comes with you." : "Signing in switches to your account. Practice you did as a guest stays with the guest.")
+              : (isUp ? "Save your progress and practice on any device." : "Sign in to pick up where you left off.")}
           </p>
 
           <button
@@ -215,7 +225,7 @@ function AuthForm() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
             <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", whiteSpace: "nowrap" }}>or continue with email</span>
+            <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", whiteSpace: "nowrap" }}>or continue with email</span>
             <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
           </div>
 
@@ -243,13 +253,13 @@ function AuthForm() {
 
             {error && (
               <div style={{
-                fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", background: "var(--danger-surface)",
+                fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--danger)", background: "var(--danger-surface)",
                 borderLeft: "2px solid var(--danger)", padding: "10px 14px", lineHeight: 1.5,
               }}>{error}</div>
             )}
             {successMsg && (
               <div style={{
-                fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--success)", background: "var(--success-surface)",
+                fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--success)", background: "var(--success-surface)",
                 borderLeft: "2px solid var(--success)", padding: "10px 14px", lineHeight: 1.5,
               }}>{successMsg}</div>
             )}
@@ -267,7 +277,7 @@ function AuthForm() {
             </button>
           </div>
 
-          <p style={{ margin: "26px 0 0", fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", lineHeight: 1.7 }}>
+          <p style={{ margin: "26px 0 0", fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", lineHeight: 1.7 }}>
             By continuing you agree to the <span style={{ textDecoration: "underline" }}>Terms</span> and{" "}
             <span style={{ textDecoration: "underline" }}>Privacy Policy</span>. No paywall, no card.
           </p>

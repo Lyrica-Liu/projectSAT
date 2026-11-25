@@ -43,21 +43,23 @@ export default function LiteStream() {
   const [saveFailed, setSaveFailed] = useState<{ answerId: string; choice: Letter } | null>(null);
   const [recap, setRecap] = useState<Recap | null>(null);
   const [ending, setEnding] = useState(false);
-  const [leaving, setLeaving] = useState(false);
   // Saving the answer, then fetching the next card, both while the student reads the explanation.
   const prefetch = useRef<Promise<LiteCard> | null>(null);
 
   const nextCard = useCallback((id: string) => api<{ card: LiteCard }>("/api/lite/stream/next", { sessionId: id }).then((r) => r.card), []);
 
+  /** Starts a stream here and now, so Start and Keep going never wait on a page load. */
+  function begin(mode: string, pick?: string) {
+    api<{ sessionId: string; card: LiteCard }>("/api/lite/stream/start", { mode, pick }).then((r) => {
+      setSessionId(r.sessionId);
+      setCard(r.card);
+      window.history.replaceState(null, "", `/lite/stream/${r.sessionId}`);
+    }).catch((e) => setError((e as Error).message));
+  }
+
   useEffect(() => {
     if (params.id === "new") {
-      const mode = search.get("mode") ?? "adaptive";
-      const pick = search.get("pick") ?? undefined;
-      api<{ sessionId: string; card: LiteCard }>("/api/lite/stream/start", { mode, pick }).then((r) => {
-        setSessionId(r.sessionId);
-        setCard(r.card);
-        window.history.replaceState(null, "", `/lite/stream/${r.sessionId}`);
-      }).catch((e) => setError((e as Error).message));
+      begin(search.get("mode") ?? "adaptive", search.get("pick") ?? undefined);
       return;
     }
     api<{ kind: string; cards: LiteCard[] }>(`/api/lite/session/${params.id}`).then(async ({ kind, cards }) => {
@@ -122,11 +124,13 @@ export default function LiteStream() {
   }
 
   async function keepGoing() {
-    setLeaving(true);
+    // Straight back to a question card while the next stream starts.
+    setRecap(null); setCard(null); setSessionId(null); setEnding(false); setError(null);
+    setTally({ answered: 0, correct: 0 });
+    prefetch.current = null;
     try {
       const me = await fetchMe();
-      const q = new URLSearchParams({ mode: me.lastMode, ...(me.lastMode === "pick" && me.lastPick ? { pick: me.lastPick } : {}) });
-      window.location.href = `/lite/stream/new?${q}`;
+      begin(me.lastMode, me.lastMode === "pick" && me.lastPick ? me.lastPick : undefined);
     } catch {
       router.push("/lite");
     }
@@ -144,9 +148,8 @@ export default function LiteStream() {
         <Glow tone="violet" size={380} style={{ right: -160, top: -60 }} />
         <main className="l-page no-tabs" style={{ minHeight: "100dvh" }}>
           <div style={{ textAlign: "center", marginTop: 40 }}>
-            <span className="l-chip" style={{ background: "rgba(255,255,255,.85)", fontSize: 14 }}>{pct >= 80 ? "Great session" : pct >= 50 ? "Nice session" : "Every miss is a lesson"}</span>
-            <div className="l-big-num" style={{ fontSize: 104, marginTop: 18 }}>{recap.correct}<span style={{ color: "var(--l-dim)" }}>/{recap.answered}</span></div>
-            <p style={{ fontSize: 17, fontWeight: 600, margin: "12px 0 0" }}>{pct}% right</p>
+            <div className="l-big-num" style={{ fontSize: 104 }}>{recap.correct}<span style={{ color: "var(--l-dim)" }}>/{recap.answered}</span></div>
+            <p style={{ fontSize: 18, margin: "12px 0 0" }}>{pct}%</p>
           </div>
           {recap.mistakesFixed > 0 && (
             <div className="l-tile" style={{ background: "var(--l-accent-soft)", fontWeight: 600 }}>
@@ -170,8 +173,8 @@ export default function LiteStream() {
             })}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "auto" }}>
-            <button className="l-btn" onClick={() => router.push("/lite")} disabled={leaving}>Done</button>
-            <button className="l-btn ghost" onClick={keepGoing} disabled={leaving}>{leaving ? "Starting…" : "Keep going"}</button>
+            <button className="l-btn" onClick={() => router.push("/lite")}>Done</button>
+            <button className="l-btn ghost" onClick={keepGoing}>Keep going</button>
           </div>
         </main>
       </>

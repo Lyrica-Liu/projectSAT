@@ -51,7 +51,6 @@ export default function LiteSprints() {
       <main className="l-page">
         <div>
           <h1 className="l-h1">Sprints</h1>
-          <p className="l-sub" style={{ marginTop: 6 }}>Short, focused plans. One set a day.</p>
         </div>
 
         {active ? (
@@ -59,9 +58,7 @@ export default function LiteSprints() {
             <Glow tone="rose" size={260} style={{ right: -90, top: -110 }} />
             <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <p className="l-eyebrow">Your sprint</p>
                 <p className="l-h2" style={{ marginTop: 8 }}>{active.title}</p>
-                <p className="l-sub" style={{ marginTop: 6 }}>{active.completedCount} of {active.days.length} days done</p>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }} aria-label="Sprint days">
                 {active.days.map((d) => {
@@ -78,7 +75,7 @@ export default function LiteSprints() {
               </div>
               {active.key === "full-30" ? (
                 <>
-                  <p className="l-sub">30-Day Full Prep days are 20 questions with typed Math answers, so they run on the full site.</p>
+                  <p className="l-sub">Runs on the full site.</p>
                   <button className="l-btn" onClick={() => goToFullSite(active.continueHref)}>Open on full site</button>
                 </>
               ) : active.nextDay ? (
@@ -89,7 +86,7 @@ export default function LiteSprints() {
               ) : null}
               {confirmQuit ? (
                 <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 14, fontWeight: 600 }}>Quit this sprint? Practice you did still counts.</span>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>Quit this sprint?</span>
                   <button className="l-btn small" onClick={quit} disabled={busy}>Quit</button>
                   <button className="l-link" onClick={() => setConfirmQuit(false)}>Cancel</button>
                 </div>
@@ -102,10 +99,8 @@ export default function LiteSprints() {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {menu.map((s, i) => (
               <div key={s.key} className="l-card" style={{ background: TONES[i % TONES.length], padding: 20 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: "var(--l-muted)", margin: 0 }}>{s.days} days · {s.questionsPerDay} questions a day</p>
                 <p className="l-h2" style={{ marginTop: 6, fontSize: 22 }}>{s.title}</p>
                 <p className="l-sub" style={{ marginTop: 6 }}>{s.tagline}</p>
-                {s.preview && <p style={{ fontSize: 13, color: "var(--l-faint)", margin: "8px 0 0" }}>Starts with {s.preview[0]}</p>}
                 {s.key === "full-30" ? (
                   <button className="l-btn small ghost" style={{ marginTop: 14 }} onClick={() => goToFullSite("/sprints")}>On full site</button>
                 ) : (

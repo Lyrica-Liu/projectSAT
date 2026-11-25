@@ -127,7 +127,7 @@ export function FocusCard({ node, tiers, history, starting, error, onStart, onSe
 
   const navButton: React.CSSProperties = {
     border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 999, padding: "7px 13px", cursor: "pointer",
-    fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap",
+    fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-muted)", whiteSpace: "nowrap",
   };
 
   return (
@@ -166,7 +166,7 @@ export function FocusCard({ node, tiers, history, starting, error, onStart, onSe
             pointerEvents: "auto", marginTop: 16, maxHeight: Math.max(220, maxHeight - titleSize * lineHeight - 16), overflowY: "auto",
             background: "color-mix(in srgb, var(--surface) 96%, transparent)", border: "1px solid var(--border)", borderRadius: 22,
             boxShadow: "0 24px 60px rgba(32,31,28,.16), 0 2px 8px rgba(32,31,28,.06)", padding: "18px 20px 16px",
-            fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-body)", lineHeight: 1.5,
+            fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-body)", lineHeight: 1.5,
           }}
         >
           {crumbs.length > 0 && (

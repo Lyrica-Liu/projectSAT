@@ -34,7 +34,7 @@ function miniChipStyle(active: boolean): React.CSSProperties {
   return {
     padding: "5px 11px", border: `1px solid ${active ? "var(--text-strong)" : "var(--border-strong)"}`,
     background: active ? "var(--surface-sunken)" : "transparent", borderRadius: "var(--radius-sm)",
-    fontFamily: "var(--font-sans)", fontSize: 11, color: active ? "var(--text-strong)" : "var(--text-faint)", cursor: "pointer",
+    fontFamily: "var(--font-serif)", fontSize: 12, color: active ? "var(--text-strong)" : "var(--text-faint)", cursor: "pointer",
   };
 }
 
@@ -208,17 +208,17 @@ export default function PlanPage() {
 
         {adjusting && (
           <div style={{ margin: "24px 0 0", padding: 24, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", background: "var(--surface)" }}>
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: "0 0 20px", lineHeight: 1.6 }}>
+            <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)", margin: "0 0 20px", lineHeight: 1.6 }}>
               Reduce or skip anything marked strong. Only affects days you haven&apos;t started.
             </p>
-            {adjustError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 16px" }}>{adjustError}</p>}
+            {adjustError && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "0 0 16px" }}>{adjustError}</p>}
             {(["english", "math"] as const).map((subject) => {
               const cats = subject === "english" ? ENGLISH_CATEGORY_ORDER : MATH_CATEGORY_ORDER;
               const count = editableCount[subject];
               return (
                 <div key={subject} style={{ marginBottom: 28 }}>
                   <p style={{ ...microLabel, margin: "0 0 4px" }}>{subject === "english" ? "Reading & Writing" : "Math"}</p>
-                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "0 0 12px" }}>{count} day{count === 1 ? "" : "s"} left to plan</p>
+                  <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: "0 0 12px" }}>{count} day{count === 1 ? "" : "s"} left to plan</p>
                   <div style={{ borderTop: "1px solid var(--border)" }}>
                     {cats.map((c) => {
                       const tier = tierByCategory[c.subcategory];
@@ -324,11 +324,11 @@ export default function PlanPage() {
                   const dayEditable = isEditable(d);
                   const rowContent = (
                     <div style={{ display: "grid", gridTemplateColumns: "56px 1fr auto", alignItems: "baseline", gap: 20, padding: "17px 4px", borderBottom: "1px solid var(--border)" }}>
-                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: isLocked ? "var(--ink-300)" : "var(--text-faint)", fontVariantNumeric: "tabular-nums" }}>Day {d}</span>
+                      <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: isLocked ? "var(--ink-300)" : "var(--text-faint)", fontVariantNumeric: "tabular-nums" }}>Day {d}</span>
                       <span style={{ fontSize: 16, color: isLocked ? "var(--ink-400)" : "var(--text-strong)" }}>
                         {focus} {!isPendingAssignment && <span style={{ fontSize: 14, color: isLocked ? "var(--ink-300)" : "var(--text-faint)" }}>· {subj}</span>}
                       </span>
-                      <span style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "var(--font-sans)", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "var(--font-serif)", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
                         {isDone && row?.score != null ? (
                           <span style={{ color: row.score >= 75 ? "var(--text-strong)" : row.score >= 58 ? "var(--text-muted)" : "var(--accent)", fontSize: 13 }}>{row.score}%</span>
                         ) : isLocked && !dayEditable ? (
@@ -397,8 +397,8 @@ export default function PlanPage() {
                 <div style={{ width: `${Math.round((doneCt / 30) * 100)}%`, height: "100%", background: "var(--brand-fill)" }} />
               </div>
               <div style={{ display: "flex", gap: 32, margin: "22px 0 0" }}>
-                <span><span style={{ fontFamily: "var(--font-sans)", fontSize: 20, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{streak}</span><span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", display: "block", marginTop: 4 }}>day streak</span></span>
-                <span><span style={{ fontFamily: "var(--font-sans)", fontSize: 20, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{doneCt}</span><span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", display: "block", marginTop: 4 }}>days done</span></span>
+                <span><span style={{ fontFamily: "var(--font-sans)", fontSize: 20, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{streak}</span><span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", display: "block", marginTop: 4 }}>day streak</span></span>
+                <span><span style={{ fontFamily: "var(--font-sans)", fontSize: 20, fontWeight: 500, color: "var(--text-strong)", fontVariantNumeric: "tabular-nums" }}>{doneCt}</span><span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", display: "block", marginTop: 4 }}>days done</span></span>
               </div>
             </div>
 
@@ -409,7 +409,7 @@ export default function PlanPage() {
                 return (
                   <div key={d} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "11px 0", borderBottom: "1px solid var(--border)" }}>
                     <span style={{ fontSize: 15, color: earned ? "var(--text-strong)" : "var(--ink-400)" }}>{MILESTONE_LABELS[d]}</span>
-                    <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", fontVariantNumeric: "tabular-nums" }}>Day {d}</span>
+                    <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", fontVariantNumeric: "tabular-nums" }}>Day {d}</span>
                   </div>
                 );
               })}
@@ -444,7 +444,7 @@ function SwapPanel({ subject, current, saving, error, onPick }: {
       background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
       padding: 10, boxShadow: "var(--shadow-lg)",
     }}>
-      {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--danger)", margin: "0 0 8px" }}>{error}</p>}
+      {error && <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--danger)", margin: "0 0 8px" }}>{error}</p>}
       <select
         autoFocus
         disabled={saving}

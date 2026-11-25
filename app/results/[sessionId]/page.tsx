@@ -70,7 +70,7 @@ interface AnswerRow {
 function notebookToggleStyle(inNotebook: boolean): React.CSSProperties {
   return {
     display: "inline-flex", alignItems: "center", gap: 6, border: 0, background: "none", padding: 0, cursor: "pointer",
-    fontFamily: "var(--font-sans)", fontSize: 12, color: inNotebook ? "var(--accent)" : "var(--text-muted)",
+    fontFamily: "var(--font-serif)", fontSize: 13, color: inNotebook ? "var(--accent)" : "var(--text-muted)",
   };
 }
 
@@ -300,12 +300,12 @@ export default function ResultsPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
           <span style={{ display: "flex", alignItems: "center", gap: 20 }}>
             <button
-              onClick={() => router.push(planDay ? "/plan" : "/practice")}
+              onClick={() => router.push(planDay ? "/plan" : "/dashboard")}
               style={{ border: 0, background: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", letterSpacing: "inherit", textTransform: "inherit", color: "inherit" }}
             >
               ← Back
             </button>
-            <span>Day report</span>
+            {planDay && <span>Day report</span>}
           </span>
           <span>{planDay ? `Day ${planDay.day_number} of 30 · ` : ""}{dateLine}</span>
         </div>
@@ -314,9 +314,9 @@ export default function ResultsPage() {
           <div>
             {planDay && (
               <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-                {streak > 0 && <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)" }}>{streak}-day streak</span>}
+                {streak > 0 && <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-muted)" }}>{streak}-day streak</span>}
                 {MILESTONE_LABELS[planDay.day_number] && (
-                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--accent)" }}>· {MILESTONE_LABELS[planDay.day_number]} milestone</span>
+                  <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--accent)" }}>· {MILESTONE_LABELS[planDay.day_number]} milestone</span>
                 )}
               </div>
             )}
@@ -325,7 +325,7 @@ export default function ResultsPage() {
               {correctCount} of {totalCount} correct.
             </p>
           </div>
-          <ScoreRing score={score} size={148} caption={`${correctCount} of ${totalCount} correct`} />
+          <ScoreRing score={score} size={148} />
         </div>
 
         {mapInfo?.sprintReward && <SprintReward title={mapInfo.sprintReward.title} tiles={mapInfo.sprintReward.tiles} style={{ margin: "36px 0 0" }} />}
@@ -337,7 +337,7 @@ export default function ResultsPage() {
           const { before, after } = mapInfo.change;
           const moved = before.level !== after.level;
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", margin: "32px 0 0", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", margin: "32px 0 0", fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)" }}>
               <span style={{ color: "var(--text-strong)" }}>{after.subcategory}</span>
               {moved && <LevelChip level={before.level} />}
               {moved && <span aria-hidden>→</span>}
@@ -377,10 +377,10 @@ export default function ResultsPage() {
           <p style={microLabel}>Question review</p>
           {wrongQuestionIds.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", padding: "0 0 18px", margin: "0 0 8px", borderBottom: "1px solid var(--border)" }}>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>
+              <span style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)" }}>
                 {wrongNotInNotebook.length > 0
-                  ? "Save the ones you missed to your mistake notebook and practice them again later."
-                  : "Every question you missed is in your mistake notebook."}
+                  ? "Review these later."
+                  : "All saved to your notebook."}
               </span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 16 }}>
                 {wrongNotInNotebook.length > 0 && (
@@ -393,11 +393,11 @@ export default function ResultsPage() {
                     Add all {wrongNotInNotebook.length} wrong {wrongNotInNotebook.length === 1 ? "answer" : "answers"} to notebook
                   </button>
                 )}
-                <Link href="/notebook" style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", textDecoration: "underline" }}>Open notebook</Link>
+                <Link href="/notebook" style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)", textDecoration: "underline" }}>Open notebook</Link>
               </span>
             </div>
           )}
-          {notebookError && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 12px" }}>{notebookError}</p>}
+          {notebookError && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "0 0 12px" }}>{notebookError}</p>}
           {answers
             .map((row, i) => ({ row, originalIndex: i }))
             // Missed questions first — they're the ones worth dwelling on; original numbering
@@ -417,9 +417,9 @@ export default function ResultsPage() {
                 return (
                   <div key={row.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "15px 0", borderBottom: "1px solid var(--border)" }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", fontVariantNumeric: "tabular-nums", width: 24 }}>Q{originalIndex + 1}</span>
+                      <span style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", fontVariantNumeric: "tabular-nums", width: 24 }}>Q{originalIndex + 1}</span>
                       <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--success)" }}>Correct</span>
-                      <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)" }}>{skillLabel(coeMap[row.id] ?? q.skill)}</span>
+                      <span style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)" }}>{skillLabel(coeMap[row.id] ?? q.skill)}</span>
                     </span>
                     <button
                       onClick={() => showQuestion(row.id)}
@@ -434,7 +434,7 @@ export default function ResultsPage() {
               return (
                 <div key={row.id} style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 32, padding: "0 0 34px", margin: "0 0 34px", borderBottom: "1px solid var(--border)" }}>
                   <div>
-                    <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: 0, fontVariantNumeric: "tabular-nums" }}>Q{originalIndex + 1}</p>
+                    <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: 0, fontVariantNumeric: "tabular-nums" }}>Q{originalIndex + 1}</p>
                     <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: row.is_correct ? "var(--success)" : "var(--danger)", margin: "8px 0 0" }}>
                       {row.is_correct ? "Correct" : "Missed"}
                     </p>
@@ -450,7 +450,7 @@ export default function ResultsPage() {
                       </button>
                     </div>
                     <p style={{ fontSize: 19, lineHeight: 1.5, color: "var(--text-strong)", margin: "0 0 16px", maxWidth: "52ch" }}>{q.stem}</p>
-                    <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: "0 0 18px" }}>
+                    <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)", margin: "0 0 18px" }}>
                       Your answer <span style={{ color: row.is_correct ? "var(--success)" : "var(--danger)" }}>{userAnswerDisplay}</span>
                       {!row.is_correct && <> · correct answer <span style={{ color: "var(--success)" }}>{correctAnswerDisplay}</span></>}
                     </p>
@@ -474,7 +474,7 @@ export default function ResultsPage() {
                           </div>
                         )}
                         {!q.passage && !q.options && (
-                          <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-faint)", margin: 0 }}>No additional passage for this question.</p>
+                          <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-faint)", margin: 0 }}>No additional passage for this question.</p>
                         )}
                       </div>
                     )}
@@ -501,7 +501,7 @@ export default function ResultsPage() {
             <div>
               <p style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)", margin: "0 0 12px" }}>Tomorrow</p>
               <p style={{ fontSize: 25, color: "var(--text-strong)", margin: 0, letterSpacing: "-0.018em" }}>Day {nextDay} · {nextPlanDay.subject === "math" ? "Math" : "English"} — {nextPlanDay.focus}</p>
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "10px 0 0" }}>Opens tomorrow</p>
+              <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: "10px 0 0" }}>Opens tomorrow</p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
               <button onClick={() => router.push("/plan")} style={{ border: 0, background: "var(--brand-fill)", color: "var(--text-on-brand)", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, padding: "14px 28px", borderRadius: "var(--radius-lg)", cursor: "pointer" }}>

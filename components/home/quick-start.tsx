@@ -38,12 +38,12 @@ export function QuickStartCard({ quickStart, style }: { quickStart: SkillMapResp
         <p style={{ fontSize: 16, color: "var(--text-strong)", margin: "0 0 4px" }}>
           {resuming ? "Finish your quick start" : "Quick start: color in your whole map"}
         </p>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.5, color: "var(--text-muted)", margin: 0 }}>
+        <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, lineHeight: 1.5, color: "var(--text-muted)", margin: 0 }}>
           {resuming
             ? "Your answers so far are saved."
-            : `${quickStart.questions} mixed questions, about ${minutes} minutes — two from every skill, so every tile gets a first estimate. Optional.`}
+            : `${quickStart.questions} questions · about ${minutes} min`}
         </p>
-        {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "8px 0 0" }}>{error}</p>}
+        {error && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "8px 0 0" }}>{error}</p>}
       </div>
       <button onClick={go} disabled={busy} style={{
         flexShrink: 0, border: "1px solid var(--border-strong)", background: "transparent", color: "var(--text-strong)",

@@ -409,7 +409,7 @@ export function MindMap({ mastery, tiers, history, mode, height }: MindMapProps)
 
   const controlButton: React.CSSProperties = {
     minWidth: 32, height: 32, padding: "0 11px", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--surface) 86%, transparent)",
-    backdropFilter: "blur(6px)", borderRadius: 999, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)",
+    backdropFilter: "blur(6px)", borderRadius: 999, cursor: "pointer", fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-muted)",
   };
 
   return (
@@ -559,7 +559,7 @@ export function MindMap({ mastery, tiers, history, mode, height }: MindMapProps)
                       : { fontFamily: "var(--font-sans)", fontSize: 9.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-muted)", lineHeight: 1.3 }}>
                       {n.label}
                     </span>
-                    {p.collapsed && <span style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-faint)" }}>{summary(skillsUnder(n))}</span>}
+                    {p.collapsed && <span style={{ fontFamily: "var(--font-serif)", fontSize: 11, color: "var(--text-faint)" }}>{summary(skillsUnder(n))}</span>}
                   </button>
                   <button
                     className="mm-toggle"
@@ -583,13 +583,13 @@ export function MindMap({ mastery, tiers, history, mode, height }: MindMapProps)
           <button style={controlButton} onClick={() => setCollapsed(new Set(groupIds.filter((id) => id.startsWith("domain:"))))} aria-label="Collapse all">Collapse all</button>
           <span style={{ width: 6 }} />
           <button style={controlButton} onClick={() => zoomAt(1 / 1.2, undefined, undefined, true)} aria-label="Zoom out">−</button>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", minWidth: 40, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{Math.round(view.k * 100)}%</span>
+          <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", minWidth: 40, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{Math.round(view.k * 100)}%</span>
           <button style={controlButton} onClick={() => zoomAt(1.2, undefined, undefined, true)} aria-label="Zoom in">+</button>
           <button style={controlButton} onClick={() => { touched.current = false; center(true); }} aria-label="Center">Center</button>
           <button style={controlButton} onClick={() => { touched.current = true; fit(); }} aria-label="Fit to screen">Fit</button>
         </div>
-        <p className="mm-hint" style={{ position: "absolute", left: 16, bottom: 16, margin: 0, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", pointerEvents: "none" }}>
-          Drag to explore · pinch or Ctrl + scroll to zoom{mode === "full" ? " · scroll to pan" : ""} · click any word for details · +/− folds a branch
+        <p className="mm-hint" style={{ position: "absolute", left: 16, bottom: 16, margin: 0, fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", pointerEvents: "none" }}>
+          Drag to explore · click a skill for details
         </p>
 
         {selected && nodeById.get(selected) && (
@@ -609,7 +609,7 @@ export function MindMap({ mastery, tiers, history, mode, height }: MindMapProps)
           />
         )}
       </div>
-      {mode === "inline" && <MapLegend note="Faded nodes are early estimates" />}
+      {mode === "inline" && <MapLegend />}
     </div>
   );
 }
@@ -649,7 +649,7 @@ function RootNode({ mastery, started, hidden, onSelect }: { mastery: CategoryMas
           boxShadow: "0 18px 44px rgba(218,71,120,.32), inset 0 1px 0 rgba(255,255,255,.35), inset 0 -10px 24px rgba(80,40,140,.25)",
         }}>
           <span style={{ fontSize: 19, letterSpacing: "-0.015em" }}>Your SAT</span>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 10, letterSpacing: "0.04em", opacity: 0.7, marginTop: 4 }}>{started} of {mastery.length} started</span>
+          <span style={{ fontFamily: "var(--font-serif)", fontSize: 11, letterSpacing: "0.04em", opacity: 0.7, marginTop: 4 }}>{started} of {mastery.length} started</span>
         </button>
       </div>
     </div>
@@ -731,7 +731,7 @@ export function SkillMapView({ mastery, tiers, history }: { mastery: CategoryMas
         <div role="dialog" aria-modal="true" aria-label="Skill map, full screen" style={{ position: "fixed", inset: 0, zIndex: 70, background: "var(--canvas)", display: "flex", flexDirection: "column", fontFamily: "var(--font-serif)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", padding: "10px 18px", borderBottom: "1px solid var(--border)", background: "var(--surface)" }}>
             <span style={{ fontSize: 18, color: "var(--text-strong)" }}>Your skill map</span>
-            <div className="mm-legend-full" style={{ marginTop: -22 }}><MapLegend note="Faded nodes are early estimates" /></div>
+            <div className="mm-legend-full" style={{ marginTop: -22 }}><MapLegend /></div>
             <button onClick={() => setFull(false)} style={{
               border: "1px solid var(--border-strong)", background: "transparent", borderRadius: 999, padding: "8px 16px",
               cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-strong)",

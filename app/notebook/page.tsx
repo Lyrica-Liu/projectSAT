@@ -124,16 +124,9 @@ export default function NotebookPage() {
       <Sidebar />
 
       <main className="pw-main-content" style={{ maxWidth: 960 + SIDEBAR_WIDTH, marginRight: "auto", padding: "0 56px 96px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, height: 60, borderBottom: "1px solid var(--border)", fontFamily: "var(--font-sans)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--text-faint)" }}>
-          <span>Mistake notebook</span>
-          <span>{entries.length} {entries.length === 1 ? "question" : "questions"}</span>
-        </div>
 
         <div style={{ padding: "52px 0 0" }}>
           <h1 style={{ fontWeight: 400, fontSize: 44, lineHeight: 1.04, letterSpacing: "-0.026em", color: "var(--text-strong)", margin: 0 }}>Try them again</h1>
-          <p style={{ fontSize: 17, lineHeight: 1.62, color: "var(--text-muted)", margin: "20px 0 0", maxWidth: "54ch", textWrap: "pretty" }}>
-            Questions you saved from your results. Get one right in a review session and it leaves the notebook on its own.
-          </p>
 
           {entries.length === 0 ? (
             <div style={{ margin: "44px 0 0", padding: "36px 32px", border: "1px dashed var(--line-strong)", borderRadius: "var(--radius-xl)", maxWidth: 620 }}>
@@ -141,7 +134,7 @@ export default function NotebookPage() {
               <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--text-muted)", margin: 0 }}>
                 After any session, open its results and use <strong style={{ fontWeight: 500, color: "var(--text-body)" }}>Add all wrong answers to notebook</strong>, or add questions one at a time.
               </p>
-              <Link href="/dashboard" style={{ display: "inline-block", marginTop: 18, fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--accent)" }}>Go to your dashboard →</Link>
+              <Link href="/dashboard" style={{ display: "inline-block", marginTop: 18, fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--accent)" }}>Go to your dashboard →</Link>
             </div>
           ) : (
             <>
@@ -174,11 +167,11 @@ export default function NotebookPage() {
                 </span>
               </div>
               {practiceIds.length > MAX_PER_SESSION && (
-                <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "10px 0 0" }}>
+                <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: "10px 0 0" }}>
                   A review session holds up to {MAX_PER_SESSION} questions — the oldest go first.
                 </p>
               )}
-              {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "12px 0 0" }}>{error}</p>}
+              {error && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "12px 0 0" }}>{error}</p>}
 
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {visible.map((e) => {
@@ -207,7 +200,7 @@ export default function NotebookPage() {
                           display: "-webkit-box", WebkitLineClamp: e.passage ? 1 : 2, WebkitBoxOrient: "vertical", overflow: "hidden",
                           fontStyle: e.passage ? "italic" : "normal",
                         }}>{e.stem}</p>
-                        <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)", margin: "6px 0 0" }}>
+                        <p style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", margin: "6px 0 0" }}>
                           Added {new Date(e.addedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </p>
                       </div>

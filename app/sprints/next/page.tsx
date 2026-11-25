@@ -27,7 +27,7 @@ export default function NextSprintDayPage() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--canvas)", fontFamily: "var(--font-serif)", padding: 24 }}>
       <div style={{ textAlign: "center" }}>
         <p style={{ fontSize: 18, color: "var(--text-strong)", margin: "0 0 16px" }}>{error}</p>
-        <Link href="/sprints" style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--accent)" }}>Back to sprints</Link>
+        <Link href="/sprints" style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--accent)" }}>Back to sprints</Link>
       </div>
     </div>
   );

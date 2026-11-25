@@ -39,19 +39,18 @@ export const skillAriaLabel = (m: CategoryMastery) =>
   `${m.subcategory}: ${LEVEL_LABEL[m.level]}${m.estimate ? " (estimate)" : ""}. Start ${m.level === "not_started" ? FIRST_SET : SET} questions.`;
 
 export function ErrorLine({ error }: { error: string | null }) {
-  return error ? <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "0 0 14px" }}>{error}</p> : null;
+  return error ? <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "0 0 14px" }}>{error}</p> : null;
 }
 
-export function MapLegend({ note }: { note: string }) {
+export function MapLegend() {
   return (
-    <div style={{ display: "flex", gap: 18, flexWrap: "wrap", margin: "22px 0 0", fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-faint)" }}>
+    <div style={{ display: "flex", gap: 18, flexWrap: "wrap", margin: "22px 0 0", fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)" }}>
       {(["not_started", "weak", "strong", "mastered"] as const).map((l) => (
         <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <span aria-hidden style={{ width: 12, height: 12, borderRadius: 3, background: LEVEL_STYLE[l].background, border: LEVEL_STYLE[l].border }} />
           {LEVEL_LABEL[l]}
         </span>
       ))}
-      <span>· {note}</span>
     </div>
   );
 }
@@ -74,7 +73,7 @@ function Tile({ m, tier, busy, onStart }: { m: CategoryMastery; tier: Difficulty
       }}
     >
       <span style={{ fontSize: 15, lineHeight: 1.3, color: look.ink }}>{m.subcategory}</span>
-      <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: look.sub }}>
+      <span style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, fontFamily: "var(--font-serif)", fontSize: 12, color: look.sub }}>
         <span style={{ letterSpacing: "0.08em", textTransform: "uppercase" }}>
           {busy ? "Starting…" : LEVEL_LABEL[m.level]}{m.estimate && !busy ? " · estimate" : ""}
         </span>
@@ -112,7 +111,7 @@ export function SkillMap({ mastery, tiers }: { mastery: CategoryMastery[]; tiers
           </div>
         );
       })}
-      <MapLegend note="Faded tiles are early estimates" />
+      <MapLegend />
     </div>
   );
 }

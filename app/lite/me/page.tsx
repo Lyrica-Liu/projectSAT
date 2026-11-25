@@ -138,7 +138,7 @@ export default function LiteMe() {
       <main className="l-page">
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", marginTop: 12 }}>
           <span style={{ width: 88, height: 88, borderRadius: "50%", padding: 3, background: "conic-gradient(var(--l-coral), var(--l-accent), var(--l-violet), var(--l-coral))", display: "flex" }}>
-            <span style={{ flex: 1, borderRadius: "50%", background: "var(--l-accent-soft)", border: "3px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 800 }}>
+            <span style={{ flex: 1, borderRadius: "50%", background: "var(--l-accent-soft)", border: "3px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 600 }}>
               {displayName.charAt(0).toUpperCase()}
             </span>
           </span>
@@ -148,7 +148,7 @@ export default function LiteMe() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <div className="l-tile" style={{ textAlign: "center" }}>
-            <p style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", margin: 0 }}>{me.streak}</p>
+            <p style={{ fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em", margin: 0 }}>{me.streak}</p>
             <p style={{ fontSize: 13, fontWeight: 600, color: "var(--l-muted)", margin: "2px 0 0" }}>Day streak</p>
           </div>
           <div className="l-tile" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
@@ -158,7 +158,7 @@ export default function LiteMe() {
         </div>
 
         <section>
-          <p className="l-eyebrow" style={{ marginBottom: 10 }}>Daily goal (questions)</p>
+          <p className="l-eyebrow" style={{ marginBottom: 10 }}>Daily goal</p>
           <div className="l-seg" role="group" aria-label="Daily goal">
             {GOALS.map((g) => <button key={g} aria-pressed={me.dailyGoal === g} onClick={() => setGoal(g)}>{g}</button>)}
           </div>
@@ -169,7 +169,7 @@ export default function LiteMe() {
             <Glow tone="rose" size={240} style={{ right: -90, top: -110 }} />
             <div style={{ position: "relative" }}>
               <p className="l-h2" style={{ fontSize: 22 }}>Save your progress</p>
-              <p className="l-sub" style={{ marginTop: 6 }}>Right now it lives only on this phone. Sign in to keep it and use it on the website too. Already have an account? This signs you in to it.</p>
+              <p className="l-sub" style={{ marginTop: 6 }}>Your practice so far comes with you.</p>
             </div>
             <button className="l-btn" onClick={saveWithGoogle} disabled={busy} style={{ position: "relative", gap: 10 }}>
               <GoogleIcon />{busy ? "Opening Google…" : "Continue with Google"}
@@ -180,12 +180,9 @@ export default function LiteMe() {
 
         {!mastery ? <Skeleton height={150} /> : <SkillSummary mastery={mastery} />}
 
+        {notebook.length > 0 && (
         <section>
           <p className="l-eyebrow" style={{ marginBottom: 6 }}>Mistake notebook</p>
-          {notebook.length === 0 ? (
-            <p className="l-sub">Nothing saved. Questions you add from a results page on the website show up here.</p>
-          ) : (
-            <>
               {notebook.slice(0, 5).map((n) => (
                 <div key={n.id} className="l-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "var(--l-faint)" }}>{n.subcategory ?? "Question"}</span>
@@ -195,9 +192,8 @@ export default function LiteMe() {
               <button className="l-btn small" style={{ marginTop: 12 }} onClick={practiceMistakes} disabled={busy}>
                 Practice {Math.min(notebook.length, 20)} {notebook.length === 1 ? "mistake" : "mistakes"}
               </button>
-            </>
-          )}
         </section>
+        )}
 
         <section>
           <button className="l-row" onClick={() => goToFullSite()} style={{ width: "100%", background: "none", border: 0, borderBottom: "1px solid var(--l-line)", color: "var(--l-ink)", fontWeight: 600 }}>
@@ -205,6 +201,7 @@ export default function LiteMe() {
           </button>
           {!me.isAnonymous && (
             <form action="/auth/signout" method="post">
+              <input type="hidden" name="next" value="/lite" />
               <button className="l-row" type="submit" style={{ width: "100%", background: "none", border: 0, color: "var(--l-wrong)", fontWeight: 600 }}>Sign out</button>
             </form>
           )}

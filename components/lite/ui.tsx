@@ -78,7 +78,7 @@ export function Logo() {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
       {/* The website's wordmark, so the two read as one product. */}
-      <Mark width={28} height={17} fill="var(--l-ink)" />
+      <Mark height={22} />
       <span style={{ fontFamily: "var(--l-serif)", fontSize: 19, fontWeight: 600, letterSpacing: "-0.02em" }}>800Path</span>
       <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "var(--l-gradient)", padding: "3px 8px", borderRadius: 999 }}>lite</span>
     </span>

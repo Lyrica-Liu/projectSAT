@@ -122,7 +122,7 @@ export function ReferenceSheetPanel({ open, onClose }: { open: boolean; onClose:
                 {s.formulas.join("   ")}
               </span>
             </div>
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)", margin: "4px 0 0" }}>{s.note}</p>
+            <p style={{ fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)", margin: "4px 0 0" }}>{s.note}</p>
           </div>
         ))}
         <ul style={{ margin: "14px 0 0", padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: 6 }}>

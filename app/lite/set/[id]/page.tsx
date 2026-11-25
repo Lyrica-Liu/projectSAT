@@ -85,17 +85,15 @@ export default function LiteSet() {
           <div style={{ textAlign: "center", marginTop: 48 }}>
             <span className="l-chip" style={{ background: "rgba(255,255,255,.85)", fontSize: 14 }}>{finished.sprintCompleted ? "Sprint complete!" : "Set done"}</span>
             <div className="l-big-num" style={{ fontSize: 112, marginTop: 18 }}>{right}<span style={{ color: "var(--l-dim)" }}>/{cards.length}</span></div>
-            <p style={{ fontSize: 17, fontWeight: 600, margin: "12px 0 0" }}>{finished.score}% right</p>
+            <p style={{ fontSize: 18, margin: "12px 0 0" }}>{finished.score}%</p>
           </div>
           {finished.sprintCompleted && (
             <div className="l-card" style={{ background: "var(--l-accent-soft)", textAlign: "center" }}>
               <p className="l-h2">You finished {finished.sprintCompleted.title}</p>
-              <p className="l-sub" style={{ marginTop: 8 }}>Every day done. Pick a new sprint whenever you&apos;re ready.</p>
-            </div>
+                          </div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "auto" }}>
             <button className="l-btn" onClick={() => router.push("/lite")}>Done</button>
-            <button className="l-btn ghost" onClick={() => router.push("/lite/sprints")}>Sprints</button>
           </div>
         </main>
       </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LiteCard } from "@/lib/server/lite-stream";
 import { Burst, DIFFICULTY } from "@/components/lite/ui";
 
@@ -75,7 +75,7 @@ export function QuestionCard({ card, onAnswer, fullSiteHref }: {
       </div>
 
       {card.passage && <Passage text={card.passage} />}
-      <p style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.4, margin: 0, whiteSpace: "pre-wrap" }}>{card.stem}</p>
+      <p style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.4, margin: 0, whiteSpace: "pre-wrap" }}>{card.stem}</p>
 
       {card.questionType !== "multiple_choice" || !card.options ? (
         <div className="l-tile" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -140,11 +140,20 @@ export function gradeLocally(card: LiteCard, choice: Letter): LiteCard {
   return { ...card, result: { choice, correct: choice === card.key.answer, answer: card.key.answer, gridAnswer: null, explanation: card.key.explanation } };
 }
 
+const HINT_KEY = "lite:tap-hint";
+const HINT_TIMES = 3;
+function hintsSeen() {
+  try { return Number(localStorage.getItem(HINT_KEY)) || 0; } catch { return HINT_TIMES; }
+}
+
 /** The sheet that slides up after an answer: right/wrong, the explanation, and Next. */
 export function ExplanationSheet({ card, onNext, nextLabel = "Next", busy = false }: {
   card: LiteCard; onNext: () => void; nextLabel?: string; busy?: boolean;
 }) {
   const r = card.result!;
+  // Taught on a student's first few answers, then out of the way.
+  const [showHint] = useState(() => hintsSeen() < HINT_TIMES);
+  useEffect(() => { try { localStorage.setItem(HINT_KEY, String(hintsSeen() + 1)); } catch { /* blocked: harmless */ } }, []);
   return (
     <div className="l-sheet docked" role="region" aria-label="Explanation" aria-live="polite">
       <div className="l-grabber" />
@@ -153,7 +162,7 @@ export function ExplanationSheet({ card, onNext, nextLabel = "Next", busy = fals
       </p>
       <p style={{ fontFamily: "var(--l-serif)", fontSize: 16, lineHeight: 1.55, color: "var(--l-text2)", margin: "10px 0 18px", whiteSpace: "pre-wrap" }}>{r.explanation}</p>
       <button className="l-btn" onClick={onNext} disabled={busy}>{busy ? "Loading…" : nextLabel}</button>
-      <p style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--l-faint)", margin: "10px 0 0" }}>or tap anywhere to continue</p>
+      {showHint && <p style={{ textAlign: "center", fontSize: 14, color: "var(--l-faint)", margin: "10px 0 0" }}>or tap anywhere</p>}
     </div>
   );
 }

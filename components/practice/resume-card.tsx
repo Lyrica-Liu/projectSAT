@@ -60,7 +60,7 @@ export function ResumeCard({ style }: { style?: React.CSSProperties }) {
     }}>
       <div>
         <p style={{ fontSize: 16, color: "var(--text-strong)", margin: "0 0 4px" }}>Continue where you left off</p>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
+        <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--text-muted)", margin: 0 }}>
           Extra practice from {started} · {unfinished.answered} of {unfinished.total} answered
         </p>
       </div>

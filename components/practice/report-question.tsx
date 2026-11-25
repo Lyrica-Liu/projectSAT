@@ -47,7 +47,7 @@ export function ReportQuestionButton({ questionId }: { questionId: string }) {
 
   if (sent) {
     return (
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-faint)" }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-serif)", fontSize: 13, color: "var(--text-faint)" }}>
         <Icon name="circle-check" size={13} /> Reported — thanks
       </span>
     );
@@ -100,7 +100,7 @@ export function ReportQuestionButton({ questionId }: { questionId: string }) {
               }}
             />
 
-            {error && <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--danger)", margin: "10px 0 0" }}>{error}</p>}
+            {error && <p style={{ fontFamily: "var(--font-serif)", fontSize: 14, color: "var(--danger)", margin: "10px 0 0" }}>{error}</p>}
 
             <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 18 }}>
               <button onClick={submit} disabled={!reason || sending} style={{
