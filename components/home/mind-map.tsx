@@ -206,7 +206,7 @@ interface MindMapProps {
   tiers: Tiers;
   history?: Record<string, SkillHistory>;
   mode: "inline" | "full";
-  height?: number;
+  height?: number | string;
 }
 
 export function MindMap({ mastery, tiers, history, mode, height }: MindMapProps) {
@@ -251,27 +251,32 @@ export function MindMap({ mastery, tiers, history, mode, height }: MindMapProps)
     if (smooth) glide(next); else setView(next);
   }, [glide]);
 
-  const fit = useCallback(() => {
+  const fitView = useCallback((maxK: number, minK = 0): View | null => {
     const el = viewportRef.current;
-    if (!el) return;
+    if (!el) return null;
     const { width, height: h } = el.getBoundingClientRect();
-    const k = clampK(Math.min(width / (bounds.maxX - bounds.minX), h / (bounds.maxY - bounds.minY), 1.4) * 0.94);
-    glide({ k, tx: width / 2 - ((bounds.minX + bounds.maxX) / 2) * k, ty: h / 2 - ((bounds.minY + bounds.maxY) / 2) * k });
-  }, [bounds, glide]);
+    if (!width || !h) return null;
+    const k = clampK(Math.max(minK, Math.min(width / (bounds.maxX - bounds.minX), h / (bounds.maxY - bounds.minY), maxK) * 0.94));
+    return { k, tx: width / 2 - ((bounds.minX + bounds.maxX) / 2) * k, ty: h / 2 - ((bounds.minY + bounds.maxY) / 2) * k };
+  }, [bounds]);
 
-  // Start centered on "Your SAT" at 110%, and stay centered as the viewport settles, until the student moves it.
+  const fit = useCallback(() => { const v = fitView(1.4); if (v) glide(v); }, [fitView, glide]);
+
+  // Start with as much of the map in view as stays readable (75%–110%), and keep it fitted as the
+  // viewport settles, until the student moves it.
+  const settle = useCallback(() => { const v = fitView(START_K, 0.75); if (v) setView(v); else center(); }, [fitView, center]);
   useLayoutEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
-    center();
+    if (!touched.current) settle();
     const ro = new ResizeObserver(() => {
       const r = el.getBoundingClientRect();
       setSize({ w: r.width, h: r.height });
-      if (!touched.current) center();
+      if (!touched.current) settle();
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [center]);
+  }, [settle]);
 
   const zoomAt = useCallback((factor: number, px?: number, py?: number, smooth = false) => {
     const el = viewportRef.current;
@@ -585,7 +590,7 @@ export function MindMap({ mastery, tiers, history, mode, height }: MindMapProps)
           <button style={controlButton} onClick={() => zoomAt(1 / 1.2, undefined, undefined, true)} aria-label="Zoom out">−</button>
           <span style={{ fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", minWidth: 40, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{Math.round(view.k * 100)}%</span>
           <button style={controlButton} onClick={() => zoomAt(1.2, undefined, undefined, true)} aria-label="Zoom in">+</button>
-          <button style={controlButton} onClick={() => { touched.current = false; center(true); }} aria-label="Center">Center</button>
+          <button style={controlButton} onClick={() => { touched.current = true; center(true); }} aria-label="Center">Center</button>
           <button style={controlButton} onClick={() => { touched.current = true; fit(); }} aria-label="Fit to screen">Fit</button>
         </div>
         <p className="mm-hint" style={{ position: "absolute", left: 16, bottom: 16, margin: 0, fontFamily: "var(--font-serif)", fontSize: 12, color: "var(--text-faint)", pointerEvents: "none" }}>
@@ -700,7 +705,14 @@ const subscribeWide = (cb: () => void) => {
  * Home's skill map: the mind map inline on wide screens (tile grid on narrow ones), plus a
  * full-screen mode that covers the whole window. Esc closes it.
  */
-export function SkillMapView({ mastery, tiers, history }: { mastery: CategoryMastery[]; tiers: Tiers; history?: Record<string, SkillHistory> }) {
+/**
+ * `header` sits left of the Full screen button, `banner` between that row and the map; `height`
+ * sizes the inline map (default 660px).
+ */
+export function SkillMapView({ mastery, tiers, history, header, banner, height }: {
+  mastery: CategoryMastery[]; tiers: Tiers; history?: Record<string, SkillHistory>;
+  header?: React.ReactNode; banner?: React.ReactNode; height?: number | string;
+}) {
   const wide = useSyncExternalStore(subscribeWide, () => window.matchMedia(WIDE_QUERY).matches, () => true);
   const [full, setFull] = useState(false);
 
@@ -724,8 +736,9 @@ export function SkillMapView({ mastery, tiers, history }: { mastery: CategoryMas
 
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 0 10px" }}>{openButton}</div>
-      {wide ? <MindMap mastery={mastery} tiers={tiers} history={history} mode="inline" /> : <SkillMap mastery={mastery} tiers={tiers} />}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: header ? "space-between" : "flex-end", gap: 16, flexWrap: "wrap", margin: "0 0 14px" }}>{header}{openButton}</div>
+      {banner}
+      {wide ? <MindMap mastery={mastery} tiers={tiers} history={history} mode="inline" height={height} /> : <SkillMap mastery={mastery} tiers={tiers} />}
 
       {full && (
         <div role="dialog" aria-modal="true" aria-label="Skill map, full screen" style={{ position: "fixed", inset: 0, zIndex: 70, background: "var(--canvas)", display: "flex", flexDirection: "column", fontFamily: "var(--font-serif)" }}>
